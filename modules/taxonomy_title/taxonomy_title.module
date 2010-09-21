@@ -1,0 +1,85 @@
+<?php
+// $Id: taxonomy_title.module,v 1.5 2009/04/29 05:59:00 jenlampton Exp $
+
+/**
+ * Implementation of hook_help()
+ */
+function taxonomy_title_help($path, $arg) {
+  switch ($section) {
+    case 'admin/content/taxonomy':
+      return t('<p>Set the page title on your Taxonomy pages.</p>');
+    case 'admin/help#quiz':
+      return t('<p>Set the page title on your Taxonomy pages.</p>');
+  }
+}
+
+/**
+ * Implementation of hook_form_alter()
+ */
+function taxonomy_title_form_alter(&$form, &$form_state, $form_id){
+  if ($form_id == 'taxonomy_form_term'){
+    $title = _taxonomy_title_get_title($form['tid']['#value']);
+    $form['identification']['tax_title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Taxonomy Page Title'),
+      '#default_value' => $title,
+      '#description' => t('This is the title you will see on your taxonomy page.  If left blank, the term name will be used.'),
+      '#weight' => 0,
+      );
+  }
+}
+
+/**
+ * Implementation of hook_taxonomy()
+ */
+function taxonomy_title_taxonomy($op, $type, $array = NULL) {
+  if ($type == 'term') {
+    switch($op){
+      case 'delete':
+        _taxonomy_title_delete_title($array['tid']);
+      break;
+      case 'update':
+        _taxonomy_title_delete_title($array['tid']);
+        _taxonomy_title_insert_title($array['tid'], $array['tax_title']);
+      break;
+      case 'insert':
+        _taxonomy_title_insert_title($array['tid'], $array['tax_title']);
+      break;
+    }
+  }
+}
+
+function _taxonomy_title_delete_title($tid){
+  db_query('DELETE FROM {taxonomy_title} WHERE tid = %d', $tid);
+}
+
+function _taxonomy_title_insert_title($tid, $title){
+  if ($title != ''){
+    db_query('INSERT INTO {taxonomy_title} VALUES (%d, "%s")', $tid, $title);
+  }
+}
+
+function _taxonomy_title_get_title($tid){
+  $title = db_result(db_query('SELECT title FROM {taxonomy_title} WHERE tid = %d', $tid));
+  return $title;
+}
+
+/* 
+ * Implementtion of hook_preprocess
+ * overrides variables sent to template_preprocess
+ */
+function taxonomy_title_preprocess(&$variables, $hook) {
+  if ($hook == 'page' && arg(0) == 'taxonomy' && arg(1) == 'term' && is_numeric(arg(2)) && arg(2) > 0) {
+    $title = _taxonomy_title_get_title(arg(2));
+    if ($title){
+      // Sets the meta title.
+      drupal_set_title($title);
+      // Assures the page heading is set.
+      $variables['title'] = drupal_get_title();
+    }
+  }
+}
+
+
+
+
