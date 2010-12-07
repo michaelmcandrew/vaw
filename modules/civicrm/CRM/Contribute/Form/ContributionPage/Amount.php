@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.1                                                |
+ | CiviCRM version 3.2                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -104,7 +104,7 @@ class CRM_Contribute_Form_ContributionPage_Amount extends CRM_Contribute_Form_Co
         //check if selected payment processor supports recurring payment
         if ( CRM_Contribute_BAO_ContributionPage::checkRecurPaymentProcessor( $this->_id ) ) {
             $this->addElement( 'checkbox', 'is_recur', ts('Recurring contributions'), null, 
-                               array('onclick' => "return showHideByValue('is_recur',true,'recurFields','table-row','radio',false);") );
+                               array('onclick' => "showHideByValue('is_recur',true,'recurFields','table-row','radio',false); showRecurInterval( );") );
             require_once 'CRM/Core/OptionGroup.php';
             $this->addCheckBox( 'recur_frequency_unit', ts('Supported recurring units'), 
                                 CRM_Core_OptionGroup::values( 'recur_frequency_units', false, false, false, null, 'name' ),
@@ -135,7 +135,7 @@ class CRM_Contribute_Form_ContributionPage_Amount extends CRM_Contribute_Form_Co
                    null, array('onchange' => "showHideAmountBlock( this.value, 'price_set_id' );")
                    );
         //CiviPledge fields.
-        $config =& CRM_Core_Config::singleton( );
+        $config = CRM_Core_Config::singleton( );
         if ( in_array('CiviPledge', $config->enableComponents) ) {
             $this->assign('civiPledge', true );
             require_once 'CRM/Core/OptionGroup.php';
@@ -230,7 +230,7 @@ class CRM_Contribute_Form_ContributionPage_Amount extends CRM_Contribute_Form_Co
      * @access public  
      * @static  
      */  
-    static function formRule( &$fields, &$files, $self ) 
+    static function formRule( $fields, $files, $self ) 
     {  
         $errors = array( );
 
@@ -260,7 +260,7 @@ class CRM_Contribute_Form_ContributionPage_Amount extends CRM_Contribute_Form_Co
         //then disable contribution amount section. CRM-3801,
         
         require_once 'CRM/Member/DAO/MembershipBlock.php';
-        $membershipBlock =& new CRM_Member_DAO_MembershipBlock( );
+        $membershipBlock = new CRM_Member_DAO_MembershipBlock( );
         $membershipBlock->entity_table = 'civicrm_contribution_page';
         $membershipBlock->entity_id = $self->_id;
         $membershipBlock->is_active = 1;
@@ -301,13 +301,11 @@ class CRM_Contribute_Form_ContributionPage_Amount extends CRM_Contribute_Form_Co
             if ( CRM_Utils_Array::value( 'amount_block_is_active', $fields ) ) {
                 if ( !CRM_Utils_Array::value( 'is_allow_other_amount', $fields ) &&
                      !$priceSetId ) {
-                    //get the values and labels of amount block
-                    $labels  = CRM_Utils_Array::value( 'label'  , $fields );
+                    //get the values of amount block
                     $values  = CRM_Utils_Array::value( 'value'  , $fields );
                     $isSetRow = false;
                     for ( $i = 1; $i < self::NUM_OPTION; $i++ ) {
-                        if ( ( isset( $values[$i] ) && ( strlen( trim( $values[$i] ) ) > 0 ) ) &&
-                             ( CRM_Utils_Array::value( $i, $labels ) ) ) { 
+                        if ( ( isset( $values[$i] ) && ( strlen( trim( $values[$i] ) ) > 0 ) ) ) { 
                             $isSetRow = true;
                         }
                     }
@@ -332,7 +330,7 @@ class CRM_Contribute_Form_ContributionPage_Amount extends CRM_Contribute_Form_Co
     {
         // get the submitted form values.
         $params = $this->controller->exportValues( $this->_name );
-        
+       
         // check for price set.
         $priceSetID = CRM_Utils_Array::value( 'price_set_id', $params );
         
@@ -343,7 +341,7 @@ class CRM_Contribute_Form_ContributionPage_Amount extends CRM_Contribute_Form_Co
                          'max_amount'             => "null",
                          'is_monetary'            => false,
                          'is_pay_later'           => false,
-                         'is_recur_interval'      => "null",
+                         'is_recur_interval'      => false,
                          'recur_frequency_unit'   => "null",
                          'default_amount_id'      => "null",
                          'is_allow_other_amount'  => false,
@@ -354,6 +352,10 @@ class CRM_Contribute_Form_ContributionPage_Amount extends CRM_Contribute_Form_Co
             $resetFields = array( 'min_amount', 'max_amount', 'is_allow_other_amount' );
         }
         
+        if ( !CRM_Utils_Array::value( 'is_recur', $params ) ) {
+            $resetFields = array_merge( $resetFields, array( 'is_recur_interval', 'recur_frequency_unit' ) );
+        }
+
         foreach ( $fields as $field => $defaultVal ) {
             $val = CRM_Utils_Array::value( $field, $params, $defaultVal );
             if ( in_array( $field, $resetFields ) ) $val = $defaultVal;

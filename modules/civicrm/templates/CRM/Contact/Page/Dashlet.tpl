@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.1                                                |
+ | CiviCRM version 3.2                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -23,7 +23,7 @@
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
 *}
-    <div class="status" style="padding: 1em;">
+    <div id="help" style="padding: 1em;">
         {ts}Available dashboard elements - dashlets - are displayed in the dark gray top bar. Drag and drop dashlets onto the left or right columns below to add them to your dashboard. Changes are automatically saved. Click 'Done' to return to the normal dashboard view.{/ts}
         {help id="id-dash_configure" file="CRM/Contact/Page/Dashboard.hlp"}
     </div><br/>
@@ -97,6 +97,7 @@
                 // post to server
                 var postUrl = {/literal}"{crmURL p='civicrm/ajax/dashboard' h=0 }"{literal};
                 params['op'] = 'save_columns';
+                params['key'] = {/literal}"{crmKey name='civicrm/ajax/dashboard'}"{literal};
                 cj.post( postUrl, params, function(response, status) {
                     // TO DO show done / disable escape action
                 });
@@ -117,6 +118,7 @@
                 // delete dashlet
                 var postUrl = {/literal}"{crmURL p='civicrm/ajax/dashboard' h=0 }"{literal};
                 params['op'] = 'delete_dashlet';
+                params['key'] = {/literal}"{crmKey name='civicrm/ajax/dashboard'}"{literal};
                 cj.post( postUrl, params, function(response, status) {
                     // delete dom object
                     cj('#' + dashletID ).parent().remove();
