@@ -132,6 +132,9 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                                                'activity_date_time'=> 
                                                array( 'title'      => ts( 'Activity Date'),
                                                       'default'    => true ),
+                                               'activity_duration'=> 
+                                               array( 'title'      => ts( 'Activity Duration'),
+                                                      'default'    => true ),
                                                'status_id'         => 
                                                array( 'title'      => ts( 'Activity Status' ),
                                                       'default'    => true ,
