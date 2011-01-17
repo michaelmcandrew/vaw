@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.1                                                |
+ | CiviCRM version 3.2                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -39,8 +39,7 @@ require_once 'CRM/Report/Form.php';
 class CRM_Report_Form_Activity extends CRM_Report_Form {
 
     protected $_emailField         = false;
-    protected $_customGroupExtends = array( 'Activity', 'Contact','Organization' );
-    protected $_customGroupGroupBy = true;
+    protected $_customGroupExtends = array( 'Activity', 'Contact', 'Organization' );
 
     function __construct( ) {
         $this->_columns = array(  
@@ -48,7 +47,7 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                                 array( 'dao'     => 'CRM_Contact_DAO_Contact',
                                        'fields'  =>
                                        array(
-                                             'source_contact_id' =>
+                                             'target_contact_id' =>
                                              array( 'name'       => 'id',
                                                     'alias'      => 'contact_civireport',
                                                     'no_display' => true, 
@@ -57,7 +56,7 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                                              'contact_source'    =>
                                               array( 'name'      => 'display_name' ,
                                                      'title'     => ts( 'Source Contact Name' ),
-                                                     'alias'     => 'contact_civireport',
+                                                     'alias'     => 'civicrm_contact_source',
                                                      'required'  => true,
                                                      'no_repeat' => true ),
                                               'contact_assignee' =>
@@ -68,7 +67,7 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                                               'contact_target'   =>
                                               array( 'name'      => 'display_name' ,
                                                      'title'     => ts( 'Target Contact Name' ),
-                                                     'alias'     => 'civicrm_contact_target',
+                                                     'alias'     => 'contact_civireport',
                                                      'default'   => true ),
                                               ),
                                        
@@ -237,9 +236,9 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
              LEFT JOIN civicrm_activity_assignment {$this->_aliases['civicrm_activity_assignment']}
                     ON {$this->_aliases['civicrm_activity']}.id = {$this->_aliases['civicrm_activity_assignment']}.activity_id 
              LEFT JOIN civicrm_contact contact_civireport
-                    ON {$this->_aliases['civicrm_activity']}.source_contact_id = contact_civireport.id 
-             LEFT JOIN civicrm_contact civicrm_contact_target 
-                    ON {$this->_aliases['civicrm_activity_target']}.target_contact_id = civicrm_contact_target.id
+             		ON {$this->_aliases['civicrm_activity_target']}.target_contact_id = contact_civireport.id
+             LEFT JOIN civicrm_contact civicrm_contact_source 
+             		ON {$this->_aliases['civicrm_activity']}.source_contact_id = civicrm_contact_source.id 
              LEFT JOIN civicrm_contact civicrm_contact_assignee 
                     ON {$this->_aliases['civicrm_activity_assignment']}.assignee_contact_id = civicrm_contact_assignee.id
             
