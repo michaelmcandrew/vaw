@@ -1,0 +1,85 @@
+<?php
+// $Id: themekey_ui.install,v 1.2 2009/11/12 11:14:25 mkalkbrenner Exp $
+
+/**
+ * Implementation of hook_schema().
+ */
+function themekey_ui_schema() {
+  $schema = array();
+  $schema['themekey_ui_node_theme'] = array(
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The {node} this version belongs to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'vid' => array(
+        'description' => 'The primary identifier for this version.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'theme' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''),
+    ),
+    'primary key' => array('nid', 'vid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function themekey_ui_install() {
+  drupal_install_schema('themekey_ui');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function themekey_ui_uninstall() {
+  // Drop tables
+  drupal_uninstall_schema('themekey_ui');
+  // Remove variables
+  db_query("DELETE FROM {variable} WHERE name LIKE 'themekey_ui%'");
+  cache_clear_all('variables', 'cache');
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function themekey_ui_update_6100() {
+  $return = drupal_install_schema('themekey_ui');
+
+  if (!variable_get('themekey_nodeaspath', 0)) {
+    $sql = "SELECT id, value, theme, nid, vid FROM {themekey_properties} JOIN {node_revisions} ON (value = nid) WHERE property = 'node:nid' AND conditions = '%s'";
+    if ($result = db_query($sql, 'a:0:{}')) {
+      $insert_sql = "INSERT INTO {themekey_ui_node_theme} (nid, vid, theme) VALUES (%d, %d, '%s')";
+      $return['INSERT']['query'] = check_plain($insert_sql);
+      $delete_sql = "DELETE FROM {themekey_properties} WHERE id = %d";
+      $return['DELETE']['query'] = check_plain($delete_sql);
+      while ($row = db_fetch_array($result)) {
+        if ($return['INSERT']['success'] = db_query($insert_sql, $row['nid'], $row['vid'], $row['theme'])) {
+          if (!($return['DELETE']['success'] = db_query($delete_sql, $row['id']))) {
+            break;
+          }
+        }
+        else {
+          $return['INSERT']['success'] = FALSE;
+          break;
+        }
+      }
+    }
+    else {
+      $return['SELECT'] = array('success' => FALSE, 'query' => check_plain($sql));
+    }
+  }
+
+  variable_del('themekey_nodeaspath');
+
+  return $return;
+}

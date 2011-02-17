@@ -1,0 +1,136 @@
+<?php
+// $Id: themekey.install,v 1.7 2009/11/12 10:36:08 mkalkbrenner Exp $
+
+/**
+ * Implementation of hook_schema().
+ */
+function themekey_schema() {
+  $schema = array();
+  $schema['themekey_paths'] = array(
+    'fields' => array(
+      'id'            => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+      'path'          => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+      'fit'           => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+      'weight'        => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+      'wildcards'     => array('type' => 'text', 'not null' => TRUE, 'size' => 'big', 'serialize' => TRUE),
+      'conditions'    => array('type' => 'text', 'not null' => TRUE, 'size' => 'big', 'serialize' => TRUE),
+      'custom'        => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+      'theme'         => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+      'callbacks'     => array('type' => 'text', 'not null' => TRUE, 'size' => 'big', 'serialize' => TRUE)
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'path'        => array('path'),
+      'fit'         => array('fit'),
+      'weight'      => array('weight'),
+      'custom'      => array('custom')
+    )
+  );
+  $schema['themekey_properties'] = array(
+    'fields' => array(
+      'id'            => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+      'property'      => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+      'value'         => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+      'weight'        => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+      'conditions'    => array('type' => 'text', 'not null' => TRUE, 'size' => 'big', 'serialize' => TRUE),
+      'theme'         => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+      'callbacks'     => array('type' => 'text', 'not null' => TRUE, 'size' => 'big', 'serialize' => TRUE)
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'property'  => array('property'),
+      'weight'    => array('weight')
+    )
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function themekey_install() {
+  drupal_install_schema('themekey');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function themekey_uninstall() {
+  // Drop tables
+  drupal_uninstall_schema('themekey');
+  // Remove variables
+  db_query("DELETE FROM {variable} WHERE name LIKE 'themekey_%'");
+  cache_clear_all('variables', 'cache');
+}
+
+/**
+ * Implementation of hook_update_N().
+ * (Update property 'nid' to 'node:nid')
+ */
+function themekey_update_6001() {
+  $ret = array();
+  //
+  $result = db_query('SELECT * FROM {themekey_properties} WHERE property = \'nid\'');
+  while ($item = db_fetch_array($result)) {
+    if (db_result(db_query('SELECT COUNT(id) FROM {themekey_properties} WHERE property = \'node:nid\' AND value = \'%s\'', $item['value'])) > 0) {
+      $ret[] = update_sql('DELETE FROM {themekey_properties} WHERE id = '. $item['id']);
+    }
+    else {
+      $ret[] = update_sql('UPDATE {themekey_properties} SET property = \'node:nid\' WHERE id = '. $item['id']);
+    }
+  }
+
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function themekey_update_6100() {
+
+  $properties = variable_get('themekey_properties', array());
+
+  foreach ($properties as $key => &$property) {
+    if (array_key_exists('path', $property) && $key === $property['path']) {
+      $property['path'] = FALSE;
+    }
+  }
+
+  variable_set('themekey_properties', $properties);
+
+  return array();
+}
+
+
+/**
+ * Implementation of hook_update_N().
+ */
+function themekey_update_6101() {
+  db_query("UPDATE {system} SET weight = 0 WHERE name = 'themekey'");
+  return array();
+}
+
+
+/**
+ * Implementation of hook_update_N().
+ */
+function themekey_update_6102() {
+  if (module_exists('forum')) {
+    variable_set('themekey_module_forum_triggers_taxonomy_vid', 1);
+  }
+
+  if (module_exists('taxonomy_menu')) {
+    variable_set('themekey_module_taxonomy_menu_triggers_taxonomy_tid', 1);
+  }
+
+  return array();
+}
+
+
+/**
+ * Implementation of hook_update_N().
+ */
+function themekey_update_6103() {
+  variable_del('themekey_nodediscover');
+}
