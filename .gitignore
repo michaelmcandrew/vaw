@@ -9,3 +9,4 @@ civicrm.settings.php
 *~
 \#*\#
 drupal/sites/default/files/*
+settings_location.php
