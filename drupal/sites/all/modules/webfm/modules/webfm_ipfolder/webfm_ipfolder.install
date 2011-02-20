@@ -1,13 +1,12 @@
 <?php
-// $Id: webfm_ipfolder.install,v 1.1 2009/08/19 15:23:34 robmilne Exp $
+// $Id: webfm_ipfolder.install,v 1.2 2009/08/20 01:10:35 robmilne Exp $
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * @author			Niels Hackius <niels.hackius@tu-harburg.de>
- * @copyright	2009, Technische Universit�t Hamburg-Harburg: Institut f�r Logistik und Unternehmensf�hrung
+ * @copyright	2009, Technische Universität Hamburg-Harburg: Institut für Logistik und Unternehmensführung
  * @license			http://www.opensource.org/licenses/gpl-3.0.html  GNU General Public License version 3 (GPLv3)
- * @version		$Id: webfm_ipfolder.install,v 1.1 2009/08/19 15:23:34 robmilne Exp $
+ * @version		$Id: webfm_ipfolder.install,v 1.2 2009/08/20 01:10:35 robmilne Exp $
  * @since			23:09:49 - 15.04.2009
- *
  */
 
 /**

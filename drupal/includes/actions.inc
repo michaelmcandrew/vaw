@@ -1,9 +1,47 @@
 <?php
-// $Id: actions.inc,v 1.8.2.6 2009/01/06 17:02:58 goba Exp $
+// $Id: actions.inc,v 1.8.2.13 2010/08/11 20:35:47 goba Exp $
 
 /**
  * @file
  * This is the actions engine for executing stored actions.
+ */
+
+/**
+ * @defgroup actions Actions
+ * @{
+ * Functions that perform an action on a certain system object.
+ *
+ * All modules should declare their action functions to be in this group and
+ * each action function should reference its configuration form, validate, and
+ * submit functions using \@see. Conversely, form, validate, and submit
+ * functions should reference the action function using \@see. For examples of
+ * this see comment_unpublish_by_keyword_action(), which has the following in
+ * its doxygen documentation:
+ *
+ * \@ingroup actions
+ * \@see comment_unpublish_by_keyword_action_form().
+ * \@see comment_unpublish_by_keyword_action_submit().
+ *
+ * @} End of "defgroup actions".
+ */
+
+/**
+ * @defgroup actions Actions
+ * @{
+ * Functions that perform an action on a certain system object.
+ *
+ * All modules should declare their action functions to be in this group and
+ * each action function should reference its configuration form, validate, and
+ * submit functions using \@see. Conversely, form, validate, and submit
+ * functions should reference the action function using \@see. For examples of
+ * this see comment_unpublish_by_keyword_action(), which has the following in
+ * its doxygen documentation:
+ *
+ * \@ingroup actions
+ * \@see comment_unpublish_by_keyword_action_form().
+ * \@see comment_unpublish_by_keyword_action_submit().
+ *
+ * @} End of "defgroup actions".
  */
 
 /**
@@ -40,6 +78,7 @@
  *   performs the action, keyed on action ID.
  */
 function actions_do($action_ids, &$object, $context = NULL, $a1 = NULL, $a2 = NULL) {
+  // $stack tracks the number of recursive calls.
   static $stack;
   $stack++;
   if ($stack > variable_get('actions_max_stack', 35)) {
@@ -80,8 +119,13 @@ function actions_do($action_ids, &$object, $context = NULL, $a1 = NULL, $a2 = NU
     foreach ($actions as $action_id => $params) {
       if (is_numeric($action_id)) { // Configurable actions need parameters.
         $function = $params['callback'];
-        $context = array_merge($context, $params);
-        $result[$action_id] = $function($object, $context, $a1, $a2);
+        if (function_exists($function)) {
+          $context = array_merge($context, $params);
+          $actions_result[$action_id] = $function($object, $context, $a1, $a2);
+        }
+        else {
+          $actions_result[$action_id] = FALSE;
+        }
       }
       // Singleton action; $action_id is the function name.
       else {
@@ -95,14 +139,20 @@ function actions_do($action_ids, &$object, $context = NULL, $a1 = NULL, $a2 = NU
     if (is_numeric($action_ids)) {
       $action = db_fetch_object(db_query("SELECT * FROM {actions} WHERE aid = '%s'", $action_ids));
       $function = $action->callback;
-      $context = array_merge($context, unserialize($action->parameters));
-      $result[$action_ids] = $function($object, $context, $a1, $a2);
+      if (function_exists($function)) {
+        $context = array_merge($context, unserialize($action->parameters));
+        $actions_result[$action_ids] = $function($object, $context, $a1, $a2);
+      }
+      else {
+        $actions_result[$action_ids] = FALSE;
+      }
     }
     // Singleton action; $action_ids is the function name.
     else {
       $result[$action_ids] = $action_ids($object, $context, $a1, $a2);
     }
   }
+  $stack--;
   return $result;
 }
 
@@ -110,6 +160,7 @@ function actions_do($action_ids, &$object, $context = NULL, $a1 = NULL, $a2 = NU
 /**
  * Discover all action functions by invoking hook_action_info().
  *
+ * @code
  * mymodule_action_info() {
  *   return array(
  *     'mymodule_functiondescription_action' => array(
@@ -123,6 +174,7 @@ function actions_do($action_ids, &$object, $context = NULL, $a1 = NULL, $a2 = NU
  *     )
  *   );
  * }
+ * @endcode
  *
  * The description is used in presenting possible actions to the user for
  * configuration. The type is used to present these actions in a logical
@@ -163,17 +215,21 @@ function actions_list($reset = FALSE) {
 }
 
 /**
- * Retrieve all action instances from the database.
+ * Retrieves all action instances from the database.
  *
- * Compare with actions_list() which gathers actions by
- * invoking hook_action_info(). The two are synchronized
- * by visiting /admin/build/actions (when actions.module is
- * enabled) which runs actions_synchronize().
+ * Compare with actions_list(), which gathers actions by invoking
+ * hook_action_info(). The actions returned by this function and the actions
+ * returned by actions_list() are partially synchronized. Non-configurable
+ * actions from hook_action_info() implementations are put into the database
+ * when actions_synchronize() is called, which happens when
+ * admin/settings/actions is visited. Configurable actions are not added to
+ * the database until they are configured in the user interface, in which case
+ * a database row is created for each configuration of each action.
  *
  * @return
- *   Associative array keyed by action ID. Each value is
- *   an associative array with keys 'callback', 'description',
- *   'type' and 'configurable'.
+ *   Associative array keyed by action ID. Each value is an
+ *   associative array with keys 'callback', 'description', 'type' and
+ *   'configurable'.
  */
 function actions_get_all_actions() {
   $actions = array();
@@ -272,7 +328,7 @@ function actions_synchronize($actions_in_code = array(), $delete_orphans = FALSE
       else {
         // This is a new singleton that we don't have an aid for; assign one.
         db_query("INSERT INTO {actions} (aid, type, callback, parameters, description) VALUES ('%s', '%s', '%s', '%s', '%s')", $callback, $array['type'], $callback, '', $array['description']);
-        watchdog('actions', "Action '%action' added.", array('%action' => filter_xss_admin($array['description'])));
+        watchdog('actions', "Action '%action' added.", array('%action' => $array['description']));
       }
     }
   }
@@ -294,7 +350,7 @@ function actions_synchronize($actions_in_code = array(), $delete_orphans = FALSE
       $results = db_query("SELECT a.aid, a.description FROM {actions} a WHERE callback IN ($placeholders)", $orphaned);
       while ($action = db_fetch_object($results)) {
         actions_delete($action->aid);
-        watchdog('actions', "Removed orphaned action '%action' from database.", array('%action' => filter_xss_admin($action->description)));
+        watchdog('actions', "Removed orphaned action '%action' from database.", array('%action' => $action->description));
       }
     }
     else {
@@ -310,6 +366,9 @@ function actions_synchronize($actions_in_code = array(), $delete_orphans = FALSE
  *
  * @param $function
  *   The name of the function to be called when this action is performed.
+ * @param $type
+ *   The type of action, to describe grouping and/or context, e.g., 'node',
+ *   'user', 'comment', or 'system'.
  * @param $params
  *   An associative array with parameter names as keys and parameter values
  *   as values.

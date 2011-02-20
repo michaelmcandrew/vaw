@@ -1,6 +1,6 @@
 <?php
 
-// $Id: taxonomy_menu_path_custom.module,v 1.1.2.4 2009/03/14 21:21:07 indytechcook Exp $
+// $Id: taxonomy_menu_path_custom.module,v 1.1.2.6 2009/10/31 18:39:33 indytechcook Exp $
 
 /**
  * @file
@@ -16,21 +16,25 @@
 function taxonomy_menu_path_custom_taxonomy_menu_options() {
 
   $options['taxonomy_menu_path_custom_depth'] = array(
-    '#title' => t('Display Depth in Custom Path'),
+    '#title' => t('Display depth in custom path'),
     '#weight' => -2,
-    '#description' => t("Only used with a Custom Path. <br />
-	  To use depth the path in the view has to have the path of '<Base Path for Custom Path>/%/%' The two arguments must be 'Term ID (with depth)' and 'Depth Modifier'.<br />
-	  Have this view setup <strong>before</strong> you create this taxonomy menu. Otherwise leave this field empty!"),
+    '#description' => t("Only used with a custom path.<br />To use depth the path in the view has to have the path of '<base path for custom path>/%/%'. The two arguments must be 'Term ID (with depth)' and 'Depth modifier'.<br />Have this view setup <strong>before</strong> you create this taxonomy menu. Otherwise leave this field empty!"),
     'default' => '',
     '#type' => 'textfield',
   );
   $options['taxonomy_menu_path_custom_base_path'] = array(
-    '#title' => t('Base Path for Custom Path'),
+    '#title' => t('Base path for custom path'),
     '#weight' => -3,
     '#type' => 'textfield',
     'default' => 'category',
-    '#description' => t("Only used with a Custom Path.<br />
-	  You need to have a view with path 'custom path/%' and an argument 'Term ID' <strong>before</strong> you create this taxonomy menu."),
+    '#description' => t("Only used with a custom path.<br />You need to have a view with path 'custom path/%' and an argument 'Term ID' <strong>before</strong> you create this taxonomy menu."),
+  );
+  $options['taxonomy_menu_path_custom_use_term_name'] = array(
+    '#title' => t('Use term name'),
+    '#weight' => -1,
+    '#type' => 'checkbox',
+    'default' => '',
+    '#description' => t("If checked, use term name instead of term ID."),
   );
 
   return $options;
@@ -41,7 +45,7 @@ function taxonomy_menu_path_custom_taxonomy_menu_options() {
  */
 function taxonomy_menu_path_custom_taxonomy_menu_path() {
   $output = array(
-    'taxonomy_menu_path_custom_path' => t('Custom Path'),
+    'taxonomy_menu_path_custom_path' => t('Custom path'),
   );
 
   return $output;
@@ -79,6 +83,17 @@ function taxonomy_menu_path_custom_path($vid, $tid) {
   if ($depth != '') {
     $path .= '/'. $depth;
   }
-
+  
+  if(variable_get('taxonomy_menu_taxonomy_menu_path_custom_use_term_name_'. $vid, false)) {
+    $tids = ($tids) ? $tids : array($tid);
+   
+    foreach($tids as $tid) {
+      $term = taxonomy_get_term($tid);
+      $names[] = strtolower(str_replace(' ','-',$term->name));
+    }
+    
+    $path = $base_path .'/'. implode(' ',$names);
+  }
+  
   return $path;
 }

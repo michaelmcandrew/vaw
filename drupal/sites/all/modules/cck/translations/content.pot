@@ -1,13 +1,13 @@
-# $Id: content.pot,v 1.1.2.9 2008/11/05 12:24:00 hass Exp $
+# $Id: content.pot,v 1.1.2.11 2009/06/16 17:05:11 hass Exp $
 #
 # LANGUAGE translation of Drupal (root)
 # Copyright YEAR NAME <EMAIL@ADDRESS>
 # Generated from files:
-#  content.module,v 1.301.2.82 2008/11/03 13:11:00 yched
-#  content.install,v 1.85.2.29 2008/10/18 12:44:37 yched
+#  content.module,v 1.301.2.106 2009/06/02 12:24:04 yched
+#  content.install,v 1.85.2.31 2009/04/23 18:37:10 yched
 #  content.info,v 1.6 2007/07/04 23:46:29 yched
-#  content.rules.inc,v 1.1.2.4 2008/10/24 11:11:48 fago
-#  content.views.inc,v 1.1.2.17 2008/11/03 20:56:12 yched
+#  content.rules.inc,v 1.1.2.6 2009/04/30 09:56:07 fago
+#  content.views.inc,v 1.1.2.25 2009/04/11 14:50:53 yched
 #  content_copy.info,v 1.6 2008/04/23 18:01:48 dww
 #  content_permissions.info,v 1.2 2008/04/23 18:01:52 dww
 #  fieldgroup.info,v 1.6.2.1 2008/09/22 18:25:21 karens
@@ -21,7 +21,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2008-11-05 12:54+0100\n"
+"POT-Creation-Date: 2009-06-16 19:00+0200\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -66,115 +66,151 @@ msgstr ""
 msgid "For more information, see the online handbook entry for <a href=\"@handbook-cck\">CCK</a> or the <a href=\"@project-cck\">CCK project page</a>."
 msgstr ""
 
-#: content.module:478
+#: content.module:492
 msgid "This field is required."
 msgstr ""
 
-#: content.module:482
+#: content.module:496
 msgid "!title: !required"
 msgstr ""
 
-#: content.module:1834
+#: content.module:1854
 msgid "Basic"
 msgstr ""
 
-#: content.module:1847;1850
+#: content.module:1867;1870
 msgid "RSS"
 msgstr ""
 
-#: content.module:1860
+#: content.module:1880
 msgid "Search"
 msgstr ""
 
-#: content.module:1863
+#: content.module:1883
 msgid "Search Index"
 msgstr ""
 
-#: content.module:1867
+#: content.module:1887
 msgid "Search Result"
 msgstr ""
 
-#: content.module:2282;2289
+#: content.module:1897;1900
+msgid "Print"
+msgstr ""
+
+#: content.module:2348;2355
 msgid "Node module form."
 msgstr ""
 
-#: content.module:2296
+#: content.module:2362
 msgid "Language"
 msgstr ""
 
-#: content.module:2297
+#: content.module:2363
 msgid "Locale module form."
 msgstr ""
 
-#: content.module:2303
+#: content.module:2369
 msgid "Menu settings"
 msgstr ""
 
-#: content.module:2304
+#: content.module:2370
 msgid "Menu module form."
 msgstr ""
 
-#: content.module:2310
+#: content.module:2376
 msgid "Taxonomy"
 msgstr ""
 
-#: content.module:2311
+#: content.module:2377
 msgid "Taxonomy module form."
 msgstr ""
 
-#: content.module:2317
+#: content.module:2383
+msgid "Book"
+msgstr ""
+
+#: content.module:2384
+msgid "Book module form."
+msgstr ""
+
+#: content.module:2390
+msgid "Poll title"
+msgstr ""
+
+#: content.module:2391
+msgid "Poll module title."
+msgstr ""
+
+#: content.module:2395
+msgid "Poll choices"
+msgstr ""
+
+#: content.module:2396
+msgid "Poll module choices."
+msgstr ""
+
+#: content.module:2400
+msgid "Poll settings"
+msgstr ""
+
+#: content.module:2401
+msgid "Poll module settings."
+msgstr ""
+
+#: content.module:2407
 msgid "File attachments"
 msgstr ""
 
-#: content.module:2318
+#: content.module:2408
 msgid "Upload module form."
 msgstr ""
 
-#: content.module:581
+#: content.module:595
 msgid "Updating field type %type with module %module."
 msgstr ""
 
-#: content.module:588
+#: content.module:602
 msgid "Updating widget type %type with module %module."
 msgstr ""
 
-#: content.module:63
+#: content.module:60
 msgid "Use PHP input for field settings (dangerous - grant with care)"
 msgstr ""
 
-#: content.module:82
+#: content.module:79
 msgid "Fields"
 msgstr ""
 
-#: content.module:104
+#: content.module:101
 msgid "Manage fields"
 msgstr ""
 
-#: content.module:113
+#: content.module:110
 msgid "Display fields"
 msgstr ""
 
-#: content.module:144
+#: content.module:141
 msgid "Remove field"
 msgstr ""
 
-#: content.install:232
+#: content.install:236
 msgid "Updates for CCK-related modules are not run until the modules are enabled on the <a href=\"@admin-modules-path\">administer modules page</a>. When you enable them, you'll need to return to <a href=\"@update-php\">update.php</a> and run the remaining updates."
 msgstr ""
 
-#: content.install:235
+#: content.install:239
 msgid "!module.module has updates but cannot be updated because content.module is not enabled.<br />If and when content.module is enabled, you will need to re-run the update script. You will continue to see this message until the module is enabled and updates are run."
 msgstr ""
 
-#: content.install:240
+#: content.install:244
 msgid "!module.module has updates and is available in the modules folder but is not enabled.<br />If and when it is enabled, you will need to re-run the update script. You will continue to see this message until the module is enabled and updates are run."
 msgstr ""
 
-#: content.install:247
+#: content.install:251
 msgid "Some updates are still pending. Please return to <a href=\"@update-php\">update.php</a> and run the remaining updates."
 msgstr ""
 
-#: content.install:248
+#: content.install:252
 msgid "Some updates are still pending.<br/>Please re-run the update script."
 msgstr ""
 
@@ -186,7 +222,7 @@ msgstr ""
 msgid "CCK integration with Views module requires Views 6.x-2.0-rc2 or greater."
 msgstr ""
 
-#: content.info:0 includes/content.rules.inc:19;200 includes/views/content.views.inc:177;221
+#: content.info:0 includes/content.rules.inc:19;212 includes/views/content.views.inc:180;261
 msgid "Content"
 msgstr ""
 

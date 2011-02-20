@@ -1,5 +1,5 @@
 <?php
-// $Id: form.inc,v 1.265.2.17 2009/01/12 16:07:23 goba Exp $
+// $Id: form.inc,v 1.265.2.35 2010/11/04 09:55:29 goba Exp $
 
 /**
  * @defgroup forms Form builder functions
@@ -48,7 +48,7 @@
 
 /**
  * Retrieves a form from a constructor function, or from the cache if
- * the form was built in a previous page-load. The form is then passesed
+ * the form was built in a previous page-load. The form is then passed
  * on for processing, after and rendered for display if necessary.
  *
  * @param $form_id
@@ -62,7 +62,9 @@
  *   Any additional arguments are passed on to the functions called by
  *   drupal_get_form(), including the unique form constructor function.
  *   For example, the node_edit form requires that a node object be passed
- *   in here when it is called.
+ *   in here when it is called. These are available to implementations of
+ *   hook_form_alter() and hook_form_FORM_ID_alter() as the array
+ *   $form['#parameters'].
  * @return
  *   The rendered form.
  */
@@ -100,7 +102,7 @@ function drupal_get_form($form_id) {
       array_unshift($args_temp, $form_id);
 
       $form = call_user_func_array('drupal_retrieve_form', $args_temp);
-      $form_build_id = 'form-'. md5(uniqid(mt_rand(), true));
+      $form_build_id = 'form-'. md5(uniqid(mt_rand(), TRUE));
       $form['#build_id'] = $form_build_id;
       drupal_prepare_form($form_id, $form, $form_state);
       // Store a copy of the unprocessed form for caching and indicate that it
@@ -119,9 +121,8 @@ function drupal_get_form($form_id) {
     drupal_process_form($form_id, $form, $form_state);
     if ($cacheable && !empty($form['#cache'])) {
       // Caching is done past drupal_process_form so #process callbacks can
-      // set #cache. By not sending the form state, we avoid storing
-      // $form_state['storage'].
-      form_set_cache($form_build_id, $original_form, NULL);
+      // set #cache.
+      form_set_cache($form_build_id, $original_form, $form_state);
     }
   }
 
@@ -132,14 +133,14 @@ function drupal_get_form($form_id) {
   // the form will simply be re-rendered with the values still in its
   // fields.
   //
-  // If $form_state['storage'] or $form_state['rebuild'] have been
-  // set by any submit or validate handlers, however, we know that
-  // we're in a complex multi-part process of some sort and the form's
-  // workflow is NOT complete. We need to construct a fresh copy of
-  // the form, passing in the latest $form_state in addition to any
-  // other variables passed into drupal_get_form().
+  // If $form_state['storage'] or $form_state['rebuild'] has been set
+  // and input has been processed, we know that we're in a complex
+  // multi-part process of some sort and the form's workflow is NOT
+  // complete. We need to construct a fresh copy of the form, passing
+  // in the latest $form_state in addition to any other variables passed
+  // into drupal_get_form().
 
-  if (!empty($form_state['rebuild']) || !empty($form_state['storage'])) {
+  if ((!empty($form_state['storage']) || !empty($form_state['rebuild'])) && !empty($form_state['process_input']) && !form_get_errors()) {
     $form = drupal_rebuild_form($form_id, $form_state, $args);
   }
 
@@ -196,7 +197,7 @@ function drupal_rebuild_form($form_id, &$form_state, $args, $form_build_id = NUL
 
   if (!isset($form_build_id)) {
     // We need a new build_id for the new version of the form.
-    $form_build_id = 'form-'. md5(mt_rand());
+    $form_build_id = 'form-'. md5(uniqid(mt_rand(), TRUE));
   }
   $form['#build_id'] = $form_build_id;
   drupal_prepare_form($form_id, $form, $form_state);
@@ -249,9 +250,14 @@ function form_get_cache($form_build_id, &$form_state) {
 }
 
 /**
- * Retrieves a form using a form_id, populates it with $form_state['values'],
- * processes it, and returns any validation errors encountered. This
- * function is the programmatic counterpart to drupal_get_form().
+ * Retrieves, populates, and processes a form.
+ *
+ * This function allows you to supply values for form elements and submit a
+ * form for processing. Compare to drupal_get_form(), which also builds and
+ * processes a form, but does not allow you to supply values.
+ *
+ * There is no return value, but you can check to see if there are errors by
+ * calling form_get_errors().
  *
  * @param $form_id
  *   The unique string identifying the desired form. If a function
@@ -271,12 +277,13 @@ function form_get_cache($form_build_id, &$form_state) {
  *   For example, the node_edit form requires that a node object be passed
  *   in here when it is called.
  * For example:
- *
+ * @code
  * // register a new user
  * $form_state = array();
  * $form_state['values']['name'] = 'robo-user';
  * $form_state['values']['mail'] = 'robouser@example.com';
- * $form_state['values']['pass'] = 'password';
+ * $form_state['values']['pass']['pass1'] = 'password';
+ * $form_state['values']['pass']['pass2'] = 'password';
  * $form_state['values']['op'] = t('Create new account');
  * drupal_execute('user_register', $form_state);
  *
@@ -289,9 +296,14 @@ function form_get_cache($form_build_id, &$form_state) {
  * $form_state['values']['name'] = 'robo-user';
  * $form_state['values']['op'] = t('Save');
  * drupal_execute('story_node_form', $form_state, (object)$node);
+ * @endcode
  */
 function drupal_execute($form_id, &$form_state) {
   $args = func_get_args();
+
+  // Make sure $form_state is passed around by reference.
+  $args[1] = &$form_state;
+  
   $form = call_user_func_array('drupal_retrieve_form', $args);
   $form['#post'] = $form_state['values'];
   drupal_prepare_form($form_id, $form, $form_state);
@@ -395,6 +407,7 @@ function drupal_process_form($form_id, &$form, &$form_state) {
   // Only process the form if it is programmed or the form_id coming
   // from the POST data is set and matches the current form_id.
   if ((!empty($form['#programmed'])) || (!empty($form['#post']) && (isset($form['#post']['form_id']) && ($form['#post']['form_id'] == $form_id)))) {
+    $form_state['process_input'] = TRUE;
     drupal_validate_form($form_id, $form, $form_state);
 
     // form_clean_id() maintains a cache of element IDs it has seen,
@@ -756,7 +769,10 @@ function form_execute_handlers($type, &$form, &$form_state) {
 
   foreach ($handlers as $function) {
     if (function_exists($function))  {
-      if ($type == 'submit' && ($batch =& batch_get())) {
+      // Check to see if a previous _submit handler has set a batch, but 
+      // make sure we do not react to a batch that is already being processed 
+      // (for instance if a batch operation performs a drupal_execute()).
+      if ($type == 'submit' && ($batch =& batch_get()) && !isset($batch['current_set'])) {
         // Some previous _submit handler has set a batch. We store the call
         // in a special 'control' batch set, for execution at the correct
         // time during the batch processing workflow.
@@ -1169,7 +1185,12 @@ function form_type_image_button_value($form, $edit = FALSE) {
  */
 function form_type_checkbox_value($form, $edit = FALSE) {
   if ($edit !== FALSE) {
-    return !empty($edit) ? $form['#return_value'] : 0;
+    if (empty($form['#disabled'])) {
+      return !empty($edit) ? $form['#return_value'] : 0;
+    }
+    else {
+      return $form['#default_value'];
+    }
   }
 }
 
@@ -1533,7 +1554,7 @@ function theme_radio($element) {
   $output .= (check_plain($element['#value']) == $element['#return_value']) ? ' checked="checked" ' : ' ';
   $output .= drupal_attributes($element['#attributes']) .' />';
   if (!is_null($element['#title'])) {
-    $output = '<label class="option">'. $output .' '. $element['#title'] .'</label>';
+    $output = '<label class="option" for="'. $element['#id'] .'">'. $output .' '. $element['#title'] .'</label>';
   }
 
   unset($element['#title']);
@@ -1616,7 +1637,7 @@ function password_confirm_validate($form, &$form_state) {
   $pass1 = trim($form['pass1']['#value']);
   if (!empty($pass1)) {
     $pass2 = trim($form['pass2']['#value']);
-    if ($pass1 != $pass2) {
+    if (strcmp($pass1, $pass2)) {
       form_error($form, t('The specified passwords do not match.'));
     }
   }
@@ -1872,7 +1893,7 @@ function theme_checkbox($element) {
   $checkbox .= drupal_attributes($element['#attributes']) .' />';
 
   if (!is_null($element['#title'])) {
-    $checkbox = '<label class="option">'. $checkbox .' '. $element['#title'] .'</label>';
+    $checkbox = '<label class="option" for="'. $element['#id'] .'">'. $checkbox .' '. $element['#title'] .'</label>';
   }
 
   unset($element['#title']);
@@ -2301,11 +2322,17 @@ function form_clean_id($id = NULL, $flush = FALSE) {
  *     array('my_function_2', array()),
  *   ),
  *   'finished' => 'my_finished_callback',
+ *   'file' => 'path_to_file_containing_myfunctions',
  * );
  * batch_set($batch);
  * // only needed if not inside a form _submit handler :
  * batch_process();
  * @endcode
+ *
+ * Note: if the batch 'title', 'init_message', 'progress_message', or
+ * 'error_message' could contain any user input, it is the responsibility of
+ * the code calling batch_set() to sanitize them first with a function like
+ * check_plain() or filter_xss().
  *
  * Sample batch operations:
  * @code
@@ -2374,38 +2401,37 @@ function form_clean_id($id = NULL, $flush = FALSE) {
  */
 
 /**
- * Open a new batch.
+ * Opens a new batch.
  *
  * @param $batch
- *   An array defining the batch. The following keys can be used:
- *     'operations': an array of function calls to be performed.
- *        Example:
- *        @code
- *        array(
- *          array('my_function_1', array($arg1)),
- *          array('my_function_2', array($arg2_1, $arg2_2)),
- *        )
- *        @endcode
- *     All the other values below are optional.
- *     batch_init() provides default values for the messages.
- *     'title': title for the progress page.
- *       Defaults to t('Processing').
- *     'init_message': message displayed while the processing is initialized.
- *       Defaults to t('Initializing.').
- *     'progress_message': message displayed while processing the batch.
- *       Available placeholders are @current, @remaining, @total and @percent.
- *       Defaults to t('Remaining @remaining of @total.').
- *     'error_message': message displayed if an error occurred while processing
- *       the batch.
- *       Defaults to t('An error has occurred.').
- *     'finished': the name of a function to be executed after the batch has
- *       completed. This should be used to perform any result massaging that
- *       may be needed, and possibly save data in $_SESSION for display after
- *       final page redirection.
- *     'file': the path to the file containing the definitions of the
- *       'operations' and 'finished' functions, for instance if they don't
- *       reside in the original '.module' file. The path should be relative to
- *       the base_path(), and thus should be built using drupal_get_path().
+ *   An array defining the batch. The following keys can be used -- only
+ *   'operations' is required, and batch_init() provides default values for
+ *   the messages.
+ *   - 'operations': Array of function calls to be performed.
+ *     Example:
+ *     @code
+ *     array(
+ *       array('my_function_1', array($arg1)),
+ *       array('my_function_2', array($arg2_1, $arg2_2)),
+ *     )
+ *     @endcode
+ *   - 'title': Title for the progress page. Only safe strings should be passed.
+ *     Defaults to t('Processing').
+ *   - 'init_message': Message displayed while the processing is initialized.
+ *     Defaults to t('Initializing.').
+ *   - 'progress_message': Message displayed while processing the batch.
+ *     Available placeholders are @current, @remaining, @total, @percentage,
+ *     @estimate and @elapsed. Defaults to t('Completed @current of @total.').
+ *   - 'error_message': Message displayed if an error occurred while processing
+ *     the batch. Defaults to t('An error has occurred.').
+ *   - 'finished': Name of a function to be executed after the batch has
+ *     completed. This should be used to perform any result massaging that
+ *     may be needed, and possibly save data in $_SESSION for display after
+ *     final page redirection.
+ *   - 'file': Path to the file containing the definitions of the
+ *     'operations' and 'finished' functions, for instance if they don't
+ *     reside in the main .module file. The path should be relative to
+ *     base_path(), and thus should be built using drupal_get_path().
  *
  * Operations are added as new batch sets. Batch sets are used to ensure
  * clean code independence, ensuring that several batches submitted by
@@ -2460,7 +2486,7 @@ function batch_set($batch_definition) {
 }
 
 /**
- * Process the batch.
+ * Processes the batch.
  *
  * Unless the batch has been marked with 'progressive' = FALSE, the function
  * issues a drupal_goto and thus ends page execution.
@@ -2527,7 +2553,7 @@ function batch_process($redirect = NULL, $url = NULL) {
 }
 
 /**
- * Retrieve the current batch.
+ * Retrieves the current batch.
  */
 function &batch_get() {
   static $batch = array();

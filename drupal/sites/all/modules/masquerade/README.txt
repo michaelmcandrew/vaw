@@ -4,13 +4,23 @@ The Masquerade module allows users to temporarily switch to another user
 account. It keeps a record of the original user account, so users can easily
 switch back to the previous account.
 
-== Installation ==
+== Installation and Configuration ==
 
 To install the Masquerade module, extract the module to your modules folder,
 such as sites/all/modules. After enabling the module, it can be configured
 under Administer > Site configuration > Masquerade. To enable users to
 masquerade, assign the appropriate "masquerade module" permissions to the roles
-available on your site.
+available on your site. For example:
+
+ * To allow members of the 'customer support' role to masquerade as any
+   non-admin user, add the 'masquerade as user' permission to the role. In the
+   Masquerade configuration, set 'site administrators' as an administrator role
+   to prevent customer support users from masquerading as those users.
+
+ * To allow members of the 'tech support' role to masquerade as 'site
+   administrators', add the 'masquerade as admin' permission to the role. Then,
+   in the Masquerade configuration, set 'site administrators' as an
+   administrator role.
 
 == Module Weights ==
 

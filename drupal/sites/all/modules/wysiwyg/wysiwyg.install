@@ -1,19 +1,79 @@
 <?php
-// $Id: wysiwyg.install,v 1.4 2009/06/08 21:57:10 sun Exp $
+// $Id: wysiwyg.install,v 1.4.2.6 2011/01/06 02:00:34 sun Exp $
 
 /**
  * Implementation of hook_schema().
  */
 function wysiwyg_schema() {
-  $schema = array();
   $schema['wysiwyg'] = array(
-    'description' => t('Stores Wysiwyg profiles.'),
+    'description' => 'Stores Wysiwyg profiles.',
     'fields' => array(
-      'format' => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
-      'editor' => array('type' => 'varchar', 'length' => 128, 'not null' => TRUE, 'default' => ''),
-      'settings' => array('type' => 'text', 'size' => 'normal'),
+      'format' => array(
+        'description' => 'The {filter_formats}.format of the text format.',
+        'type' => 'int',
+        // Primary keys are implicitly not null.
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'editor' => array(
+        'description' => 'Internal name of the editor attached to the text format.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'settings' => array(
+        'description' => 'Configuration settings for the editor.',
+        'type' => 'text',
+        'size' => 'normal',
+      ),
     ),
     'primary key' => array('format'),
+    'foreign keys' => array(
+      'format' => array(
+        'table' => 'filter_formats',
+        'columns' => array('format' => 'format'),
+      ),
+    ),
+  );
+  $schema['wysiwyg_user'] = array(
+    'description' => 'Stores user preferences for wysiwyg profiles.',
+    'fields' => array(
+      'uid' => array(
+        'description' => 'The {users}.uid of the user.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'format' => array(
+        'description' => 'The {filter_formats}.format of the text format.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'status' => array(
+        'description' => 'Boolean indicating whether the format is enabled by default.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+      ),
+    ),
+    'indexes' => array(
+      'uid' => array('uid'),
+      'format' => array('format'),
+    ),
+    'foreign keys' => array(
+      'uid' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+      'format' => array(
+        'table' => 'filter_formats',
+        'columns' => array('format' => 'format'),
+      ),
+    ),
   );
   return $schema;
 }
@@ -39,6 +99,7 @@ function wysiwyg_enable() {
   // Disable conflicting, obsolete editor integration modules whenever this
   // module is enabled. This is crude, but the only way to ensure no conflicts.
   module_disable(array(
+    'ckeditor',
     'editarea',
     'editonpro',
     'editor',
@@ -153,3 +214,75 @@ function wysiwyg_update_6001() {
   return $ret;
 }
 
+/**
+ * Clear JS/CSS caches to ensure that clients load fresh copies.
+ */
+function wysiwyg_update_6200() {
+  $ret = array();
+  // Change query-strings on css/js files to enforce reload for all users.
+  _drupal_flush_css_js();
+
+  drupal_clear_css_cache();
+  drupal_clear_js_cache();
+
+  // Rebuild the menu to remove old admin/settings/wysiwyg/profile item.
+  menu_rebuild();
+
+  // Flush content caches.
+  cache_clear_all();
+
+  $ret[] = array(
+    'success' => TRUE,
+    'query' => 'Caches have been flushed.',
+  );
+  return $ret;
+}
+
+/**
+ * Create the {wysiwyg_user} table.
+ */
+function wysiwyg_update_6201() {
+  $ret = array();
+  if (!db_table_exists('wysiwyg_user')) {
+    db_create_table($ret, 'wysiwyg_user', array(
+      'description' => 'Stores user preferences for wysiwyg profiles.',
+      'fields' => array(
+        'uid' => array(
+          'description' => 'The {users}.uid of the user.',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'format' => array(
+          'description' => 'The {filter_formats}.format of the text format.',
+          'type' => 'int',
+          'not null' => FALSE,
+        ),
+        'status' => array(
+          'description' => 'Boolean indicating whether the format is enabled by default.',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+          'size' => 'tiny',
+        ),
+      ),
+      'indexes' => array(
+        'uid' => array('uid'),
+        'format' => array('format'),
+      ),
+      'foreign keys' => array(
+        'uid' => array(
+          'table' => 'users',
+          'columns' => array('uid' => 'uid'),
+        ),
+        'format' => array(
+          'table' => 'filter_formats',
+          'columns' => array('format' => 'format'),
+        ),
+      ),
+    ));
+  }
+  return $ret;
+}

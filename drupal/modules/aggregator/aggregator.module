@@ -1,5 +1,5 @@
 <?php
-// $Id: aggregator.module,v 1.374.2.4 2009/01/14 21:36:16 goba Exp $
+// $Id: aggregator.module,v 1.374.2.6 2010/05/28 16:06:59 goba Exp $
 
 /**
  * @file
@@ -390,7 +390,7 @@ function aggregator_save_category($edit) {
   else if (!empty($edit['title'])) {
     // A single unique id for bundles and feeds, to use in blocks
     db_query("INSERT INTO {aggregator_category} (title, description, block) VALUES ('%s', '%s', 5)", $edit['title'], $edit['description']);
-    $link_path .= db_last_insert_id('aggregator', 'cid');
+    $link_path .= db_last_insert_id('aggregator_category', 'cid');
     $op = 'insert';
   }
   if (isset($op)) {
@@ -640,10 +640,8 @@ function aggregator_refresh($feed) {
 
         watchdog('aggregator', 'There is new syndicated content from %site.', array('%site' => $feed['title']));
         drupal_set_message(t('There is new syndicated content from %site.', array('%site' => $feed['title'])));
-        break;
       }
-      $result->error = t('feed not parseable');
-      // Deliberate no break.
+      break;
     default:
       watchdog('aggregator', 'The feed from %site seems to be broken, due to "%error".', array('%site' => $feed['title'], '%error' => $result->code .' '. $result->error), WATCHDOG_WARNING);
       drupal_set_message(t('The feed from %site seems to be broken, because of error "%error".', array('%site' => $feed['title'], '%error' => $result->code .' '. $result->error)));

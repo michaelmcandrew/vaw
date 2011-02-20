@@ -1,5 +1,5 @@
 <?php
-// $Id: webfm.module,v 1.37 2009/08/19 15:44:13 robmilne Exp $
+// $Id: webfm.module,v 1.41 2010/03/12 03:24:56 robmilne Exp $
 
 /**
  * @file
@@ -8,7 +8,7 @@
  */
 
 $modulepath = drupal_get_path('module', 'webfm');
-require_once "./".$modulepath."/webfm_file.inc";
+require_once "./" . $modulepath . "/webfm_file.inc";
 
 define('WEBFM_FLUSH', -1);
 
@@ -424,7 +424,7 @@ function webfm_nodeapi(&$node, $op, $teaser) {
     case 'update':
       // If the user cannot access webfm, $_POST['attachlist'] is always empty
       // and therefore will delete existing attachments from the node.
-      if(user_access('access webfm')) {
+      if(user_access('access webfm') && array_key_exists('attachlist', $_POST)) {
         $files = explode(',', $_POST['attachlist']);
         webfm_dbupdate_attach($node->nid, $files);
       }
@@ -1706,12 +1706,16 @@ function webfm_upload_form($upload_url) {
 }
 
 function webfm_version_form($filename) {
+  $filearg = array( '%filename' => $filename, );
   $form['select'] = array(
     '#prefix' => '<div id="replace-options">',
     '#suffix' => '</div>',
     '#type' => 'radios',
     '#title' => t('Select File Versioning Option'),
-    '#options' => array('Replace and rename original copy of '.$filename,'Replace and delete original copy of '.$filename,'Rename new copy of '.$filename,'Cancel'),
+    '#options' => array(t('Replace and rename original copy of %filename', $filearg),
+                        t('Replace and delete original copy of %filename', $filearg),
+                        t('Rename new copy of %filename', $filearg),
+                        t('Cancel')),
     '#required' => TRUE,
   );
 
@@ -3019,8 +3023,18 @@ function webfm_popup() {
   exit();
 }
 
+/**
+ * Views Module
+ */
 if(module_exists('views')){
-  require_once("./".$modulepath."/webfm_views.inc");
+  require_once('./'.$modulepath.'/views/webfm_views.inc');
+}
+
+function webfm_views_api() {
+  return array(
+      'api' => 2,
+      'path' => $modulepath.'/views',
+    );
 }
 
 /**

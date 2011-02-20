@@ -1,43 +1,45 @@
-<?php // $Id: taxonomy_title.install,v 1.2 2009/03/03 07:49:16 jenlampton Exp $
+<?php 
+// $Id: taxonomy_title.install,v 1.3 2009/12/18 22:15:58 jenlampton Exp $
 
 /**
-* Implementation of hook_install().
-*/
+ * Implementation of hook_install().
+ */
 function taxonomy_title_install() {
   // Create tables.
   drupal_install_schema('taxonomy_title');
 }
 
 /**
-* Implementation of hook_uninstall().
-*/
+ * Implementation of hook_uninstall().
+ */
 function taxonomy_title_uninstall() {
   // Remove tables.
   drupal_uninstall_schema('taxonomy_title');
 }
 
 /**
-* Implementation of hook_schema().
-*/
+ * Implementation of hook_schema().
+ */
 function taxonomy_title_schema() {
-  $schema = array();
-
   $schema['taxonomy_title'] = array(
-  'description' => 'Records separate titles/headings for taxonomy term pages',
+    'description' => 'Records separate titles/headings for taxonomy term pages',
     'fields' => array(
-      'tid'       => array(
+      'tid' => array(
         'type' => 'int',
-        'length' => '11', 
-        'unsigned' => TRUE, 
-        'default' => 0, 
-        'not null' => TRUE),
+        'length' => '11',
+        'unsigned' => TRUE,
+        'default' => 0,
+        'not null' => TRUE,
+      ),
       'title' => array(
-        'type' => 'varchar',     
-        'length' => '255',                     
-        'default' => '', 
-        'not null' => TRUE ),  
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'not null' => TRUE,
+      ),  
     ),
     'primary key' => array('tid'),
   );
+  
   return $schema;
 }

@@ -1,5 +1,5 @@
 <?php
-// $Id: tinymce.inc,v 1.35 2009/06/09 00:18:12 sun Exp $
+// $Id: tinymce.inc,v 1.35.2.11 2010/12/19 23:27:09 sun Exp $
 
 /**
  * @file
@@ -45,6 +45,7 @@ function wysiwyg_tinymce_editor() {
         'css files' => array('tinymce-2.css'),
         'download url' => 'http://sourceforge.net/project/showfiles.php?group_id=103281&package_id=111430&release_id=557383',
       ),
+      // @todo Starting from 3.3, tiny_mce.js may support JS aggregation.
       '3.1' => array(
         'js files' => array('tinymce-3.js'),
         'css files' => array('tinymce-3.css'),
@@ -81,9 +82,12 @@ function wysiwyg_tinymce_editor() {
  */
 function wysiwyg_tinymce_version($editor) {
   $script = $editor['library path'] . '/tiny_mce.js';
+  if (!file_exists($script)) {
+    return;
+  }
   $script = fopen($script, 'r');
-  // Version is contained in the first 80 chars.
-  $line = fgets($script, 80);
+  // Version is contained in the first 200 chars.
+  $line = fgets($script, 200);
   // 2.x: this.majorVersion="2";this.minorVersion="1.3"
   // 3.x: majorVersion:'3',minorVersion:'2.0.1'
   if (preg_match('@majorVersion[=:]["\'](\d).+?minorVersion[=:]["\']([\d\.]+)@', $line, $version)) {
@@ -195,11 +199,10 @@ function wysiwyg_tinymce_settings($editor, $config, $theme) {
   // Find the enabled buttons and the button row they belong on.
   // Also map the plugin metadata for each button.
   // @todo What follows is a pain; needs a rewrite.
+  // $settings['buttons'] are stacked into $settings['theme_advanced_buttons1']
+  // later.
+  $settings['buttons'] = array();
   if (!empty($config['buttons']) && is_array($config['buttons'])) {
-    // $settings['buttons'] are stacked into
-    // $settings['theme_advanced_buttons1'] later.
-    // @todo Add a toolbar designer based on jQuery UI.
-    $settings['buttons'] = array();
     // Only array keys in $settings['extensions'] matter; added to
     // $settings['plugins'] later.
     $settings['extensions'] = array();
@@ -290,11 +293,9 @@ function wysiwyg_tinymce_settings($editor, $config, $theme) {
   unset($settings['buttons']);
 
   // Convert the config values into the form expected by TinyMCE.
-  foreach ($settings as $key => $value) {
-    if (is_bool($value)) {
-      continue;
-    }
-    if (is_array($value)) {
+  $csv_settings = array('plugins', 'extended_valid_elements', 'theme_advanced_buttons1', 'theme_advanced_buttons2', 'theme_advanced_buttons3');
+  foreach ($csv_settings as $key) {
+    if (isset($settings[$key]) && is_array($settings[$key])) {
       $settings[$key] = implode(',', $settings[$key]);
     }
   }
@@ -315,7 +316,17 @@ function wysiwyg_tinymce_plugin_settings($editor, $profile, $plugins) {
       // Add path for native external plugins; internal ones are loaded
       // automatically.
       if (empty($plugin['internal']) && isset($plugin['path'])) {
-        $settings[$name] = base_path() . $plugin['path'];
+        // TinyMCE plugins commonly use the filename editor_plugin.js, but there
+        // is no default. Previously, Wysiwyg's API documentation suggested to
+        // have the 'path' contain the 'filename' property, so if 'filename' is
+        // not defined, automatically extract it from 'path' for backwards
+        // compatibility.
+        if (!isset($plugin['filename'])) {
+          $parts = explode('/', $plugin['path']);
+          $plugin['filename'] = array_pop($parts);
+          $plugin['path'] = implode('/', $parts);
+        }
+        $settings[$name] = base_path() . $plugin['path'] . '/' . $plugin['filename'];
       }
     }
   }
@@ -333,9 +344,10 @@ function wysiwyg_tinymce_proxy_plugin_settings($editor, $profile, $plugins) {
       'title' => $plugin['title'],
       'icon' => base_path() . $plugin['icon path'] . '/' . $plugin['icon file'],
       'iconTitle' => $plugin['icon title'],
-      // @todo These should only be set if the plugin defined them.
-      'css' => base_path() . $plugin['css path'] . '/' . $plugin['css file'],
     );
+    if (isset($plugin['css file'])) {
+      $settings[$name]['css'] = base_path() . $plugin['css path'] . '/' . $plugin['css file'];
+    }
   }
   return $settings;
 }
@@ -367,7 +379,7 @@ function _wysiwyg_tinymce_plugin_name($op, $name) {
 }
 
 /**
- * Return internal plugins for TinyMCE; semi-implementation of hook_wysiwyg_plugin().
+ * Return internal plugins for this editor; semi-implementation of hook_wysiwyg_plugin().
  */
 function wysiwyg_tinymce_plugins($editor) {
   $plugins = array(
@@ -384,7 +396,7 @@ function wysiwyg_tinymce_plugins($editor) {
         'image' => t('Image'),
         'cleanup' => t('Clean-up'),
         'forecolor' => t('Forecolor'), 'backcolor' => t('Backcolor'),
-        'sup' => t('Sup'), 'sub' => t('Sub'),
+        'sup' => t('Superscript'), 'sub' => t('Subscript'),
         'blockquote' => t('Blockquote'), 'code' => t('Source code'),
         'hr' => t('Horizontal rule'),
         'cut' => t('Cut'), 'copy' => t('Copy'), 'paste' => t('Paste'),
@@ -406,7 +418,7 @@ function wysiwyg_tinymce_plugins($editor) {
     'advimage' => array(
       'path' => $editor['library path'] . '/plugins/advimage',
       'extensions' => array('advimage' => t('Advanced image')),
-      'extended_valid_elements' => array('img[src|alt|title|align|width|height|hspace|vspace|border|style|class|onmouseover|onmouseout|id|name]'),
+      'extended_valid_elements' => array('img[src|alt|title|align|width|height|usemap|hspace|vspace|border|style|class|onmouseover|onmouseout|id|name]'),
       'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/advimage',
       'internal' => TRUE,
       'load' => TRUE,
@@ -552,7 +564,7 @@ function wysiwyg_tinymce_plugins($editor) {
     );
     $plugins['xhtmlxtras'] = array(
       'path' => $editor['library path'] . '/plugins/xhtmlxtras',
-      'buttons' => array('cite' => t('Citation'), 'del' => t('Deleted'), 'abbr' => t('Abbreviation'), 'acronym' => t('Acronym'), 'ins' => t('Inserted')),
+      'buttons' => array('cite' => t('Citation'), 'del' => t('Deleted'), 'abbr' => t('Abbreviation'), 'acronym' => t('Acronym'), 'ins' => t('Inserted'), 'attribs' => t('HTML attributes')),
       'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/xhtmlxtras',
       'internal' => TRUE,
       'load' => TRUE,
@@ -566,10 +578,39 @@ function wysiwyg_tinymce_plugins($editor) {
       'internal' => TRUE,
       'load' => TRUE,
     );
-    $plugins['safari'] = array(
-      'path' => $editor['library path'] . '/plugins/safari',
-      'extensions' => array('safari' => t('Safari compatibility')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/safari',
+    if (version_compare($editor['installed version'], '3.3', '<')) {
+      $plugins['safari'] = array(
+        'path' => $editor['library path'] . '/plugins/safari',
+        'extensions' => array('safari' => t('Safari compatibility')),
+        'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/safari',
+        'internal' => TRUE,
+        'load' => TRUE,
+      );
+    }
+  }
+  if (version_compare($editor['installed version'], '3.2.5', '>=')) {
+    $plugins['autoresize'] = array(
+      'path' => $editor['library path'] . '/plugins/autoresize',
+      'extensions' => array('autoresize' => t('Auto resize')),
+      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/autoresize',
+      'internal' => TRUE,
+      'load' => TRUE,
+    );
+  }
+  if (version_compare($editor['installed version'], '3.3', '>=')) {
+    $plugins['advlist'] = array(
+      'path' => $editor['library path'] . '/plugins/advlist',
+      'extensions' => array('advlist' => t('Advanced list')),
+      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/advlist',
+      'internal' => TRUE,
+      'load' => TRUE,
+    );
+  }
+  if (version_compare($editor['installed version'], '3.2.6', '>=')) {
+    $plugins['wordcount'] = array(
+      'path' => $editor['library path'] . '/plugins/wordcount',
+      'extensions' => array('wordcount' => t('Word count')),
+      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/wordcount',
       'internal' => TRUE,
       'load' => TRUE,
     );

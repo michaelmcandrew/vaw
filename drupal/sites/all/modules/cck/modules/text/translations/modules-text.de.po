@@ -1,4 +1,4 @@
-# $Id: modules-text.de.po,v 1.1.2.8 2008/11/05 12:24:01 hass Exp $
+# $Id: modules-text.de.po,v 1.1.2.10 2009/06/16 17:19:19 hass Exp $
 # German translation of CCK
 # Copyright 2006 Lukas Gangoly <lukas.gangoly@univie.ac.at>
 # Copyright 2006 Jakob Petsovits <jpetso@gmx.at>
@@ -16,8 +16,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: German translation of CCK\n"
-"POT-Creation-Date: 2008-11-05 12:54+0100\n"
-"PO-Revision-Date: 2008-11-05 13:21+0100\n"
+"POT-Creation-Date: 2009-06-16 19:00+0200\n"
+"PO-Revision-Date: 2009-06-16 19:10+0100\n"
 "Last-Translator: Alexander Haß\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -32,49 +32,37 @@ msgstr ""
 msgid "Store text in the database."
 msgstr "Text in der Datenbank speichern."
 
-#: modules/text/text.module:54
+#: modules/text/text.module:55
 msgid "Filtered text (user selects input format)"
 msgstr "Gefilterter Text (Benutzer wählt Eingabeformat aus)"
 
-#: modules/text/text.module:57
+#: modules/text/text.module:58
 msgid "Text processing"
 msgstr "Textverarbeitung"
 
-#: modules/text/text.module:63
+#: modules/text/text.module:64
 msgid "Maximum length"
 msgstr "Maximallänge"
 
-#: modules/text/text.module:66
+#: modules/text/text.module:68
 msgid "The maximum length of the field in characters. Leave blank for an unlimited size."
 msgstr "Die maximale Zeichenlänge des Feldes. Für eine unbegrenzte Länge freilassen."
 
-#: modules/text/text.module:158
+#: modules/text/text.module:160
 msgid "%name: the value may not be longer than %max characters."
 msgstr "%name: Der Wert darf nicht länger als %max Zeichen sein."
 
-#: modules/text/text.module:205
+#: modules/text/text.module:207
 msgid "Trimmed"
 msgstr "Getrimmt"
 
-#: modules/text/text.module:263
+#: modules/text/text.module:265
 msgid "Text area (multiple rows)"
 msgstr "Textfeld (mehrere Zeilen)"
 
-#: modules/text/text.module:315
-msgid "Size of textfield"
-msgstr "Größe des Textfeldes"
-
-#: modules/text/text.module:324
+#: modules/text/text.module:326
 msgid "Rows"
 msgstr "Zeilen"
-
-#: modules/text/text.module:341
-msgid "\"Rows\" must be a positive integer."
-msgstr "„Zeilen“ muss eine positive Zahl sein."
-
-#: modules/text/text.module:348
-msgid "\"Size\" must be a positive integer."
-msgstr "„Größe“ muss eine positive Zahl sein."
 
 #: modules/text/text.module:0
 msgid "text"

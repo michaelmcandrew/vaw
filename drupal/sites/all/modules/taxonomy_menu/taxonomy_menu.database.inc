@@ -1,11 +1,11 @@
 <?php
 
-// $Id: taxonomy_menu.database.inc,v 1.1.2.10 2009/03/25 21:29:13 indytechcook Exp $
+// $Id: taxonomy_menu.database.inc,v 1.1.2.18 2009/11/19 20:28:05 indytechcook Exp $
 
 /**
  * @file
  * Database functions
- * 
+ *
  * @author Neil Hastings      <http://drupal.org/user/245817>
  * @author Mark Theunissen    <http://drupal.org/user/108606>
  * @author Afief Halumi       <http://drupal.org/user/237472>
@@ -69,13 +69,13 @@ function _taxonomy_menu_delete_all($vid) {
 
 /**
  * Get an array of the tid's related to the node
- * 
+ *
  * @param $nid
  * @return array of tids
  */
 function _taxonomy_menu_get_node_terms($nid) {
   $output = array();
-  $result = db_query('SELECT tid FROM {term_node} WHERE nid = %d', $nid);
+  $result = db_query(db_rewrite_sql('SELECT t.tid FROM {term_node} t WHERE t.nid = %d', 't', 'tid'), $nid);
   while ($data = db_fetch_object($result)) {
     $output[] = $data->tid;
   }
@@ -84,7 +84,7 @@ function _taxonomy_menu_get_node_terms($nid) {
 
 /**
  * Get an array of the tid's from the parent
- * 
+ *
  * @param $tid
  * @return array of tid
  */
@@ -94,7 +94,7 @@ function _taxonomy_menu_get_parents($tid) {
   foreach ($result as $key => $item) {
     $output[] = $key;
   }
-  return $output;  
+  return $output;
 }
 
 /**
@@ -115,7 +115,7 @@ function _taxonomy_menu_delete_item($vid, $tid) {
  */
 function _taxonomy_menu_get_terms($vid) {
   $output = array();
-  $result = db_query('SELECT tid FROM {term_data} WHERE vid = %d', $vid);
+  $result = db_query(db_rewrite_sql('SELECT t.tid FROM {term_data} t WHERE t.vid = %d','t', 'tid'), $vid);
   while ($data = db_fetch_object($result)) {
     $output[] = $data->tid;
   }
@@ -124,9 +124,46 @@ function _taxonomy_menu_get_terms($vid) {
 
 /**
  * used to get the count without children
- * 
+ *
  * @param $tid
  */
 function _taxonomy_menu_term_count($tid) {
-  return db_result(db_query('SELECT COUNT(n.nid) AS c FROM {term_node} t INNER JOIN {node} n ON t.vid = n.vid WHERE n.status = 1 AND t.tid = %d', $tid));
+  return db_result(db_query(db_rewrite_sql('SELECT COUNT(n.nid) AS c FROM {term_node} t INNER JOIN {node} n ON t.vid = n.vid WHERE n.status = 1 AND t.tid = %d'), $tid));
+}
+
+/**
+ * Get tid for a given mlid
+ *
+ * @param $mlid
+ * @return $tid
+ */
+function _taxonomy_menu_get_tid($mlid) {
+  return db_result(db_query('SELECT tid FROM {taxonomy_menu} WHERE mlid = %d', $mlid));
+}
+
+/**
+ * Get vid, tid for a given mlid
+ *
+ * @param $mlid
+ * @return array of vid, tid
+ */
+function _taxonomy_menu_get_item($mlid) {
+  return db_fetch_array(db_query('SELECT tid, vid FROM {taxonomy_menu} WHERE mlid = %d', $mlid));
+}
+
+/**
+ * Get the vocabulary for a tid
+ * @param $tid array of tids
+ * @return $vid
+ */
+function _taxonomy_menu_get_vid_by_tid($tid) {
+  if ($tid) {
+    $tids = implode(',', $tid);
+    $result = db_query("SELECT vid FROM {term_data} WHERE tid in (%s)", $tids);
+    $vids = array();
+    while ($data = db_fetch_object($result)) {
+      $vids[$data->vid] = $data->vid;
+    }
+    return $vids;
+  }
 }

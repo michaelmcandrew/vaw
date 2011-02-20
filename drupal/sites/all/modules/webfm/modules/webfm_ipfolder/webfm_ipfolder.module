@@ -1,20 +1,37 @@
 <?php
-// $Id: webfm_ipfolder.module,v 1.1 2009/08/19 15:23:34 robmilne Exp $
+// $Id: webfm_ipfolder.module,v 1.2 2009/08/20 01:10:35 robmilne Exp $
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * @author		Niels Hackius <niels.hackius@tu-harburg.de>
  * @copyright	2009, Technische Universität Hamburg-Harburg: Institut für Logistik und Unternehmensführung
  * @license    http://www.opensource.org/licenses/gpl-3.0.html  GNU General Public License version 3 (GPLv3)
- * @version		$Id: webfm_ipfolder.module,v 1.1 2009/08/19 15:23:34 robmilne Exp $
+ * @version		$Id: webfm_ipfolder.module,v 1.2 2009/08/20 01:10:35 robmilne Exp $
  * @since		10:10:57 15.04.2009
  *
  */
 
 /**
+ * Implementation of hook_help
+ *
+ * @param $path string Path being accessed
+ * @param $arg array
+ * @return string A localized string containing the help text.
+ */
+function webfm_ipfolder_help($path,$arg)
+{
+	switch ($path) {
+    case 'admin/help#webfm_ipfolder':
+      return '<p>'. t('This module extends the Web File Manager. It allows to block or allow certain IP Ranges access to specified folders. <br /> In the !configuration you can provide IP Ranges and folder names.<br /> Depending on your !settings the selected IP Range will be allowed or blocked. By default it <b>blocks</b> access to all folders.',array('!configuration'=>l(t('configuration'),'admin/settings/webfm_ipfolder'),'!settings'=>l(t('settings'),'admin/settings/webfm_ipfolder/webfm_ipfolder_settings'))) .'</p>';
+	case 'admin/modules#description':
+      return t('Enable the Web File Manager Extension to allow IP based folder blocking.');
+  }
+}
+  
+/**
  * Implementation of hook_webfm_send
  * Provides an IP based checking routine that allows the user create IP based folder access rules
  *
- * @param $file
+ * @param $file object File object of file requested
  * @return array Containing the maybe set sent flag
  */
 

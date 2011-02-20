@@ -1,11 +1,11 @@
 <?php
-// $Id: webfm_ipfolder.admin.inc,v 1.1 2009/08/19 15:23:33 robmilne Exp $
+// $Id: webfm_ipfolder.admin.inc,v 1.2 2009/08/20 01:10:35 robmilne Exp $
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * @author     Niels Hackius <niels.hackius@tu-harburg.de>
  * @copyright 2009, Technische Universität Hamburg-Harburg: Institut für Logistik und Unternehmensführung
  * @license    http://www.opensource.org/licenses/gpl-3.0.html  GNU General Public License version 3 (GPLv3)
- * @version   $Id: webfm_ipfolder.admin.inc,v 1.1 2009/08/19 15:23:33 robmilne Exp $
+ * @version   $Id: webfm_ipfolder.admin.inc,v 1.2 2009/08/20 01:10:35 robmilne Exp $
  * @since      12:01:33 15.04.2009
  *
  */
@@ -20,9 +20,9 @@ function webfm_ipfolder_ips()
  $form['ip_list'] = array(
     '#type' => 'fieldset',
     '#title' => t('Current IP authenticated folders'),
-    '#description' => "<b>". t("Instructions:") ."</b><br/> &nbsp;".
-                      t(" - Click on an ip range to modify the authenticator assignment.") ."<br/> &nbsp; ".
-                      t(" - The title fields are sortable.") ."<br/><br/>".
+    '#description' => "<b>". t("Instructions:") ."</b><br/> &nbsp; - ".
+                      t("Click on an ip range to modify the authenticator assignment.") ."<br/> &nbsp; - ".
+                      t("The title fields are sortable.") ."<br/><br/>".
                       "<b>". t("Your IP: @s", array('@s' => $_SERVER['REMOTE_ADDR'])) ."</b>".
                       '<br /><br/>'.
                       t('Please note that users with the <em>administer webfm</em> rights will be able to download the files anyway.'),
@@ -269,7 +269,7 @@ function webfm_ipfolder_settings()
 		'#type' => 'radios',
 		'#title' => t('Default behavior'),
   		'#default_value' => variable_get('webfm_ipfolder_bydefault', false),
-  		'#options' => array(t('Block access to all folders, but not to IP/folder-Pairs specifed.'), t('Allow access to all folders, but not to IP/folder-Pairs specified.')),
+  		'#options' => array(t('Block access to all folders, but not to IP/folder-Pairs specifed.'), t('Allow access to all folders, but restrict access for the IP/folder-Pairs as specified.')),
 	);
 
 	return system_settings_form($form);

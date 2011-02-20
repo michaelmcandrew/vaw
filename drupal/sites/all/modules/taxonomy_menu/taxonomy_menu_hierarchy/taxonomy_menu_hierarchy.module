@@ -1,5 +1,5 @@
 <?php
-// $Id: taxonomy_menu_hierarchy.module,v 1.1.2.2 2009/03/14 21:21:06 indytechcook Exp $
+// $Id: taxonomy_menu_hierarchy.module,v 1.1.2.3 2009/10/31 18:39:33 indytechcook Exp $
 
 /**
  * @file
@@ -51,8 +51,8 @@ function taxonomy_menu_hierarchy_path_hierarchy($vid, $tid) {
  */
 function taxonomy_menu_hierarchy_taxonomy_menu_options() {
   $options['hierarchy_base'] = array(
-    '#title' => t('Base Path for Hierarchy Path'),
-    '#description' => t('Only used when the Hierarchy path type is selected'),
+    '#title' => t('Base path for hierarchy path'),
+    '#description' => t('Only used if the <em>Hierarchy path</em> type is selected.'),
     'default' => 'category',
     '#type' => 'textfield',
     '#weight' => -5,

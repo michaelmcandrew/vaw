@@ -1,4 +1,5 @@
-// $Id: tinymce-3.js,v 1.16 2009/05/15 15:06:06 sun Exp $
+// $Id: tinymce-3.js,v 1.17.2.5 2010/10/17 20:52:54 twod Exp $
+(function($) {
 
 /**
  * Initialize editor instances.
@@ -15,15 +16,18 @@ Drupal.wysiwyg.editor.init.tinymce = function(settings) {
   if (tinymce.query == 'q') {
     tinymce.query = '';
   }
-  // If JS compression is enabled, TinyMCE is unable to find its own base path
-  // and exec mode, hence we need to define it manually.
+  // If JS compression is enabled, TinyMCE is unable to autodetect its global
+  // settinge, hence we need to define them manually.
   // @todo Move global library settings somewhere else.
-  tinyMCE.baseURL = Drupal.settings.wysiwyg.editorBasePath;
-  tinyMCE.srcMode = (Drupal.settings.wysiwyg.execMode == 'src' ? '_src' : '');
-  tinyMCE.gzipMode = (Drupal.settings.wysiwyg.execMode == 'gzip');
+  tinyMCE.baseURL = settings.global.editorBasePath;
+  tinyMCE.srcMode = (settings.global.execMode == 'src' ? '_src' : '');
+  tinyMCE.gzipMode = (settings.global.execMode == 'gzip');
 
   // Initialize editor configurations.
   for (var format in settings) {
+    if (format == 'global') {
+      continue;
+    };
     tinyMCE.init(settings[format]);
     if (Drupal.settings.wysiwyg.plugins[format]) {
       // Load native external plugins.
@@ -60,6 +64,17 @@ Drupal.wysiwyg.editor.attach.tinymce = function(context, params, settings) {
     $('#' + ed.editorContainer + ' table.mceLayout td.mceToolbar').append($toolbar);
     $('#' + ed.editorContainer + ' table.mceToolbar').remove();
   });
+
+  // Remove TinyMCE's internal mceItem class, which was incorrectly added to
+  // submitted content by Wysiwyg <2.1. TinyMCE only temporarily adds the class
+  // for placeholder elements. If preemptively set, the class prevents (native)
+  // editor plugins from gaining an active state, so we have to manually remove
+  // it prior to attaching the editor. This is done on the client-side instead
+  // of the server-side, as Wysiwyg has no way to figure out where content is
+  // stored, and the class only affects editing.
+  $field = $('#' + params.field);
+  $field.val($field.val().replace(/(<.+?\s+class=['"][\w\s]*?)\bmceItem\b([\w\s]*?['"].*?>)/ig, '$1$2'));
+
   // Attach editor.
   ed.render();
 };
@@ -106,7 +121,9 @@ Drupal.wysiwyg.editor.instance.tinymce = {
         ed.addCommand(plugin, function() {
           if (typeof Drupal.wysiwyg.plugins[plugin].invoke == 'function') {
             var data = { format: 'html', node: ed.selection.getNode(), content: ed.selection.getContent() };
-            Drupal.wysiwyg.plugins[plugin].invoke(data, pluginSettings, ed.id);
+            // TinyMCE creates a completely new instance for fullscreen mode.
+            var instanceId = ed.id == 'mce_fullscreen' ? ed.getParam('fullscreen_editor_id') : ed.id;
+            Drupal.wysiwyg.plugins[plugin].invoke(data, pluginSettings, instanceId);
           }
         });
 
@@ -163,9 +180,10 @@ Drupal.wysiwyg.editor.instance.tinymce = {
   },
 
   openDialog: function(dialog, params) {
-    var editor = tinyMCE.get(this.field);
+    var instanceId = this.isFullscreen() ? 'mce_fullscreen' : this.field;
+    var editor = tinyMCE.get(instanceId);
     editor.windowManager.open({
-      file: dialog.url + '/' + this.field,
+      file: dialog.url + '/' + instanceId,
       width: dialog.width,
       height: dialog.height,
       inline: 1
@@ -173,7 +191,8 @@ Drupal.wysiwyg.editor.instance.tinymce = {
   },
 
   closeDialog: function(dialog) {
-    var editor = tinyMCE.get(this.field);
+    var instanceId = this.isFullscreen() ? 'mce_fullscreen' : this.field;
+    var editor = tinyMCE.get(instanceId);
     editor.windowManager.close(dialog);
   },
 
@@ -185,16 +204,22 @@ Drupal.wysiwyg.editor.instance.tinymce = {
       img: { 'class': 'mceItem' }
     };
     var $content = $('<div>' + content + '</div>'); // No .outerHTML() in jQuery :(
-    jQuery.each(specialProperties, function(element, properties) {
-      $content.find(element).each(function() {
-        for (var property in properties) {
-          if (property == 'class') {
-            $(this).addClass(properties[property]);
+    // Find all placeholder/replacement content of Drupal plugins.
+    $content.find('.drupal-content').each(function() {
+      // Recursively process DOM elements below this element to apply special
+      // properties.
+      var $drupalContent = $(this);
+      $.each(specialProperties, function(element, properties) {
+        $drupalContent.find(element).andSelf().each(function() {
+          for (var property in properties) {
+            if (property == 'class') {
+              $(this).addClass(properties[property]);
+            }
+            else {
+              $(this).attr(property, properties[property]);
+            }
           }
-          else {
-            $(this).attr(property, properties[property]);
-          }
-        }
+        });
       });
     });
     return $content.html();
@@ -202,7 +227,14 @@ Drupal.wysiwyg.editor.instance.tinymce = {
 
   insert: function(content) {
     content = this.prepareContent(content);
-    tinyMCE.execInstanceCommand(this.field, 'mceInsertContent', false, content);
+    var instanceId = this.isFullscreen() ? 'mce_fullscreen' : this.field;
+    tinyMCE.execInstanceCommand(instanceId, 'mceInsertContent', false, content);
+  },
+
+  isFullscreen: function() {
+    // TinyMCE creates a completely new instance for fullscreen mode.
+    return tinyMCE.activeEditor.id == 'mce_fullscreen' && tinyMCE.activeEditor.getParam('fullscreen_editor_id') == this.field;
   }
 };
 
+})(jQuery);

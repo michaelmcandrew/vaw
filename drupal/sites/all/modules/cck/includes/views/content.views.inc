@@ -1,5 +1,5 @@
 <?php
-// $Id: content.views.inc,v 1.1.2.18 2008/11/05 19:40:19 yched Exp $
+// $Id: content.views.inc,v 1.1.2.28 2009/08/11 20:05:18 markuspetrux Exp $
 
 /**
  * @file
@@ -32,6 +32,9 @@ function content_views_handlers() {
       'content_handler_argument_numeric' => array(
         'parent' => 'views_handler_argument_numeric',
       ),
+      'content_handler_argument_reference' => array(
+        'parent' => 'content_handler_argument_numeric',
+      ),
       'content_handler_argument_many_to_one' => array(
         'parent' => 'views_handler_argument_many_to_one',
       ),
@@ -52,8 +55,7 @@ function content_views_handlers() {
         'parent' => 'views_handler_filter_numeric',
       ),
       'content_handler_filter_float' => array(
-        // views_handler_filter_float is defined in views_handler_filter_numeric.inc
-        'parent' => 'views_handler_filter_numeric',
+        'parent' => 'views_handler_filter_float',
       ),
       'content_handler_filter_many_to_one' => array(
         'parent' => 'views_handler_filter_many_to_one',
@@ -138,7 +140,8 @@ function content_views_data() {
   $data = array();
   foreach (content_fields() as $field) {
     $module = $field['module'];
-    $result = module_invoke($module, 'field_settings', 'views data', $field);
+    $result = (array) module_invoke($module, 'field_settings', 'views data', $field);
+    drupal_alter('field_settings', $result, 'views data', $field);
     if (empty($result)) {
       $result = content_views_field_views_data($field);
     }
@@ -181,12 +184,39 @@ function content_views_field_views_data($field) {
       'left_field' => 'vid',
       'field' => 'vid',
     );
+    $data['table']['join']['node_revisions'] = array(
+      'table' => $db_info['table'],
+      'left_field' => 'vid',
+      'field' => 'vid',
+    );
 
+    // Build the list of columns enabled for default views integration.
+    $db_columns = array();
+    $additional_fields = array();
+    foreach ($db_info['columns'] as $column => $attributes) {
+      // Select explicitly enabled field columns.
+      if (!empty($attributes['views'])) {
+        $db_columns[$column] = $attributes;
+      }
+      // Ensure all columns are retrieved.
+      $additional_fields[$attributes['column']] = $attributes['column'];
+    }
+    // Pick up the first column when none has been explicitly enabled
+    // (pre CCK 2.2 backwards compatibility).
+    if (empty($db_columns)) {
+      // Can't use array_slice(), it won't work in PHP4 for assoc array.
+      foreach ($db_info['columns'] as $column => $attributes) {
+        $db_columns[$column] = $attributes;
+        break;
+      }
+    }
     $columns = array();
+    $db_fields = array();
     $arguments = array();
     $filters = array();
-    foreach ($db_info['columns'] as $column => $attributes) {
-      $columns[] = $attributes['column'];
+    foreach ($db_columns as $column => $attributes) {
+      $columns[] = $column;
+      $db_fields[] = $attributes['column'];
       $sorts[] = !empty($attributes['sortable']) ? TRUE : FALSE;
 
       // Identify likely filters and arguments for each column based on field type.
@@ -215,52 +245,111 @@ function content_views_field_views_data($field) {
       }
     }
 
-    // Ensure all columns are retrieved,
-    $additional_fields = drupal_map_assoc($columns);
+    // Provide automatic filters, sorts, and arguments for each column, not just the first.
+    $db_fields_count = count($db_fields);
+    foreach ($db_fields as $i => $db_field) {
+      $label_truncated = truncate_utf8(t($field['widget']['label']), 10, TRUE);
+      if ($db_fields_count == 1) {
+        $title = t('@label (!name)', array('@label' => t($field['widget']['label']), '!name' => $field['field_name']));
+        $title_short = check_plain($label_truncated);
+      }
+      else {
+        $title = t('@label (!name) - !column', array('@label' => t($field['widget']['label']), '!name' => $field['field_name'], '!column' => $columns[$i]));
+        $title_short = t('@label-truncated - !column', array('@label-truncated' => $label_truncated, '!column' => $columns[$i]));
+      }
 
-    $data[$columns[0]] = array(
-      'group' => t('Content'),
-      'title' => t('@label - (!name)', array('@label' => t($field['widget']['label']), '!name' => $field['field_name'])),
-      'title_short' => check_plain(t($field['widget']['label'])),
-      'help' =>  t($field_types[$field['type']]['label']) .' - '. t('Appears in: @types', array('@types' => implode(', ', $types))),
-      'field' => array(
-        'field' => $columns[0],
+      $data[$db_field] = array(
+        'group' => t('Content'),
+        'title' => $title,
+        'title short' => $title_short,
+        'help' =>  t($field_types[$field['type']]['label']) .' - '. t('Appears in: @types', array('@types' => implode(', ', $types))),
+      );
+      if ($i == 0) {
+        $data[$db_field]['field'] = array(
+          'title' => t('@label (!name)', array('@label' => t($field['widget']['label']), '!name' => $field['field_name'])),
+          'title short' => check_plain($label_truncated),
+          'field' => $db_field,
+          'table' => $db_info['table'],
+          'handler' => 'content_handler_field_multiple',
+          'click sortable' => $sorts[$i],
+          'additional fields' => $additional_fields,
+          'content_field_name' => $field['field_name'],
+          'access callback' => 'content_access',
+          'access arguments' => array('view', $field),
+        );
+      }
+      $data[$db_field]['argument'] = array(
+        'field' => $db_field,
         'table' => $db_info['table'],
-        'handler' => 'content_handler_field_multiple',
-        'click sortable' => $sorts[0],
-        'additional fields' => $additional_fields,
-        'content_field_name' => $field['field_name'],
-        // Access control modules should implement content_views_access_callback().
-        'access callback' => 'content_views_access_callback',
-        'access arguments' => array($field),
-      ),
-      'argument' => array(
-        'field' => $columns[0],
-        'table' => $db_info['table'],
-        'handler' => $arguments[0],
+        'handler' => $arguments[$i],
         'additional fields' => $additional_fields,
         'content_field_name' => $field['field_name'],
         'empty field name' => t('<No value>'),
-      ),
-      'filter' => array(
-        'field' => $columns[0],
+      );
+      $data[$db_field]['filter'] = array(
+        'field' => $db_field,
         'table' => $db_info['table'],
-        'handler' => $filters[0],
+        'handler' => $filters[$i],
         'additional fields' => $additional_fields,
         'content_field_name' => $field['field_name'],
         'allow empty' => TRUE,
-      ),
-    );
-    if (!empty($sorts[0])) {
-      $data[$columns[0]]['sort'] = array(
-        'field' => $columns[0],
+      );
+      if (!empty($sorts[$i])) {
+        $data[$db_field]['sort'] = array(
+          'field' => $db_field,
+          'table' => $db_info['table'],
+          'handler' => 'content_handler_sort',
+          'additional fields' => $additional_fields,
+          'content_field_name' => $field['field_name'],
+        );
+      }
+    }
+
+    // Expose additional delta column for multiple value fields.
+    if ($field['multiple']) {
+      $title = t('@label (!name) - delta', array('@label' => t($field['widget']['label']), '!name' => $field['field_name']));
+      $title_short = t('@label-truncated - delta', array('@label-truncated' => $label_truncated));
+
+      $db_field = 'delta';
+      $data[$db_field] = array(
+        'group' => t('Content'),
+        'title' => $title,
+        'title short' => $title_short,
+        'help' => t('Delta - Appears in: @types', array('@types' => implode(', ', $types))),
+      );
+      $data[$db_field]['field'] = array(
+        'title' => $title,
+        'title short' => $title_short,
+        'field' => $db_field,
         'table' => $db_info['table'],
-        'handler' => 'content_handler_sort',
+        'handler' => 'views_handler_field_numeric',
+        'click sortable' => TRUE,
         'additional fields' => $additional_fields,
-        'content_field_name' => $field['field_name'],
+        'access callback' => 'content_access',
+        'access arguments' => array('view', $field),
+      );
+      $data[$db_field]['argument'] = array(
+        'field' => $db_field,
+        'table' => $db_info['table'],
+        'handler' => 'views_handler_argument_numeric',
+        'additional fields' => $additional_fields,
+        'empty field name' => t('<No value>'),
+      );
+      $data[$db_field]['filter'] = array(
+        'field' => $db_field,
+        'table' => $db_info['table'],
+        'handler' => 'views_handler_filter_numeric',
+        'additional fields' => $additional_fields,
+        'allow empty' => TRUE,
+      );
+      $data[$db_field]['sort'] = array(
+        'field' => $db_field,
+        'table' => $db_info['table'],
+        'handler' => 'views_handler_sort',
+        'additional fields' => $additional_fields,
       );
     }
-    // TODO: provide automatic filters, sorts, and arguments for each column, not just the first?
+
     return array($table_alias => $data);
   }
 }
@@ -275,9 +364,11 @@ function content_views_tablename($field) {
 
 function theme_content_view_multiple_field($items, $field, $values) {
   $output = '';
+  $i = 0;
   foreach ($items as $item) {
     if (!empty($item) || $item == '0') {
-      $output .= '<div class="field-item">'. $item .'</div>';
+      $output .= '<div class="field-item field-item-'. $i .'">'. $item .'</div>';
+      $i++;
     }
   }
   return $output;

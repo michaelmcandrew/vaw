@@ -1,5 +1,5 @@
 <?php
-// $Id: userreference.module,v 1.106.2.29 2008/11/07 15:18:39 yched Exp $
+// $Id: userreference.module,v 1.106.2.51 2010/06/10 16:17:06 markuspetrux Exp $
 
 /**
  * @file
@@ -44,6 +44,15 @@ function userreference_theme() {
 }
 
 /**
+ * Implementaion of hook_ctools_plugin_directory().
+ */
+function userreference_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ctools' && $plugin == 'relationships') {
+    return 'panels/' . $plugin;
+  }
+}
+
+/**
  * Implementation of hook_field_info().
  */
 function userreference_field_info() {
@@ -51,6 +60,7 @@ function userreference_field_info() {
     'userreference' => array(
       'label' => t('User reference'),
       'description' => t('Store the ID of a related user as an integer value.'),
+//      'content_icon' => 'icon_content_noderef.png',
     ),
   );
 }
@@ -69,10 +79,10 @@ function userreference_field_settings($op, $field) {
         '#options' => user_roles(1),
       );
       $form['referenceable_status'] = array(
-        '#type' => 'checkboxes',
+        '#type' => 'radios',
         '#title' => t('User status that can be referenced'),
-        '#default_value' => isset($field['referenceable_status']) && is_array($field['referenceable_status']) ? array_filter($field['referenceable_status']) : array(1),
-        '#options' => array(1 => t('Active'), 0 => t('Blocked')),
+        '#default_value' => isset($field['referenceable_status']) ? $field['referenceable_status'] : '',
+        '#options' => array('' => t('All users'), 1 => t('Active users'), 0 => t('Blocked users')),
       );
       if (module_exists('views')) {
         $views = array('--' => '--');
@@ -89,19 +99,20 @@ function userreference_field_settings($op, $field) {
           }
         }
 
+        $form['advanced'] = array(
+           '#type' => 'fieldset',
+           '#title' => t('Advanced - Users that can be referenced (View)'),
+           '#collapsible' => TRUE,
+           '#collapsed' => !isset($field['advanced_view']) || $field['advanced_view'] == '--',
+         );
         if (count($views) > 1) {
-          $form['advanced'] = array(
-             '#type' => 'fieldset',
-             '#title' => t('Advanced - Users that can be referenced (View)'),
-             '#collapsible' => TRUE,
-             '#collapsed' => !isset($field['advanced_view']) || $field['advanced_view'] == '--',
-           );
           $form['advanced']['advanced_view'] = array(
             '#type' => 'select',
             '#title' => t('View used to select the users'),
             '#options' => $views,
             '#default_value' => isset($field['advanced_view']) ? $field['advanced_view'] : '--',
-            '#description' => t('Choose the "Views module" view that selects the users that can be referenced.<br />Note:<ul><li>Only views that have fields will work for this purpose.</li><li>This will discard the "Referenceable Roles" and "Referenceable Status" settings above. Use the view\'s "filters" section instead.</li><li>Use the view\'s "fields" section to display additional informations about candidate users on user creation/edition form.</li><li>Use the view\'s "sort criteria" section to determine the order in which candidate users will be displayed.</li></ul>'),
+            '#description' =>  t('<p>Choose the "Views module" view that selects the users that can be referenced.<br />Note:</p>') .
+              t('<ul><li>Only views that have fields will work for this purpose.</li><li>This will discard the "Referenceable Roles" and "Referenceable Status" settings above. Use the view\'s "filters" section instead.</li><li>Use the view\'s "fields" section to display additional informations about candidate users on user creation/edition form.</li><li>Use the view\'s "sort criteria" section to determine the order in which candidate users will be displayed.</li></ul>'),
           );
           $form['advanced']['advanced_view_args'] = array(
             '#type' => 'textfield',
@@ -109,6 +120,12 @@ function userreference_field_settings($op, $field) {
             '#default_value' => isset($field['advanced_view_args']) ? $field['advanced_view_args'] : '',
             '#required' => FALSE,
             '#description' => t('Provide a comma separated list of arguments to pass to the view.'),
+          );
+        }
+        else {
+          $form['advanced']['no_view_help'] = array(
+            '#value' => t('<p>The list of user that can be referenced can be based on a "Views module" view but no appropriate views were found. <br />Note:</p>') .
+              t('<ul><li>Only views that have fields will work for this purpose.</li><li>This will discard the "Referenceable Roles" and "Referenceable Status" settings above. Use the view\'s "filters" section instead.</li><li>Use the view\'s "fields" section to display additional informations about candidate users on user creation/edition form.</li><li>Use the view\'s "sort criteria" section to determine the order in which candidate users will be displayed.</li></ul>'),
           );
         }
       }
@@ -124,7 +141,7 @@ function userreference_field_settings($op, $field) {
 
     case 'database columns':
       $columns = array(
-        'uid' => array('type' => 'int', 'unsigned' => TRUE,  'not null' => FALSE),
+        'uid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE, 'index' => TRUE),
       );
       return $columns;
 
@@ -135,9 +152,17 @@ function userreference_field_settings($op, $field) {
 
       // Filter : swap the handler to the 'in' operator.
       $data[$table_alias][$field['field_name'] .'_uid']['filter']['handler'] = 'content_handler_filter_many_to_one';
-      // Argument: use users.name for summaries.
-      $data[$table_alias][$field['field_name'] .'_nid']['argument']['name table'] = 'node';
-      $data[$table_alias][$field['field_name'] .'_nid']['argument']['name field'] = 'title';
+      // Argument: get the user name for summaries.
+      // We need to join a new instance of the users table.
+      $data["users_$table_alias"]['table']['join']['node'] = array(
+        'table' => 'users',
+        'field' => 'uid',
+        'left_table' => $table_alias,
+        'left_field' => $field['field_name'] .'_uid',
+      );
+      $data[$table_alias][$field['field_name'] .'_uid']['argument']['handler'] = 'content_handler_argument_reference';
+      $data[$table_alias][$field['field_name'] .'_uid']['argument']['name table'] = "users_$table_alias";
+      $data[$table_alias][$field['field_name'] .'_uid']['argument']['name field'] = 'name';
       // Relationship: Add a relationship for related user.
       $data[$table_alias][$field['field_name'] .'_uid']['relationship'] = array(
         'base' => 'users',
@@ -160,17 +185,27 @@ function userreference_field($op, &$node, $field, &$items, $teaser, $page) {
       // Extract uids to check.
       $ids = array();
       foreach ($items as $delta => $item) {
-        if (is_array($item) && !empty($item['uid']) && is_numeric($item['uid'])) {
-          $ids[] = $item['uid'];
+        if (is_array($item) && !empty($item['uid'])) {
+          if (is_numeric($item['uid'])) {
+            $ids[] = $item['uid'];
+          }
+          else {
+            $error_element = isset($item['_error_element']) ? $item['_error_element'] : '';
+            if (is_array($item) && isset($item['_error_element'])) unset($item['_error_element']);
+            form_set_error($error_element, t('%name: invalid input.', array('%name' => t($field['widget']['label']))));
+          }
         }
       }
-      $refs = _userreference_potential_references($field, '', NULL, $ids);
-      foreach ($items as $delta => $item) {
-        if (is_array($item)) {
-          $error_element = isset($item['_error_element']) ? $item['_error_element'] : '';
-          if (is_array($item) && isset($item['_error_element'])) unset($item['_error_element']);
-          if (!empty($item['uid']) && !isset($refs[$item['uid']])) {
-            form_set_error($error_element, t('%name: invalid user.', array('%name' => t($field['widget']['label']))));
+      // Prevent performance hog if there are no ids to check.
+      if ($ids) {
+        $refs = _userreference_potential_references($field, '', NULL, $ids);
+        foreach ($items as $delta => $item) {
+          if (is_array($item)) {
+            $error_element = isset($item['_error_element']) ? $item['_error_element'] : '';
+            if (is_array($item) && isset($item['_error_element'])) unset($item['_error_element']);
+            if (!empty($item['uid']) && !isset($refs[$item['uid']])) {
+              form_set_error($error_element, t('%name: invalid user.', array('%name' => t($field['widget']['label']))));
+            }
           }
         }
       }
@@ -313,6 +348,7 @@ function userreference_widget_settings($op, $widget) {
     case 'form':
       $form = array();
       $match = isset($widget['autocomplete_match']) ? $widget['autocomplete_match'] : 'contains';
+      $size = (isset($widget['size']) && is_numeric($widget['size'])) ? $widget['size'] : 60;
       if ($widget['type'] == 'userreference_autocomplete') {
         $form['autocomplete_match'] = array(
           '#type' => 'select',
@@ -324,9 +360,17 @@ function userreference_widget_settings($op, $widget) {
           ),
           '#description' => t('Select the method used to collect autocomplete suggestions. Note that <em>Contains</em> can cause performance issues on sites with thousands of users.'),
         );
+        $form['size'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Size of textfield'),
+          '#default_value' => $size,
+          '#element_validate' => array('_element_validate_integer_positive'),
+          '#required' => TRUE,
+        );
       }
       else {
         $form['autocomplete_match'] = array('#type' => 'hidden', '#value' => $match);
+        $form['size'] = array('#type' => 'hidden', '#value' => $size);
       }
       $form['reverse_link'] = array(
         '#type' => 'checkbox',
@@ -337,7 +381,7 @@ function userreference_widget_settings($op, $widget) {
       return $form;
 
     case 'save':
-      return array('autocomplete_match', 'reverse_link');
+      return array('autocomplete_match', 'size', 'reverse_link');
   }
 }
 
@@ -584,10 +628,9 @@ function userreference_allowed_values($field) {
 
   $options = array();
   foreach ($references as $key => $value) {
-    // Views theming runs check_plain (htmlentities) on the values.
-    // We reverse that with html_entity_decode.
-    $options[$key] = html_entity_decode(strip_tags($value['rendered']), ENT_QUOTES);
+    $options[$key] = $value['rendered'];
   }
+
   return $options;
 }
 
@@ -640,7 +683,7 @@ function _userreference_potential_references($field, $string = '', $match = 'con
     }
 
     // Store the results.
-    $results[$cid] = $references;
+    $results[$cid] = !empty($references) ? $references : array();
   }
 
   return $results[$cid];
@@ -683,9 +726,8 @@ function _userreference_potential_references_views($field, $string = '', $match 
     // should be moved to content_plugin_display_references
 
     // Limit result set size.
-    if (isset($limit)) {
-      $view->display_handler->set_option('items_per_page', $limit);
-    }
+    $limit = isset($limit) ? $limit : 0;
+    $view->display_handler->set_option('items_per_page', $limit);
 
     // Get arguments for the view.
     if (!empty($field['advanced_view_args'])) {
@@ -735,12 +777,13 @@ function _userreference_potential_references_standard($field, $string = '', $mat
   $join = array();
 
   if ($string !== '') {
-    $match_operators = array(
-      'contains' => "LIKE '%%%s%%'",
+    $like = $GLOBALS["db_type"] == 'pgsql' ? "ILIKE" : "LIKE";
+    $match_clauses = array(
+      'contains' => "$like '%%%s%%'",
       'equals' => "= '%s'",
-      'starts_with' => "LIKE '%s%%'",
+      'starts_with' => "$like '%s%%'",
     );
-    $where[] = 'u.name '. (isset($match_operators[$match]) ? $match_operators[$match] : $match_operators['contains']);
+    $where[] = 'u.name '. (isset($match_clauses[$match]) ? $match_clauses[$match] : $match_clauses['contains']);
     $args[] = $string;
   }
   elseif ($ids) {
@@ -763,16 +806,9 @@ function _userreference_potential_references_standard($field, $string = '', $mat
     $join[] = 'LEFT JOIN {users_roles} r ON u.uid = r.uid';
   }
 
-  $status = array();
-  if (isset($field['referenceable_status']) && is_array($field['referenceable_status'])) {
-    // keep only selected checkboxes
-    $status = array_filter($field['referenceable_status']);
-  }
-  if (!empty($status)) {
-    // Limit query if only one status should be referenced.
-    if (count($status) == 1) {
-      $where[] = "u.status = ". array_pop($status);
-    }
+  if (isset($field['referenceable_status']) && is_numeric($field['referenceable_status'])) {
+    $where[] = 'u.status = %d';
+    $args[] = $field['referenceable_status'];
   }
 
   $users = array();
@@ -781,7 +817,7 @@ function _userreference_potential_references_standard($field, $string = '', $mat
   while ($user = db_fetch_object($result)) {
     $users[$user->uid] = array(
       'title' => $user->name,
-      'rendered' => $user->name,
+      'rendered' => check_plain($user->name),
     );
   }
   return $users;
@@ -823,28 +859,24 @@ function userreference_user($type, &$edit, &$account) {
       // table comes up in more than one content type, we only need
       // to search it once.
       $search_tables = array();
-      $search_links = array();
       foreach ($types as $type_name => $type) {
         foreach ($type['fields'] as $field) {
           // Only add tables when reverse link has been selected.
           if ($field['type'] == 'userreference' && !empty($field['widget']['reverse_link'])) {
             $db_info = content_database_info($field);
-            $search_tables[$db_info['table']] = $db_info['columns']['uid']['column'];
-            $search_links[$db_info['table']] = $field['widget']['reverse_link'];
+            $search_tables[$db_info['table']][] = $db_info['columns']['uid']['column'];
           }
         }
       }
-      foreach ($search_tables as $table => $column) {
-        $ids = db_query(db_rewrite_sql("SELECT DISTINCT(n.nid) FROM {node} n LEFT JOIN {". $table ."} f ON n.vid = f.vid WHERE f.". $column ."=". $account->uid. " AND n.status = 1"));
-        while ($data = db_fetch_object($ids)) {
-          // TODO, do we really want a complete node_load() here? We only need the title to create a link.
-          $node = node_load($data->nid);
-          $node->reverse_link = $search_links[$table];
-          $additions[$node->type][] = $node;
+      foreach ($search_tables as $table => $columns) {
+        foreach ($columns as $column) {
+          $ids = db_query(db_rewrite_sql("SELECT DISTINCT(n.nid), n.title, n.type FROM {node} n LEFT JOIN {". $table ."} f ON n.vid = f.vid WHERE f.". $column ."=". $account->uid. " AND n.status = 1"));
+          while ($data = db_fetch_object($ids)) {
+            $additions[$data->type][$data->nid] = $data->title;
+          }
         }
       }
       $account->userreference = $additions;
-      return;
       break;
 
     case 'view':
@@ -853,10 +885,8 @@ function userreference_user($type, &$edit, &$account) {
         $additions = array();
         $values = array();
         foreach ($account->userreference as $node_type => $nodes) {
-          foreach ($nodes as $node) {
-            if ($node->reverse_link) {
-              $values[$node_type][] = l($node->title, 'node/'. $node->nid);
-            }
+          foreach ($nodes as $nid => $title) {
+            $values[$node_type][] = l($title, 'node/'. $nid);
           }
           if (isset($values[$node_type])) {
             $additions[] = array(

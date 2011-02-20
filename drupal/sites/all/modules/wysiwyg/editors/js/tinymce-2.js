@@ -1,4 +1,5 @@
-// $Id: tinymce-2.js,v 1.10 2009/03/06 03:22:37 sun Exp $
+// $Id: tinymce-2.js,v 1.10.2.4 2010/10/17 20:52:54 twod Exp $
+(function($) {
 
 /**
  * Initialize editor instances.
@@ -10,15 +11,18 @@
  *   An object containing editor settings for each input format.
  */
 Drupal.wysiwyg.editor.init.tinymce = function(settings) {
-  // If JS compression is enabled, TinyMCE is unable to find its own base path
-  // and exec mode, hence we need to define it manually.
+  // If JS compression is enabled, TinyMCE is unable to autodetect its global
+  // settinge, hence we need to define them manually.
   // @todo Move global library settings somewhere else.
-  tinyMCE.baseURL = Drupal.settings.wysiwyg.editorBasePath;
-  tinyMCE.srcMode = (Drupal.settings.wysiwyg.execMode == 'src' ? '_src' : '');
-  tinyMCE.gzipMode = (Drupal.settings.wysiwyg.execMode == 'gzip');
+  tinyMCE.baseURL = settings.global.editorBasePath;
+  tinyMCE.srcMode = (settings.global.execMode == 'src' ? '_src' : '');
+  tinyMCE.gzipMode = (settings.global.execMode == 'gzip');
 
   // Initialize editor configurations.
   for (var format in settings) {
+    if (format == 'global') {
+      continue;
+    }
     tinyMCE.init(settings[format]);
     if (Drupal.settings.wysiwyg.plugins[format]) {
       // Load native external plugins.
@@ -44,6 +48,17 @@ Drupal.wysiwyg.editor.attach.tinymce = function(context, params, settings) {
   for (var setting in settings) {
     tinyMCE.settings[setting] = settings[setting];
   }
+
+  // Remove TinyMCE's internal mceItem class, which was incorrectly added to
+  // submitted content by Wysiwyg <2.1. TinyMCE only temporarily adds the class
+  // for placeholder elements. If preemptively set, the class prevents (native)
+  // editor plugins from gaining an active state, so we have to manually remove
+  // it prior to attaching the editor. This is done on the client-side instead
+  // of the server-side, as Wysiwyg has no way to figure out where content is
+  // stored, and the class only affects editing.
+  $field = $('#' + params.field);
+  $field.val($field.val().replace(/(<.+?\s+class=['"][\w\s]*?)\bmceItem\b([\w\s]*?['"].*?>)/ig, '$1$2'));
+
   // Attach editor.
   tinyMCE.execCommand('mceAddControl', true, params.field);
 };
@@ -196,3 +211,4 @@ Drupal.wysiwyg.editor.instance.tinymce = {
   }
 };
 
+})(jQuery);

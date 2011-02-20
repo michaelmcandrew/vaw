@@ -1,12 +1,12 @@
 <?php
-// $Id: node.views_default.inc,v 1.10 2008/10/28 20:19:40 merlinofchaos Exp $
+// $Id: node.views_default.inc,v 1.11.4.1 2010/03/10 20:02:26 merlinofchaos Exp $
 /**
  * @file
  * Contains default views on behalf of the node module.
  */
 
 /**
- * Implementation of hook_default_view_views().
+ * Implementation of hook_views_default_views().
  */
 function node_views_default_views() {
   $view = new view;
@@ -71,7 +71,6 @@ function node_views_default_views() {
   $handler->override_option('header_format', '1');
   $handler->override_option('footer_format', '1');
   $handler->override_option('empty_format', '1');
-  $handler->override_option('use_ajax', '1');
   $handler->override_option('use_pager', '1');
   $handler->override_option('row_plugin', 'node');
   $handler->override_option('row_options', array(
@@ -378,7 +377,6 @@ function node_views_default_views() {
       'default_argument_type' => 'fixed',
     ),
   ));
-  $handler->override_option('use_ajax', '1');
   $handler->override_option('block_description', 'Archive list');
   $views[$view->name] = $view;
 

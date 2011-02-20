@@ -1,70 +1,137 @@
 <?php
-// $Id: themekey_build.inc,v 1.12 2009/11/12 10:36:08 mkalkbrenner Exp $
+// $Id: themekey_build.inc,v 1.14.2.6 2011/01/09 09:15:32 mkalkbrenner Exp $
 
 /**
- * Function _themekey_theme_options().
+ * @file
+ * The functions in this file are the back end of ThemeKey which should be
+ * used only if you configure something but not when ThemeKey switches themes.
+ *
+ * @author Markus Kalkbrenner | Cocomore AG
+ *   @see http://drupal.org/user/124705
+ *
+ * @author profix898
+ *   @see http://drupal.org/user/35192
  */
-function _themekey_theme_options($default = TRUE) {
+
+
+/**
+ * Creates options array for a theme select box.
+ *
+ * Example:
+ *   $form['theme'] = array(
+ *     '#type' => 'select',
+ *     '#title' => t('Theme'),
+ *     '#options' => themekey_theme_options(),
+ *   );
+ *
+ * @param $default
+ *   Boolean to indicate if options array should contain
+ *   'System default' theme. Default is TRUE.
+ * @param $admin
+ *   Boolean to indicate if options array should contain
+ *   'Administration theme'. Default is FALSE.
+ *
+ * @return
+ *   options array for a theme select box
+ */
+function themekey_theme_options($default = TRUE, $admin = FALSE) {
   $themes = list_themes();
   ksort($themes);
 
   $options_themes = array();
   if ($default) {
-    $options_themes['default'] = t('System default');
+    $options_themes['default'] = '=> ' . t('System default');
   }
-  foreach ($themes as $themex) {
-    if ($themex->status || variable_get('themekey_allthemes', 1)) {
-      $options_themes[$themex->name] = $themex->info['name'];
+  foreach ($themes as $theme) {
+    if ($theme->status || variable_get('themekey_allthemes', 0)) {
+      $options_themes[$theme->name] = $theme->info['name'];
     }
+  }
+  if ($admin) {
+    $options_themes['ThemeKeyAdminTheme'] = '=> ' . t('Administration theme');
   }
 
   return $options_themes;
 }
 
+
 /**
- * Function _themekey_rebuild().
+ * Rebuilds all ThemeKey related drupal variables
+ * by calling ThemeKey's hooks:
+ * - hook_themekey_properties()
+ * - hook_themekey_paths()
  */
-function _themekey_rebuild() {
-  // Create a list of modules in the /modules subfolder (internal modules)
-  _themekey_scan_modules();
+function themekey_rebuild() {
+  // includes all modules in the themekey/modules subfolder (internal modules)
+  themekey_scan_modules();
+
   // Get property definitions (from internal and other modules)
-  $properties = module_invoke_all('themekey_properties');
+  $properties = array_merge_recursive(themekey_invoke_modules('themekey_properties'), module_invoke_all('themekey_properties'));
+
   // Attributes
   $attributes = isset($properties['attributes']) ? $properties['attributes'] : array();
-  drupal_alter('themekey_attributes', $attributes);
-  variable_set('themekey_attributes', $attributes);
-  // Property maps
-  $maps = isset($properties['maps']) ? $properties['maps'] : array();
-  drupal_alter('themekey_maps', $maps);
-  variable_set('themekey_maps', $maps);
+  ksort($attributes);
 
-  // Find all previous registered paths
-  $obsolete_paths = array();
-  $result = db_query('SELECT id, path FROM {themekey_paths} WHERE custom = 0');
-  while ($item = db_fetch_array($result)) {
-    $obsolete_paths[$item['id']] = $item['path'];
-  }
-  // Get (and register) paths from themekey modules
-  $paths = module_invoke_all('themekey_paths');
-  drupal_alter('themekey_paths', $paths);
-  foreach ($paths as $item) {
-    _themekey_path_set($item, FALSE);
-    if (isset($item['id'])) {
-      unset($obsolete_paths[$item['id']]);
+  $property_names = array();
+  foreach ($attributes as $property_name => $attribute) {
+    if (empty($attribute['static'])) {
+      if (preg_match("/^[\w-]+:[:\w-]+$/", $property_name)) {
+        $property_names[$property_name] = $property_name;
+      }
+      else {
+        drupal_set_message(t('%property is not a valid ThemeKey property name.', array('%property' => $property_name)), 'error');
+      }
+    }
+
+    if (!isset($attribute['page cache'])) {
+      $attributes[$property_name]['page cache'] = THEMEKEY_PAGECACHE_UNSUPPORTED;
     }
   }
-  // Unregister obsolete paths
-  foreach (array_keys($obsolete_paths) as $id) {
-    _themekey_path_del($id);
+  variable_set('themekey_attributes', $attributes);
+  variable_set('themekey_properties', $property_names);
+
+  // Property maps
+  $maps = isset($properties['maps']) ? $properties['maps'] : array();
+  variable_set('themekey_maps', $maps);
+
+  // Get (and register) paths from themekey modules
+  $paths = array_merge_recursive(themekey_invoke_modules('themekey_paths'), module_invoke_all('themekey_paths'));
+
+  // assign fit factor and wight to this item
+  array_walk($paths, 'themekey_path_set');
+
+  $paths_sort = array();
+  foreach ($paths as $item) {
+    $paths_sort[$item['fit']][$item['weight']][] = $item;
   }
+  ksort($paths_sort, SORT_NUMERIC);
+
+  $paths = array();
+  foreach (array_reverse($paths_sort) as $same_fit) {
+    ksort($same_fit, SORT_NUMERIC);
+    foreach (array_reverse($same_fit) as $same_weight) {
+      foreach ($same_weight as $item) {
+        $paths[] = $item;
+      }
+    }
+  }
+
+  variable_set('themekey_paths', $paths);
 }
 
+
 /**
- * Function _themekey_scan_modules().
+ * Scans directory themekey/modules for suitable files
+ * which provide ThemeKey properties mapping function and so on
+ * and stores the file names for later usage in a drupal variable
+ * called 'themekey_modules'.
+ *
+ * @see themekey_rebuild()
+ * @see themekey_invoke_modules()
  */
-function _themekey_scan_modules() {
+function themekey_scan_modules() {
   $modules = array();
-  $files = file_scan_directory(drupal_get_path('module', 'themekey') .'/modules', '\themekey.[a-z]+.inc$');
+  $files = file_scan_directory(dirname(__FILE__) . '/modules', '^themekey.[a-z]+.inc$');
   foreach ($files as $file) {
     list( , $module) = explode('.', $file->name);
     if (module_exists($module)) {
@@ -75,82 +142,71 @@ function _themekey_scan_modules() {
   variable_set('themekey_modules', $modules);
 }
 
+
 /**
- * Function _themekey_include_modules().
+ * Named wildcards in ThemeKey rules based on property
+ * drupal:path are stored as serialized array in the database.
+ *
+ * This function deserializes those wildcards and injects them back
+ * into the value of the rule. This format is needed by ThemeKey's
+ * administration interface.
+ *
+ * It's the counterpart of these functions:
+ * @see themekey_prepare_path()
+ * @see themekey_prepare_custom_path()
+ *
+ * @see themekey_load_rules()
+ *
+ * @param $item
+ *   reference to an associative array
+ *   containing a ThemeKey rule as returned
+ *   directly from database
  */
-function _themekey_include_modules() {
-  foreach (variable_get('themekey_modules', array('themekey.node')) as $module) {
-    if (is_readable(drupal_get_path('module', 'themekey') .'/modules/'. $module .'.inc')) {
-      require_once(drupal_get_path('module', 'themekey') .'/modules/'. $module .'.inc');
+function themekey_complete_path(&$item) {
+  $item['wildcards'] = unserialize($item['wildcards']);
+  if (count($item['wildcards'])) {
+    $parts = explode('/', $item['value'], MENU_MAX_PARTS);
+    foreach ($item['wildcards'] as $index => $wildcard) {
+      $parts[$index] .= $wildcard;
     }
+    $item['value'] = implode('/', $parts);
   }
 }
 
-/* Path-based */
 
 /**
- * Function _themekey_load_paths().
+ * Examines ThemeKey paths created by modules
+ * via hook_themekey_paths() in database and
+ * assigns a fit factor and a weight.
+ *
+ * @see themekey_rebuild()
+ *
+ * @param $item
+ *   reference to an associative array
+ *   containing a ThemeKey path structure
  */
-function _themekey_load_paths($limit = NULL) {
-  $paths = array();
-  $query = 'SELECT * FROM {themekey_paths} WHERE custom = 1';
-  $result = isset($limit) ? pager_query($query, $limit) : db_query($query);
-  while ($item = db_fetch_array($result)) {
-    $item['wildcards'] = unserialize($item['wildcards']);
-    if (count($item['wildcards'])) {
-      $parts = explode('/', $item['path'], MENU_MAX_PARTS);
-      foreach ($item['wildcards'] as $index => $wildcard) {
-        $parts[$index] .= $wildcard;
-      }
-      $item['path'] = implode('/', $parts);
-    }
-    $item['conditions'] = _themekey_properties_implode_conditions(unserialize($item['conditions']));
-    $paths[] = $item;
-  }
-
-  return $paths;
-}
-
-/**
- * Function _themekey_path_set().
- */
-function _themekey_path_set(&$item, $custom = TRUE) {
-  $item['conditions'] = (isset($item['conditions']) && !empty($item['conditions'])) ? $item['conditions'] : array();
-  $item['conditions'] = _themekey_properties_explode_conditions($item['conditions']);
+function themekey_path_set(&$item) {
   $item['callbacks'] = (isset($item['callbacks']) && !empty($item['callbacks'])) ? $item['callbacks'] : array();
 
-  list($item['fit'], $item['weight'], $item['wildcards']) = _themekey_prepare_path($item['path']);
-  $item['custom'] = $custom;
-
-  drupal_write_record('themekey_paths', $item, isset($item['id']) ? 'id' : array());
+  list($item['fit'], $item['weight'], $item['wildcards']) = themekey_prepare_path($item['path']);
 }
 
-/**
- * Function _themekey_path_del().
- */
-function _themekey_path_del($id) {
-  db_query('DELETE FROM {themekey_paths} WHERE id = %d', $id);
-}
 
 /**
- * Function _themekey_path_clear().
+ * Extracts named wildcards from ThemeKey paths returned
+ * by modules via hook_themekey_paths() and associates a
+ * weight and a fit factor to this path.
+ *
+ * @param $item
+ *   reference to path as string
+ *
+ * @return
+ *   array containing three elements:
+ *   - fit as integer
+ *   - weight as integer
+ *   - named wildcards as array
  */
-function _themekey_path_clear() {
-  db_query('DELETE FROM {themekey_paths} WHERE custom = 1');
-}
-
-/**
- * Function themekey_num_paths().
- */
-function _themekey_num_paths() {
-  return db_result(db_query('SELECT COUNT(id) FROM {themekey_paths} WHERE custom = 1'));
-}
-
-/**
- * Function _themekey_prepare_path().
- * (based on _menu_router_build() in includes/menu.inc)
- */
-function _themekey_prepare_path(&$path) {
+function themekey_prepare_path(&$path) {
   $fit = 0;
   $weight = 0;
   $wildcards = array();
@@ -176,161 +232,211 @@ function _themekey_prepare_path(&$path) {
   return array($fit, $weight, $wildcards);
 }
 
-/**
- * Function _themekey_properties_discover().
- */
-function _themekey_properties_discover() {
-  $properties = array();
 
-  // Module-exposed properties
-  $attributes = variable_get('themekey_attributes', array());
-  foreach ($attributes as $property => $details) {
-    if (isset($details['path'])) {
-      $properties[$property] = $details['path'];
-    }
-    else {
-      $properties[$property] = FALSE;
-    }
-  }
-  // URL argument properties
-  // REVIEW why is this required?
-  $result = db_query('SELECT wildcards FROM {themekey_paths} WHERE custom = 0');
-  while ($item = db_fetch_array($result)) {
-    $item['wildcards'] = unserialize($item['wildcards']);
-    foreach ($item['wildcards'] as $wildcard) {
-      if (!array_key_exists($wildcard, $properties)) {
-        $properties[$wildcard] = $wildcard;
+/**
+ * Extracts named wildcards from paths entered as value
+ * in a ThemeKey rule with property drupal:path.
+ *
+ * @param $path
+ *   path as string
+ *
+ * @return
+ *   array containing two elements:
+ *   - path with unnamed wildcards
+ *   - named wildcards as array
+ */
+function themekey_prepare_custom_path($path) {
+  $wildcards = array();
+
+  $parts = explode('/', $path, MENU_MAX_PARTS);
+  foreach ($parts as $index => $part) {
+    if (preg_match('/^(\%|\#)([a-z0-9_:]*)$/', $part, $matches)) {
+      $parts[$index] = $matches[1];
+      if (!empty($matches[2])) {
+        $wildcards[$index] = $matches[2];
       }
     }
   }
+  $path = implode('/', $parts);
 
+  return array($path, $wildcards);
+}
+
+
+/**
+ * Loads all ThemeKey Rules from the database.
+ * Therefore, it uses a recursion to build the rule chains.
+ *
+ * @param $parent
+ *   id of the parent rule. Default is '0'.
+ *   During the recursion this parameter changes.
+ *
+ * @param $depth
+ *   Integer that represents the 'indentation'
+ *   in current rule chain. Default is '0'.
+ *   During the recursion, this parameter changes.
+ *
+ * @return
+ *   sorted array containing all ThemeKey rules
+ */
+function themekey_load_rules($parent = 0, $depth = 0) {
+  static $properties = array();
+  static $parent_lookups = array();
+
+  if (isset($parent_lookups[$parent])) {
+    // prevent endless recursion in case of malformatted data in database
+    return $properties;
+  }
+
+  $query = 'SELECT * FROM {themekey_properties} WHERE parent = %d ORDER BY weight';
+  $result = db_query($query, $parent);
+  while ($item = db_fetch_array($result)) {
+    if ('drupal:path' == $item['property']) {
+      themekey_complete_path($item);
+    }
+    $item['depth'] = $depth;
+    $properties[$item['id']] = $item;
+    themekey_load_rules($item['id'], $depth + 1);
+    $parent_lookups[$item['id']] = TRUE;
+  }
   return $properties;
 }
 
+
 /**
- * Function _themekey_properties_explode_conditions().
+ * Stores ThemeKey rules in database.
+ * It creates a new dataset or updates an existing one.
+ *
+ * @param $item
+ *   reference to an associative array
+ *   containing a ThemeKey rule structure:
+ *   - id
+ *   - property
+ *   - operator
+ *   - value
+ *   - weight
+ *   - theme
+ *   - enabled
+ *   - wildcards
+ *   - parent
+ *
  */
-function _themekey_properties_explode_conditions($conditions) {
-  if (!is_array($conditions)) {
-    $parts = array_filter(explode(';', $conditions));
-    $conditions = array();
-    foreach ($parts as $part) {
-      $part = trim($part);
-      if (preg_match('/(.*?)([<>=!~])(.*)/', $part, $matches)) {
-        $conditions[] = array(
-          'property' => trim($matches[1]),
-          'operator' => trim($matches[2]),
-          'value' => trim($matches[3])
-        );
+function themekey_rule_set(&$item) {
+  if ('drupal:path' == $item['property']) {
+    list($item['value'], $item['wildcards']) = themekey_prepare_custom_path($item['value']);
+  }
+  else {
+    $item['wildcards'] = array();
+  }
+
+  if (empty($item['id'])) {
+    // prevent table lock issues with drupal_write_record
+    // see http://drupal.org/node/372308#comment-2442664
+    drupal_get_schema(FALSE);
+    db_lock_table('themekey_properties');
+    // new entry should be added at the end of the chain
+    $weight = db_result(db_query("SELECT MAX(weight) FROM {themekey_properties}"));
+    // if query fails $weight will be FALSE which will cause $item['weight'] to be set to '1'
+    $item['weight'] = 1 + $weight;
+    drupal_write_record('themekey_properties', $item, array());
+    db_unlock_tables();
+  }
+  else {
+    drupal_write_record('themekey_properties', $item, 'id');
+  }
+}
+
+
+/**
+ * Deletes a ThemeKey rule from database.
+ *
+ * @param $id
+ *   id of the rule to be deleted from database
+ */
+function themekey_rule_del($id) {
+  // lock table to prevent race condition
+  db_lock_table('themekey_properties');
+  $num_childs = db_result(db_query("SELECT COUNT(*) FROM {themekey_properties} WHERE parent = %d", $id));
+  if (FALSE !== $num_childs) {
+    if ($num_childs > 0) {
+      db_unlock_tables();
+      drupal_set_message(t('ThemeKey rule could not be deleted, because it has children in the chain'), 'error');
+    }
+    else {
+      $result = db_query('DELETE FROM {themekey_properties} WHERE id = %d', $id);
+      db_unlock_tables();
+      if (!$result) {
+        drupal_set_message(t('Error while deleting ThemeKey rule'), 'error');
       }
     }
   }
-
-  return $conditions;
-}
-
-/**
- * Function _themekey_properties_implode_conditions().
- */
-function _themekey_properties_implode_conditions($conditions) {
-  $string = array();
-  foreach ($conditions as $condition) {
-    $string[] = $condition['property'] . $condition['operator'] . $condition['value'];
-  }
-  $string = implode('; ', $string);
-
-  return $string;
-}
-
-/**
- * Function _themekey_load_properties().
- */
-function _themekey_load_properties($limit = NULL, $order = TRUE) {
-  $properties = array();
-  $query = 'SELECT * FROM {themekey_properties}';
-  $query .= $order ? ' ORDER BY weight' : '';
-  $result = isset($limit) ? pager_query($query, $limit) : db_query($query);
-  while ($item = db_fetch_array($result)) {
-    $item['conditions'] = _themekey_properties_implode_conditions(unserialize($item['conditions']));
-    $properties[] = $item;
-  }
-
-  return $properties;
-}
-
-/**
- * Function _themekey_properties_set().
- */
-function _themekey_properties_set(&$item) {
-  if (preg_match('/'. $item['property'] .'=(.*)/', $item['value'], $matches)) {
-    $item['value'] = $matches[1];
-  }
-  $item['conditions'] = (isset($item['conditions']) && !empty($item['conditions'])) ? $item['conditions'] : array();
-  $item['conditions'] = _themekey_properties_explode_conditions($item['conditions']);
-  $item['callbacks'] = (isset($item['callbacks']) && !empty($item['callbacks'])) ? $item['callbacks'] : array();
-  //
-  $attributes = variable_get('themekey_attributes', array());
-  if (isset($attributes[$item['property']]['multiple']) && $attributes[$item['property']]['multiple']) {
-    _themekey_include_modules();
-    $weightfn = $attributes[$item['property']]['weight'];
-    $item['weight'] = function_exists($weightfn) ? $weightfn($item) : 0;
-  }
-
-  drupal_write_record('themekey_properties', $item, isset($item['id']) ? 'id' : array());
-}
-
-/**
- * Function _themekey_properties_del().
- */
-function _themekey_properties_del($id) {
-  db_query('DELETE FROM {themekey_properties} WHERE id = %d', $id);
-}
-
-/**
- * Function _themekey_properties_delall().
- */
-function _themekey_properties_delall($properties) {
-  $properties = is_array($properties) ? $properties : array($properties);
-  foreach ($properties as $property) {
-    db_query('DELETE FROM {themekey_properties} WHERE property = \'%s\'', $property);
+  else {
+    db_unlock_tables();
+    drupal_set_message(t('Error while deleting ThemeKey rule'), 'error');
   }
 }
 
-/**
- * Function _themekey_properties_clear().
- */
-function _themekey_properties_clear() {
-  db_query('DELETE FROM {themekey_properties}');
-}
 
 /**
- * Function _themekey_properties_cmp().
+ * Loads ThemeKey rule from database.
+ *
+ * @param $id
+ *   id of the rule to be loaded from database
+ *
+ * @return
+ *   the rule as associative array or NULL
  */
-function _themekey_properties_cmp($a, $b) {
-  if ($a['weight'] == $b['weight']) {
-    if (isset($a['property']) && isset($b['property'])) {
-      return ($a['property'] < $b['property']) ? -1 : 1;
+function themekey_rule_get($id) {
+  if ($result = db_query('SELECT * FROM {themekey_properties} WHERE id = %d', $id)) {
+    if ($item = db_fetch_array($result)) {
+      if ('drupal:path' == $item['property']) {
+        themekey_complete_path($item);
+      }
+      return $item;
+    }
+  }
+
+  return NULL;
+}
+
+
+/**
+ * Adds or modifies a so-called static rule in the
+ * database. Static rules can be moved around in the chain
+ * and enabled or disabled by the site administrator, but the values
+ * are immutable. There's one static rule per static property.
+ *
+ * @param $property
+ *   name of the static property as string
+ *
+ * @param $state
+ *   boolean:
+ *   - TRUE the rule should be created or updated
+ *   - FALSE the rule should be deleted
+ */
+function themekey_update_static_rule($property, $state) {
+  $id = db_result(db_query("SELECT id FROM {themekey_properties} WHERE property = '%s'", $property));
+  if ($state) {
+    $item = array(
+      'property' => $property,
+      'operator' => '=',
+      'value' => 'static',
+      'theme' => 'default',
+    );
+
+    if ($id) {
+      $item['id'] = $id;
+      // leave 'enabled' as it is in database
     }
     else {
-      return ($a['path'] < $b['path']) ? -1 : 1;
+      // enable new rule
+      $item['enabled'] = 1;
     }
+
+    themekey_rule_set($item);
   }
-
-  return ($a['weight'] < $b['weight']) ? -1 : 1;
-}
-
-/**
- * Function _themekey_properties_resort().
- */
-function _themekey_properties_resort($key) {
-  $attributes = variable_get('themekey_attributes', array());
-  if (isset($attributes[$key]['multiple']) && $attributes[$key]['multiple']) {
-    _themekey_include_modules();
-    $weightfn = $attributes[$key]['weight'];
-    $result = db_query('SELECT * FROM {themekey_properties} WHERE property = \'%s\'', $key);
-    while ($item = db_fetch_array($result)) {
-      $item['weight'] = function_exists($weightfn) ? $weightfn($item) : 0;
-      drupal_write_record('themekey_properties', $item, 'id');
-    }
+  elseif ($id) {
+    themekey_rule_del($id);
   }
 }
+

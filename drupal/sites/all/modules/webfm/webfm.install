@@ -1,5 +1,5 @@
 <?php
-// $Id: webfm.install,v 1.15 2009/08/19 15:35:42 robmilne Exp $
+// $Id: webfm.install,v 1.16 2010/03/10 21:19:24 robmilne Exp $
 
 /**
  * Implementation of hook_install().
@@ -68,7 +68,7 @@ function webfm_schema(){
       'fsize' => array('type' => 'int', 'size' => 'normal', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'fmime' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
       'ftitle' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
-      'fdesc' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE, 'default' => ''),
+      'fdesc' => array('type' => 'text', 'not null' => TRUE),
       'fcreatedate' => array('type' => 'int', 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
       'flang' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
       'fpublisher' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
