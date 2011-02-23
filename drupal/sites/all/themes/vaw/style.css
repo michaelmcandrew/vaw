@@ -217,9 +217,9 @@ h6 a {
 	}
 .view-funds .views-row-odd, .view-funds .views-row-even, .view-funds-by-month .views-row-odd, .view-funds-by-month .views-row-even { padding-left: 20px; }
 
-.view-content .node .image-attach-teaser, .view-content .views-field-iid { position: absolute; left: 20px; top: 20px; margin-left: 0; border: 1px solid #ddd; padding: 5px; background: white; }
+.view-content .node .image-attach-teaser, .view-content .views-field-image-attach-images { position: absolute; left: 20px; top: 20px; margin-left: 0; border: 1px solid #ddd; padding: 5px; background: white; }
 .view-content .node .terms { display: block; }
-.view-content .views-field-iid a, .view-content .views-field-iid a:link, .view-content .views-field-iid a:visited { border: none; }
+.view-content .views-field-image-attach-images a, .view-content .views-field-image-attach-images a:link, .view-content .views-field-image-attach-images a:visited { border: none; }
 
 div.view-Training .views-row-odd, div.view-Training .views-row-even { padding-left: 20px; }
 
