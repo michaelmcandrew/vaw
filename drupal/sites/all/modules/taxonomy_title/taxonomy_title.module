@@ -1,0 +1,138 @@
+<?php
+// $Id: taxonomy_title.module,v 1.9 2009/12/25 21:15:20 jenlampton Exp $
+
+/**
+ * Implementation of hook_help().
+ */
+function taxonomy_title_help($path, $arg) {
+  switch ($path) {
+    case 'admin/content/taxonomy':
+      return '<p>' . t('Set the page title on your Taxonomy Term pages.') . '</p>';
+    case 'admin/help#quiz':
+      return '<p>' . t('Set the page title on your Taxonomy Term pages.') . '</p>';
+  }
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function taxonomy_title_form_taxonomy_form_term_alter(&$form, &$form_state) {
+  if (!(isset($_POST['op']) && $_POST['op'] == t('Delete')) || isset($_POST['confirm'])) {
+    $title = _taxonomy_title_get_title($form['tid']['#value']);
+    $form['identification']['taxonomy_title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Term page title'),
+      '#default_value' => $title,
+      '#description' => t('This is the title you will see on your taxonomy term page. If left blank, the term name will be used.'),
+      '#weight' => 0,
+      );
+  }
+}
+
+/**
+ * Implementation of hook_taxonomy().
+ */
+function taxonomy_title_taxonomy($op, $type, $array = NULL) {
+  if ($type == 'term') {
+    switch($op) {
+      case 'delete':
+        _taxonomy_title_delete_title($array['tid']);
+        break;
+
+      case 'update':
+        _taxonomy_title_delete_title($array['tid']);
+        _taxonomy_title_insert_title($array['tid'], $array['taxonomy_title']);
+        break;
+
+      case 'insert':
+        _taxonomy_title_insert_title($array['tid'], $array['taxonomy_title']);
+        break;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_preprocess_page().
+ *
+ * Overrides variables sent to template_preprocess.
+ */
+function taxonomy_title_preprocess_page(&$variables) {
+  if (arg(0) == 'taxonomy' && arg(1) == 'term' && is_numeric(arg(2)) && arg(2) > 0) {
+    $title = _taxonomy_title_get_title(arg(2));
+    if (!empty($title)){
+      drupal_set_title($title);
+
+      if ($new_title = drupal_get_title()) {
+        // Assures the page heading is set.
+        $variables['title'] = $new_title;
+
+        // Sets the meta title.
+        if (!module_exists('page_title')){
+          $head_title = array(strip_tags($new_title), variable_get('site_name', 'Drupal'));
+          $variables['head_title'] = implode(' | ', $head_title);
+        }
+      }
+    }
+  }
+}
+
+/**
+* Implementation of hook_token_list().
+*/
+function taxonomy_title_token_list($type = 'all') {
+  if ($type == 'taxonomy' || $type == 'all') {
+    $tokens['taxonomy']['term-title'] = t("The term's title, defaults to term name (same as [term]).");
+    return $tokens;
+  }
+}
+
+/**
+* Implementation of hook_token_values().
+*/
+function taxonomy_title_token_values($type, $object = NULL, $options = array()) {
+  $values = array();
+  if ($type == 'taxonomy') {
+      $category = $object;
+      // Use taxonomy title if it exists, else the category name.
+      $token = _taxonomy_title_get_title($category->tid);
+      $values['term-title'] = ($token) ? $token : $category->name;
+  }
+  return $values;
+}
+
+/**
+ * Adds the term title.
+ *
+ * @param $tid
+ *   The taxonomy term id of the term.
+ * @param $title
+ *   The taxonomy term title to use for this term.
+ */
+function _taxonomy_title_insert_title($tid, $title){
+  if (!empty($title)) {
+    db_query("INSERT INTO {taxonomy_title} (tid, title) VALUES (%d, '%s')", $tid, $title);
+  }
+}
+
+/**
+ * Deletes the term title.
+ *
+ * @param $tid
+ *   The taxonomy term id of the term to delete.
+ */
+function _taxonomy_title_delete_title($tid){
+  db_query("DELETE FROM {taxonomy_title} WHERE tid = %d", $tid);
+}
+
+/**
+ * Retrieves the term title.
+ *
+ * @param $tid
+ *   The taxonomy term id of the term to delete.
+ * @return
+ *   The taxonomy term title for the term.
+ */
+function _taxonomy_title_get_title($tid){
+  $title = db_result(db_query("SELECT title FROM {taxonomy_title} WHERE tid = %d", $tid));
+  return $title;
+}

@@ -39,7 +39,7 @@ require_once 'CRM/Report/Form.php';
 class CRM_Report_Form_Activity extends CRM_Report_Form {
 
     protected $_emailField         = false;
-    protected $_customGroupExtends = array( 'Activity', 'Contact', 'Organization' );
+    protected $_customGroupExtends = array( 'Activity', 'Contact', 'Organization', 'Individual' );
 
     function __construct( ) {
         $this->_columns = array(  
@@ -131,9 +131,6 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                                                       'required'   => true , ),
                                                'activity_date_time'=> 
                                                array( 'title'      => ts( 'Activity Date'),
-                                                      'default'    => true ),
-                                               'activity_duration'=> 
-                                               array( 'title'      => ts( 'Activity Duration'),
                                                       'default'    => true ),
                                                'status_id'         => 
                                                array( 'title'      => ts( 'Activity Status' ),
