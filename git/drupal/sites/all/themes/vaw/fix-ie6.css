@@ -1,0 +1,8 @@
+@charset "UTF-8";
+/* CSS Document 
+ * IE6 specific
+ */
+
+.view-content .node .image-attach-teaser, .view-content .views-field-iid { left: -130px; }
+
+#footer ul ul li, #footer ul ul li.leaf, #footer ul ul li.expanded { border-bottom: 1px solid #f6f7fa; }

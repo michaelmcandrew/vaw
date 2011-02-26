@@ -1,0 +1,58 @@
+@charset "UTF-8";
+/* CSS Document 
+/* Drupal theme navigation menu stylesheet
+ * for VAW
+ * By Paul Evans pedesign.co.uk
+ * Created July 2009
+*/
+
+/* Navigation */
+#nav {
+	position: relative;
+	text-align: left;
+	background: white;
+	border-bottom: 1px solid #ddd;
+	padding-bottom: 5px;
+}
+#nav ul {
+	position: relative;
+	z-index: 100;
+	list-style: none;
+	margin: 5px 0 0 0;
+	padding: 0;
+	margin-left: 70px;
+	font-size: 1.1em;
+	font-weight: bold;
+	text-transform: uppercase;
+	}
+ 
+/* TOP LEVEL MENU ITEM */
+#nav ul li {
+	float: left;
+	display: block;
+	margin: 0;
+	padding: 0;
+	position: relative;
+	z-index: 200;
+	border-right: 1px solid #ddd;
+}
+
+/* TOP LEVEL MENU ITEM */
+#nav ul li a,
+#nav ul li a:link,
+#nav ul li a:visited {
+	line-height: normal;
+	color: #1a8bc1;
+	display: block;
+	padding: 5px 10px 5px 10px;
+	text-decoration: none;
+	outline: none;
+	border-bottom: none;
+}
+#nav ul li a:hover,
+#nav ul li a:active,
+#nav ul li.active > a,
+#nav ul li a.active {
+	color: #d15600;
+	}
+#nav ul li a.active { font-weight: bold; }
