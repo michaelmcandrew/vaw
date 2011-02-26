@@ -1,9 +1,0 @@
-@charset "UTF-8";
-/* CSS Document */
-
-.clearfix { 
-   zoom: 1; /* triggers hasLayout */ 
-   display: block; /* resets display from inline */ 
-}
-
-#center ul.styled, #tinymce ul.styled { position: relative; zoom: 1; }
