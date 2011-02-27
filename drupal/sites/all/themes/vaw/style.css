@@ -70,6 +70,9 @@ body.sidebar-right #content { background: url(images/ui/pixel-ddd.png) 620px 0 r
 	width: 820px;
 	padding: 10px 70px 25px 70px;
 	}
+#center .view-content {
+	overflow: visible;
+	}
 #homepage #center {
 	width: 515px;
 	padding: 10px 35px 25px 70px;
