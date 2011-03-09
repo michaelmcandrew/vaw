@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -615,6 +615,7 @@ WHERE pcp.id = %1";
         $params = array( 1 => array( $pcpId, 'Integer' ) );
         return CRM_Core_DAO::singleValueQuery( $query, $params );
     }
+
 
     /**
      * Function to get pcp block & entity id given pcp id

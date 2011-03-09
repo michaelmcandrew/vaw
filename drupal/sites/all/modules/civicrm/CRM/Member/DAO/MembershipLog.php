@@ -1,7 +1,7 @@
 <?php
 /*
 +--------------------------------------------------------------------+
-| CiviCRM version 3.2                                                |
+| CiviCRM version 3.3                                                |
 +--------------------------------------------------------------------+
 | Copyright CiviCRM LLC (c) 2004-2010                                |
 +--------------------------------------------------------------------+
@@ -128,6 +128,12 @@ class CRM_Member_DAO_MembershipLog extends CRM_Core_DAO
      */
     public $renewal_reminder_date;
     /**
+     * FK to Membership Type.
+     *
+     * @var int unsigned
+     */
+    public $membership_type_id;
+    /**
      * class constructor
      *
      * @access public
@@ -150,6 +156,7 @@ class CRM_Member_DAO_MembershipLog extends CRM_Core_DAO
                 'membership_id' => 'civicrm_membership:id',
                 'status_id' => 'civicrm_membership_status:id',
                 'modified_id' => 'civicrm_contact:id',
+                'membership_type_id' => 'civicrm_membership_type:id',
             );
         }
         return self::$_links;
@@ -206,6 +213,11 @@ class CRM_Member_DAO_MembershipLog extends CRM_Core_DAO
                     'name' => 'renewal_reminder_date',
                     'type' => CRM_Utils_Type::T_DATE,
                     'title' => ts('Renewal Reminder Date') ,
+                ) ,
+                'membership_type_id' => array(
+                    'name' => 'membership_type_id',
+                    'type' => CRM_Utils_Type::T_INT,
+                    'FKClassName' => 'CRM_Member_DAO_MembershipType',
                 ) ,
             );
         }

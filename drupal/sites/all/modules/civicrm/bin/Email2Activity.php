@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -108,7 +108,7 @@ class bin_Email2Activity {
 
     function process( $file ) {
         if ( $this->_context == 'activity' ) {
-            require_once 'api/v2/Activity.php';
+            civicrm_api_include('activity');
             $result = civicrm_activity_process_email( $this->_mailDir . DIRECTORY_SEPARATOR . $file,
                                                       EMAIL_ACTIVITY_TYPE_ID );
         } elseif ( $this->_context == 'case' ) {

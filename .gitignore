@@ -2,12 +2,13 @@ settings.php
 civicrm.settings.php
 *.sql
 *.mysql
+!*/civicrm/sql/civicrm_data.*_*.mysql
 *.tar
 *.gz
 *.zip
 .svn*
 *~
 \#*\#
-drupal/sites/default/files/*
-settings_location.php
-drupal/sites/vawcvs.org
+drupal/sites/*/files/*
+drupal/backup/*
+drupal/sites/all/cam/*

@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -49,7 +49,7 @@ class CRM_Utils_Mail
      * subject : subject of the email
      * text    : text of the message
      * html    : html version of the message
-     * reply-to: reply-to header in the email
+     * replyTo : reply-to header in the email
      * attachments: an associative array of
      *   fullPath : complete pathname to the file
      *   mime_type: mime type of the attachment
@@ -90,7 +90,7 @@ class CRM_Utils_Mail
 
         $headers = array( );  
         $headers['From']                      = $params['from'];
-        $headers['To']                        = "{$params['toName']} <{$params['toEmail']}>";
+        $headers['To']                        = self::formatRFC822Email( $params['toName'], $params['toEmail'], false );
         $headers['Cc']                        = CRM_Utils_Array::value( 'cc', $params );
         $headers['Bcc']                       = CRM_Utils_Array::value( 'bcc', $params );
         $headers['Subject']                   = CRM_Utils_Array::value( 'subject', $params );
@@ -102,6 +102,19 @@ class CRM_Utils_Mail
         $headers['Date']                      = date('r');
         if (CRM_Utils_Array::value( 'autoSubmitted', $params )) {
           $headers['Auto-Submitted']          = "Auto-Generated";
+        }
+        
+        //make sure we has to have space, CRM-6977
+        foreach ( array( 'From', 'To', 'Cc', 'Bcc', 'Reply-To', 'Return-Path' ) as $fld ) {
+            $headers[$fld] = str_replace( '"<', '" <', $headers[$fld] );
+        }
+
+        // quote FROM, if comma is detected AND is not already quoted. CRM-7053
+        if ( strpos( $headers['From'], ',' )  !== false ) {
+            $from = explode( ' <', $headers['From'] );
+            $headers['From'] = self::formatRFC822Email( $from[0],
+                                                        substr( $from[1], 0, -1 ),
+                                                        true );
         }
 
         require_once 'Mail/mime.php';
@@ -262,6 +275,35 @@ class CRM_Utils_Mail
             $params = $mimeParams;
         }
         return $message->get( $params );
+    }
+
+    static function formatRFC822Email( $name, $email, $useQuote = false ) {
+        $result = null;
+
+        $name = trim( $name );
+
+        // strip out double quotes if present at the beginning AND end
+        if ( substr( $name,  0,  1 ) == '"' &&
+             substr( $name, -1,  1 ) == '"' ) {
+            $name = substr( $name, 1, -1 );
+        }
+            
+        if ( ! empty( $name ) ) {
+            // escape the special characters
+            $name = str_replace( array( '<' , '"' , '>'  ),
+                                 array( '\<', '\"', '\>' ),
+                                 $name );
+            if ( strpos( $name, ',' ) !== false ||
+                 $useQuote ) {
+                // quote the string if it has a comma
+                $name = '"' . $name . '"';
+            }
+
+            $result = "$name ";
+        }
+
+        $result .= "<{$email}>";
+        return $result;
     }
 
 }

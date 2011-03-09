@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -93,6 +93,13 @@ class CRM_Mailing_MailStore
     function allMails()
     {
         return $this->fetchNext(0);
+    }
+
+    /**
+     * Expunge the messages marked for deletion; stub function to be redefined by IMAP store
+     */
+    function expunge()
+    {
     }
 
     /**

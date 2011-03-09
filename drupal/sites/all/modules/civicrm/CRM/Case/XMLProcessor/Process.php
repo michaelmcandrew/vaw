@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -471,5 +471,17 @@ AND        a.is_deleted = 0
     function getAllowMultipleCaseClients(  ) {
         $xml = $this->retrieve( "Settings" );
         return ( string ) $xml->AllowMultipleCaseClients ? 1 : 0;
+    }
+    
+
+    /**
+     * Retrieves NaturalActivityTypeSort setting
+     * 
+     * @return string 1 if natural, 0 if alphabetic
+     */      
+    function getNaturalActivityTypeSort(  ) {
+        $xml = $this->retrieve( "Settings" );
+        return ( string ) $xml->NaturalActivityTypeSort ? 1 : 0;
     }    
+    
 }

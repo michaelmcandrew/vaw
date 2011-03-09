@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -33,7 +33,7 @@
  * @subpackage API_Location
  *
  * @copyright CiviCRM LLC (c) 2004-2010
- * @version $Id: Location.php 30095 2010-10-08 12:51:42Z kiran $
+ * @version $Id: Location.php 32551 2011-02-16 14:05:50Z sushant $
  */
 
 /**
@@ -78,13 +78,19 @@ function civicrm_location_add( &$params ) {
     $location =& _civicrm_location_add( $params, $locationTypeId );
     return $location;
 }
-
+/*
+ * Correctly named wrapper for 'add' function
+ */
+function civicrm_location_create($params){
+    $result = civicrm_location_add( $params );
+    return $result;
+    
+}
 /**
  *  Update a specified location with the provided property values.
  * 
  *  @param  object  $contact        A valid Contact object (passed by reference).
  *  @param  string  $location_id    Valid (db-level) id for location to be updated. 
-
  *  @param  Array   $params         Associative array of property name/value pairs to be updated
  *
  *  @return Location object with updated property values

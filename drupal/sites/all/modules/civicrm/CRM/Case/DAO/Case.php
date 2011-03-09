@@ -1,7 +1,7 @@
 <?php
 /*
 +--------------------------------------------------------------------+
-| CiviCRM version 3.2                                                |
+| CiviCRM version 3.3                                                |
 +--------------------------------------------------------------------+
 | Copyright CiviCRM LLC (c) 2004-2010                                |
 +--------------------------------------------------------------------+
@@ -79,7 +79,7 @@ class CRM_Case_DAO_Case extends CRM_Core_DAO
      * @var boolean
      * @static
      */
-    static $_log = false;
+    static $_log = true;
     /**
      * Unique Case ID
      *
@@ -171,12 +171,17 @@ class CRM_Case_DAO_Case extends CRM_Core_DAO
                     'dataPattern' => '',
                     'export' => false,
                 ) ,
-                'subject' => array(
+                'case_subject' => array(
                     'name' => 'subject',
                     'type' => CRM_Utils_Type::T_STRING,
-                    'title' => ts('Subject') ,
+                    'title' => ts('Case Subject') ,
                     'maxlength' => 128,
                     'size' => CRM_Utils_Type::HUGE,
+                    'import' => true,
+                    'where' => 'civicrm_case.subject',
+                    'headerPattern' => '',
+                    'dataPattern' => '',
+                    'export' => true,
                 ) ,
                 'case_start_date' => array(
                     'name' => 'start_date',

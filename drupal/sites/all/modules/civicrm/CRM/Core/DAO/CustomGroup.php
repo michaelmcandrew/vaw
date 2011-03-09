@@ -1,7 +1,7 @@
 <?php
 /*
 +--------------------------------------------------------------------+
-| CiviCRM version 3.2                                                |
+| CiviCRM version 3.3                                                |
 +--------------------------------------------------------------------+
 | Copyright CiviCRM LLC (c) 2004-2010                                |
 +--------------------------------------------------------------------+
@@ -79,7 +79,7 @@ class CRM_Core_DAO_CustomGroup extends CRM_Core_DAO
      * @var boolean
      * @static
      */
-    static $_log = false;
+    static $_log = true;
     /**
      * Unique Custom Group ID
      *
@@ -101,7 +101,7 @@ class CRM_Core_DAO_CustomGroup extends CRM_Core_DAO
     /**
      * Type of object this group extends (can add other options later e.g. contact_address, etc.).
      *
-     * @var enum('Contact', 'Individual', 'Household', 'Organization', 'Location', 'Address', 'Contribution', 'Activity', 'Relationship', 'Group', 'Membership', 'Participant', 'Event', 'Grant', 'Pledge', 'Case')
+     * @var enum('Contact', 'Individual', 'Household', 'Organization', 'Location', 'Address', 'Contribution', 'Activity', 'Relationship', 'Group', 'Membership', 'Participant', 'Event', 'Grant', 'Pledge', 'Case', 'Campaign')
      */
     public $extends;
     /**
@@ -255,7 +255,7 @@ class CRM_Core_DAO_CustomGroup extends CRM_Core_DAO
                     'default' => 'Contact',
                     'enumValues' => 'Contact, Individual, Household, Organization, Location, Address,
        Contribution, Activity, Relationship, Group, Membership, Participant,
-       Event, Grant, Pledge, Case',
+       Event, Grant, Pledge, Case, Campaign',
                 ) ,
                 'extends_entity_column_id' => array(
                     'name' => 'extends_entity_column_id',
@@ -455,6 +455,7 @@ class CRM_Core_DAO_CustomGroup extends CRM_Core_DAO
                     'Grant' => ts('Grant') ,
                     'Pledge' => ts('Pledge') ,
                     'Case' => ts('Case') ,
+                    'Campaign' => ts('Campaign') ,
                 ) ,
                 'style' => array(
                     'Tab' => ts('Tab') ,

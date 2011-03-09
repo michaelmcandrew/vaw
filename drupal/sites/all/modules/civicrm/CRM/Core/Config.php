@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -45,6 +45,7 @@ require_once 'CRM/Utils/System.php';
 require_once 'CRM/Utils/File.php';
 require_once 'CRM/Core/Session.php';
 require_once 'CRM/Core/Config/Variables.php';
+require_once 'api/api.php';
 
 class CRM_Core_Config extends CRM_Core_Config_Variables
 {
@@ -189,7 +190,7 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
             // if not in cache, fire off config construction
             if ( ! self::$_singleton ) {
                 self::$_singleton = new CRM_Core_Config;
-                self::$_singleton->_initialize( );
+                self::$_singleton->_initialize( $loadFromDB );
                 
                 //initialize variables. for gencode we cannot load from the
                 //db since the db might not be initialized
@@ -202,10 +203,10 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
                 $cache->set( 'CRM_Core_Config', self::$_singleton );
             } else {
                 // we retrieve the object from memcache, so we now initialize the objects
-                self::$_singleton->_initialize( );
+                self::$_singleton->_initialize( $loadFromDB );
                 
                 // add component specific settings
-                self::$_singleton->componentRegistry->addConfig( $this );
+                self::$_singleton->componentRegistry->addConfig( self::$_singleton );
             }
             
             self::$_singleton->initialized = 1;
@@ -227,10 +228,7 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
 
             // make sure session is always initialised            
             $session = CRM_Core_Session::singleton();
-            
         }
-
-
         return self::$_singleton;
     }
 
@@ -278,7 +276,7 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
         }
 
         if ( $userFramework == 'Joomla' ) {
-            $this->userFrameworkVersion = '1.5';
+            $this->userFrameworkVersion = 'Unknown';
             if ( class_exists('JVersion') ) {
                 $version = new JVersion;
                 $this->userFrameworkVersion = $version->getShortVersion();
@@ -303,7 +301,7 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
      * @return void
      * @access public
      */
-    private function _initialize( ) 
+    private function _initialize( $loadFromDB = true ) 
     {
 
         // following variables should be set in CiviCRM settings and
@@ -311,6 +309,10 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
         // instead of in CRM_Core_Config_Defaults
         if (defined( 'CIVICRM_DSN' )) {
             $this->dsn = CIVICRM_DSN;
+        } else if ( $loadFromDB ) {
+            // bypass when calling from gencode
+            echo 'You need to define CIVICRM_DSN in civicrm.settings.php';
+            exit( );
         }
 
         if (defined('CIVICRM_TEMPLATE_COMPILEDIR')) {
@@ -328,6 +330,9 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
             // the below statement will create both the templates directory and the config and log directory
             $this->configAndLogDir = $this->templateCompileDir . 'ConfigAndLog' . DIRECTORY_SEPARATOR;
             CRM_Utils_File::createDir( $this->configAndLogDir );
+        } else if ( $loadFromDB ) {
+            echo 'You need to define CIVICRM_TEMPLATE_COMPILEDIR in civicrm.settings.php';
+            exit( );
         }
 
         if ( defined( 'CIVICRM_UF' ) ) {
@@ -405,13 +410,17 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
             require_once 'CRM/Core/Config/Defaults.php';
             CRM_Core_Config_Defaults::setValues( $variables );
 
+            // retrieve directory and url preferences also
+            require_once 'CRM/Core/BAO/Preferences.php';
+            CRM_Core_BAO_Preferences::retrieveDirectoryAndURLPreferences( $defaults );
+
             // add component specific settings
             $this->componentRegistry->addConfig( $this );
-            
+
             // serialise settings 
             CRM_Core_BAO_Setting::add($variables);            
         }
-        
+
         $urlArray     = array('userFrameworkResourceURL', 'imageUploadURL');
         $dirArray     = array('uploadDir','customFileUploadDir');
         
@@ -432,8 +441,10 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
                 }
             } else if ( $key == 'lcMessages' ) {
                 // reset the templateCompileDir to locale-specific and make sure it exists
-                $this->templateCompileDir .= CRM_Utils_File::addTrailingSlash($value);
-                CRM_Utils_File::createDir( $this->templateCompileDir );
+                if ( substr( $this->templateCompileDir, -1 * strlen( $value ) - 1, -1 ) != $value ) {
+                    $this->templateCompileDir .= CRM_Utils_File::addTrailingSlash($value);
+                    CRM_Utils_File::createDir( $this->templateCompileDir );
+                }
             }
             
             $this->$key = $value;
@@ -500,6 +511,10 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
 
                 // set the localhost value, CRM-3153
                 $params['localhost'] = $_SERVER['SERVER_NAME'];
+
+                // also set the timeout value, lets set it to 30 seconds
+                // CRM-7510
+                $params['timeout'] = 30;
 
                 self::$_mail =& Mail::factory( 'smtp', $params );
             } elseif ($mailingInfo['outBound_option'] == 1) {

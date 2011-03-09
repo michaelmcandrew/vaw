@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -213,13 +213,12 @@ AND    {$this->_componentClause}";
                 $mail = str_replace( "\n\n", "<p>", $mail );
                 $mail = str_replace( "\n", "<br/>", $mail );
             }
-            
+
             $message[] = $mail;
 
             // reset template values before processing next transactions
             $template->clearTemplateVars( );
         }
-        
         if ( $createPdf ) {
             require_once 'CRM/Utils/PDF/Utils.php';
             CRM_Utils_PDF_Utils::domlib( $message,
@@ -236,7 +235,7 @@ AND    {$this->_componentClause}";
             }
             CRM_Core_Session::setStatus( $status );
         }
-        
+
     }
 
 }

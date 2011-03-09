@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -159,7 +159,7 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form
         if ( !$this->_rtype ) {
             $this->_rtype = str_replace( $this->_relationshipTypeId . '_', '', $this->_rtypeId );
         }
-        $this->assign( "rtype", $this->_rtype );
+        $this->assign( 'rtype', $this->_rtype );
         
         require_once 'CRM/Core/PseudoConstant.php';
         
@@ -167,7 +167,7 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form
         $this->_allRelationshipNames = CRM_Core_PseudoConstant::relationshipType( 'name' );
         
         // when custom data is included in this page
-        if ( CRM_Utils_Array::value( "hidden_custom", $_POST ) ) {
+        if ( CRM_Utils_Array::value( 'hidden_custom', $_POST ) ) {
             CRM_Custom_Form_Customdata::preProcess( $this );
             CRM_Custom_Form_Customdata::buildQuickForm( $this );
             CRM_Custom_Form_Customdata::setDefaultValues( $this );
@@ -333,10 +333,10 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form
                           );
 
         // add a ajax facility for searching contacts
-		$dataUrl = CRM_Utils_System::url( "civicrm/ajax/search", "reset=1", true, null, false );
+		$dataUrl = CRM_Utils_System::url( 'civicrm/ajax/search', 'reset=1', true, null, false );
 		$this->assign('dataUrl',$dataUrl );
         $this->add('text', 'rel_contact', ts('Find Target Contact') );
-        $this->add('hidden', "rel_contact_id" );
+        $this->add('hidden', 'rel_contact_id' );
         $this->addDate( 'start_date', ts('Start Date'), false, array( 'formatType' => 'searchDate' ) );
         $this->addDate( 'end_date'  , ts('End Date')  , false, array( 'formatType' => 'searchDate' ) );
         $this->addElement('advcheckbox', 'is_active', ts('Enabled?'), null, 'setChecked()');
@@ -505,17 +505,23 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form
             //if relationship type change and previously it was
             //employer / emplyee relationship with current employer
             //than clear the current employer. CRM-3235.
-            if ( CRM_Utils_Array::value( 'current_employee_id', $this->_values ) &&
-                 $relationshipTypeId != $this->_values['relationship_type_id'] ) {
+            
+            //make sure we has to have employer id before firing queries, CRM-7306
+            $employerId = CRM_Utils_Array::value( 'current_employee_id', $this->_values );
+            $isDisabled = true;
+            if ( CRM_Utils_Array::value( 'is_active', $params ) ) $isDisabled = false;
+            $relChanged = true;
+            if ( $relationshipTypeId == $this->_values['relationship_type_id'] ) $relChanged = false;  
+            if ( $employerId && ( $isDisabled || $relChanged ) ) {
                 require_once 'CRM/Contact/BAO/Contact/Utils.php';
                 CRM_Contact_BAO_Contact_Utils::clearCurrentEmployer( $this->_values['current_employee_id'] );
             }
         } elseif ( $quickSave ) {
             if ( $params['add_current_employee'] &&
-                 $this->_allRelationshipNames[$relationshipTypeId]["name_a_b"] == 'Employee of' ) {
+                 $this->_allRelationshipNames[$relationshipTypeId]['name_a_b'] == 'Employee of' ) {
                 $params['employee_of'] = $params['rel_contact_id'];
             } elseif ( $params['add_current_employer'] &&
-                       $this->_allRelationshipNames[$relationshipTypeId]["name_b_a"] == 'Employer of' ) {
+                       $this->_allRelationshipNames[$relationshipTypeId]['name_b_a'] == 'Employer of' ) {
                 $params['employer_of'] = array( $params['rel_contact_id'] => 1 );
             }
             if ( !$this->_rtype ) {
@@ -523,6 +529,9 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form
             }
         }
 
+        if ( !$params['note'] ) {
+            $params['note'] = 'null';
+        }
         $params['start_date'] = CRM_Utils_Date::processDate( $params['start_date'], null, true );
         $params['end_date']   = CRM_Utils_Date::processDate( $params['end_date'], null, true );
 
@@ -539,7 +548,7 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form
         // if this is called from case view, 
         //create an activity for case role removal.CRM-4480
         if ( $this->_caseId ) {
-            require_once "CRM/Case/BAO/Case.php";
+            require_once 'CRM/Case/BAO/Case.php';
             CRM_Case_BAO_Case::createCaseRoleActivity( $this->_caseId, $relationshipIds , $params['contact_check'], $this->_contactId );
         }
 
@@ -563,7 +572,7 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form
         $noteIds = array();
         if ( $note->find(true) ) {
             $id            = $note->id;    
-            $noteIds["id"] = $id;
+            $noteIds['id'] = $id;
         }
         
         $noteParams = array(
@@ -576,7 +585,7 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form
         
         
         // Membership for related contacts CRM-1657
-        if ( CRM_Core_Permission::access( 'CiviMember' ) ) {
+        if ( CRM_Core_Permission::access( 'CiviMember' ) && ( !$duplicate ) ) {
             CRM_Contact_BAO_Relationship::relatedMemberships( $this->_contactId, 
                                                               $params, $ids, 
                                                               $this->_action );
@@ -588,7 +597,8 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form
             if ( CRM_Utils_Array::value( 'employee_of', $params ) ) { 
                 $orgId = $params['employee_of'];
             } else if ( $this->_action & CRM_Core_Action::UPDATE ) {
-                if ( CRM_Utils_Array::value( 'is_current_employer', $params ) ) {
+                if ( CRM_Utils_Array::value( 'is_current_employer', $params ) &&
+                     CRM_Utils_Array::value( 'is_active', $params ) ) {
                     if ( CRM_Utils_Array::value( 'contactTarget', $ids ) != 
                          CRM_Utils_Array::value( 'current_employer_id', $this->_values ) )  {
                         $orgId = CRM_Utils_Array::value( 'contactTarget', $ids );

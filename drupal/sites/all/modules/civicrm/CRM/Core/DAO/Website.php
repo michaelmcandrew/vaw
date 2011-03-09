@@ -1,7 +1,7 @@
 <?php
 /*
 +--------------------------------------------------------------------+
-| CiviCRM version 3.2                                                |
+| CiviCRM version 3.3                                                |
 +--------------------------------------------------------------------+
 | Copyright CiviCRM LLC (c) 2004-2010                                |
 +--------------------------------------------------------------------+
@@ -164,6 +164,7 @@ class CRM_Core_DAO_Website extends CRM_Core_DAO
                 'website_type_id' => array(
                     'name' => 'website_type_id',
                     'type' => CRM_Utils_Type::T_INT,
+                    'title' => ts('Website Type') ,
                 ) ,
             );
         }

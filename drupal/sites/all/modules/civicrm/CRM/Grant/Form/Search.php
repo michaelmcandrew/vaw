@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -245,7 +245,7 @@ class CRM_Grant_Form_Search extends CRM_Core_Form
                 foreach ($rows as $row) { 
                     $this->addElement( 'checkbox', CRM_Utils_Array::value( 'checkbox', $row ), 
                                        null, null, 
-                                       array( 'onclick' => " toggleTaskAction( true ); return checkSelectedBox('" . CRM_Utils_Array::value( 'checkbox', $row ) . "', '" . $this->getName() . "');" )
+                                       array( 'onclick' => " toggleTaskAction( true ); return checkSelectedBox('" . CRM_Utils_Array::value( 'checkbox', $row ) . "');" )
                                        ); 
                     $grant_id = $row['grant_id'];
                 }

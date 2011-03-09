@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -122,6 +122,14 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
                                                           'url'   => self::getSearchURL( ) ) ) );
 
         if ( $image_URL  = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $this->_contactId , 'image_URL') ) {
+            
+            //CRM-7265 --time being fix. 
+            $config = CRM_Core_Config::singleton( );
+            $image_URL = str_replace( 'https://', 'http://', $image_URL );
+            if ( isset( $config->enableSSL ) && $config->enableSSL ) {
+                $image_URL = str_replace( 'http://', 'https://', $image_URL );    
+            }
+            
             list( $imageWidth, $imageHeight ) = getimagesize( $image_URL );
             list( $imageThumbWidth, $imageThumbHeight ) = CRM_Contact_BAO_Contact::getThumbSize( $imageWidth, $imageHeight );
             $this->assign( "imageWidth", $imageWidth );
@@ -158,15 +166,31 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
         
         // add to recently viewed block
         $isDeleted = (bool) CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $this->_contactId, 'is_deleted');
+        
+        $recentOther = array( 'imageUrl'  => $contactImageUrl,
+                              'subtype'   => $contactSubtype,
+                              'isDeleted' => $isDeleted,
+                              );
+        
+        require_once 'CRM/Contact/BAO/Contact/Permission.php';
+
+        if ( ( $session->get( 'userID' ) == $this->_contactId ) ||
+              CRM_Contact_BAO_Contact_Permission::allow( $this->_contactId, CRM_Core_Permission::EDIT ) ) {
+            $recentOther['editUrl'] = CRM_Utils_System::url('civicrm/contact/add', "reset=1&action=update&cid={$this->_contactId}");
+        }
+
+        if ( ( $session->get( 'userID' ) != $this->_contactId ) && CRM_Core_Permission::check('delete contacts') 
+             && !$isDeleted ) {
+            $recentOther['deleteUrl'] = CRM_Utils_System::url('civicrm/contact/view/delete', "reset=1&delete=1&cid={$this->_contactId}");
+        }
+            
         CRM_Utils_Recent::add( $displayName,
                                CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$this->_contactId}"),
                                $this->_contactId,
                                $contactType,
                                $this->_contactId,
                                $displayName,
-                               $contactImageUrl,
-                               $contactSubtype,
-                               $isDeleted
+                               $recentOther
                              );
         $this->assign('isDeleted', $isDeleted);
 

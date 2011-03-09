@@ -558,8 +558,7 @@ class DB_DataObject extends DB_DataObject_Overload
         }
         
         foreach($array as $k=>$v) {
-            $kk = str_replace(".", "_", $k);
-            $kk = str_replace(" ", "_", $kk);
+            $kk = str_replace(array(".", " "), "_", $k);
             if (!empty($_DB_DATAOBJECT['CONFIG']['debug'])) {
                 $this->debug("$kk = ". $array[$k], "fetchrow LINE", 3);
             }
@@ -657,6 +656,16 @@ class DB_DataObject extends DB_DataObject_Overload
         $this->_query['order_by'] .= " , {$order}";
     }
 
+    /*
+     * Return affected rows for current connection.
+     * Override the mysql affectedRows w/ db object. 
+     */
+    function affectedRows( ) {
+        global $_DB_DATAOBJECT;
+        $DB = &$_DB_DATAOBJECT['CONNECTIONS'][$this->_database_dsn_md5];
+        return $DB->affectedRows( );
+    }
+    
     /**
      * Adds a group by condition
      *

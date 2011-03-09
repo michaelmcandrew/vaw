@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -170,7 +170,7 @@ class CRM_Core_BAO_Domain extends CRM_Core_DAO_Domain {
             return array( $fromName, $email );
         }
         
-        $url = CRM_Utils_System::url( 'civicrm/contact/domain', 
+        $url = CRM_Utils_System::url( 'civicrm/admin/domain', 
                                       'action=update&reset=1' );
         $status = ts( "There is no valid default from email address configured for the domain. You can configure here <a href='%1'>Configure From Email Address.</a>", array( 1 => $url ) );
         

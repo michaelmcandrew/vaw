@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -34,6 +34,11 @@
 
   <table class="form-layout">
    <tr class="crm-mailing-group-form-block-name"><td class="label">{$form.name.label}</td><td>{$form.name.html} {help id="mailing-name"}</td></tr>
+   
+     {* CRM-7362 --add campaign *}
+     {include file="CRM/Campaign/Form/addCampaignToComponent.tpl"
+     campaignTrClass="crm-mailing-group-form-block-campaign_id"}
+
     {if $context EQ 'search'}
         <tr class="crm-mailing-group-form-block-baseGroup"><td class="label">{$form.baseGroup.label}</td><td>{$form.baseGroup.html}</td></tr>
     {/if}	

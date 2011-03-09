@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -104,7 +104,7 @@ class CRM_Utils_PDF_Utils {
           </body>
         </html>';
                         
-        $dompdf->load_html( $html );
+        $dompdf->load_html(utf8_decode($html));
         $dompdf->set_paper ($paperSize, $orientation);
         $dompdf->render( );
         
@@ -118,7 +118,8 @@ class CRM_Utils_PDF_Utils {
     static function html2pdf( $text,
                               $fileName = 'civicrm.pdf',
                               $orientation = 'landscape',
-                              $paperSize   = 'a3' ) {
+                              $paperSize   = 'a3',
+                              $output = false ) {
         require_once 'packages/dompdf/dompdf_config.inc.php';
         spl_autoload_register('DOMPDF_autoload');
         $dompdf = new DOMPDF( );
@@ -141,10 +142,14 @@ class CRM_Utils_PDF_Utils {
         foreach ( $values as $value ) {
             $html .= "{$value}\n";
         }
-        $dompdf->load_html( $html );
+        $dompdf->load_html(utf8_decode($html));
         $dompdf->set_paper ($paperSize, $orientation);
         $dompdf->render( );
-        $dompdf->stream( $fileName );
+        if ( $output ) {
+            return $dompdf->output( );
+        } else {
+            $dompdf->stream( $fileName );
+        }
     }
 
     static function &pdflib( $fileName,

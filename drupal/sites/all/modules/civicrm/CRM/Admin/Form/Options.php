@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -342,6 +342,11 @@ class CRM_Admin_Form_Options extends CRM_Admin_Form
                 } else if ( $filter = CRM_Utils_Array::value( 'contactOptions', $params ) )  {
                     $params['filter'] = $filter;
                     $params['reset_default_for'] = array( 'filter' => "0, ". $params['filter'] );
+                }
+                
+                //make sure we should has to have space, CRM-6977
+                if ( $this->_gName == 'from_email_address' ) {
+                    $params['label'] = str_replace( '"<', '" <', $params['label'] );  
                 }
             }
             

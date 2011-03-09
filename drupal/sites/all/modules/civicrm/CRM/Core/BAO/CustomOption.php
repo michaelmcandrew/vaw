@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -40,8 +40,6 @@
  *
  */
 class CRM_Core_BAO_CustomOption {
-
-    const VALUE_SEPERATOR = "";
 
     /**
      * Takes a bunch of params that are needed to match certain criteria and

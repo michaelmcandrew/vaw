@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -235,7 +235,7 @@ class CRM_Contact_BAO_GroupContact extends CRM_Contact_DAO_GroupContact {
         $numContactsRemoved    = 0;
         $numContactsNotRemoved = 0;
         
-        require_once "CRM/Contact/DAO/Group.php";
+        require_once 'CRM/Contact/DAO/Group.php';
         $group = new CRM_Contact_DAO_Group();
         $group->id = $groupId;
         $group->find(true);
@@ -421,11 +421,11 @@ class CRM_Contact_BAO_GroupContact extends CRM_Contact_DAO_GroupContact {
                 } 
                 $values[$id][$prefix . 'date']            = $dao->date; 
                 $values[$id][$prefix . 'method']          = $dao->method; 
-                if ( $status == "Removed" ) {
+                if ( $status == 'Removed' ) {
                     $query = "SELECT `date` as `date_added` FROM civicrm_subscription_history WHERE id = (SELECT max(id) FROM civicrm_subscription_history WHERE contact_id = %1 AND status = \"Added\" AND group_id = $dao->group_id )";
                     $dateDAO =& CRM_Core_DAO::executeQuery( $query, $params );
                     if ($dateDAO->fetch() ) {
-                        $values[$id]["date_added"]          = $dateDAO->date_added; 
+                        $values[$id]['date_added']          = $dateDAO->date_added; 
                     }
                     
                 }
@@ -688,11 +688,12 @@ AND civicrm_group_contact.group_id = %2";
             return false;
         }
 
-        $params = array( 'group'      => array( $groupID => 1 ),
-                         'contact_id' => $contactID,
-                         'return.contact_id' => 1 );
-        require_once 'api/v2/Contact.php';
-        $contacts = civicrm_contact_search( $params );
+        require_once 'CRM/Contact/BAO/Query.php';
+        $params = array(
+            array('group',      'IN', array($groupID => 1), 0, 0),
+            array('contact_id', '=',  $contactID,           0, 0),
+        );
+        list($contacts, $_) = CRM_Contact_BAO_Query::apiQuery($params, array('contact_id'));
 
         if ( ! empty( $contacts ) ) {
             return true;

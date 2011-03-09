@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -23,7 +23,6 @@
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
 *}
-{include file="CRM/common/WizardHeader.tpl"}
 <div id="pcp-form" class="crm-block crm-form-block crm-contribution-contributionpage-pcp-form-block">
 {if !$profile}
 	{capture assign=pUrl}{crmURL p='civicrm/admin/uf/group' q="reset=1"}{/capture}
@@ -36,9 +35,9 @@
 </div>
 <div class="crm-submit-buttons">{include file="CRM/common/formButtons.tpl" location="top"}</div>
 <table class="form-layout">
-	<tr  class="crm-contribution-contributionpage-pcp-form-block-is_active">
+	<tr  class="crm-contribution-contributionpage-pcp-form-block-pcp_active">
 	    <td class="label">&nbsp;</td>
-	    <td>{$form.is_active.html} {$form.is_active.label}</td>
+	    <td>{$form.pcp_active.html} {$form.pcp_active.label}</td>
 	</tr>
 </table>
 
@@ -75,7 +74,7 @@
 <div class="crm-submit-buttons">{include file="CRM/common/formButtons.tpl" location="bottom"}</div>
 </div>
 {include file="CRM/common/showHideByFieldValue.tpl" 
-    trigger_field_id    = "is_active"
+    trigger_field_id    = "pcp_active"
     trigger_value       = "true"
     target_element_id   = "pcpFields" 
     target_element_type = "block"

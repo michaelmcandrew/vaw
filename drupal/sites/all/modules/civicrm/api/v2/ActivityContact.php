@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -33,7 +33,7 @@
  * @subpackage API_Activity
  *
  * @copyright CiviCRM LLC (c) 2004-2010
- * @version $Id: ActivityContact.php 28934 2010-07-28 18:44:12Z mover $
+ * @version $Id: ActivityContact.php 32492 2011-02-14 21:06:52Z shot $
  *
  */
  
@@ -51,6 +51,7 @@ require_once 'CRM/Activity/BAO/Activity.php';
  *
  * @return array (reference)  array of activities / error message.
  * @access public
+
  */
 function civicrm_activity_contact_get( $params ) {
   _civicrm_initialize( );
@@ -85,6 +86,7 @@ function civicrm_activity_contact_get( $params ) {
  *
  * @return array (reference)  array of activities.
  * @access public
+ 
  */
 function &_civicrm_activities_get( $contactID, $type = 'all' ) 
 {

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -32,7 +32,7 @@
  * @subpackage API_Contribute
  *
  * @copyright CiviCRM LLC (c) 2004-2010
- * @version $Id: Contribution.php 30440 2010-11-01 05:34:30Z yashodha $
+ * @version $Id: Contribution.php 32507 2011-02-15 08:14:14Z kurund $
  *
  */
 
@@ -52,7 +52,7 @@ require_once 'CRM/Contribute/PseudoConstant.php';
  * @static void
  * @access public
  */
-function &civicrm_contribution_add( &$params ) {
+function &civicrm_contribution_create( &$params ) {
     _civicrm_initialize( );
     
     $error = _civicrm_contribute_check_params( $params );
@@ -68,9 +68,9 @@ function &civicrm_contribution_add( &$params ) {
         return $error;
     }
 
-    $values["contact_id"] = $params["contact_id"];
-    $values["source"]     = CRM_Utils_Array::value( 'source', $params );
-    
+    $values['contact_id'] = $params['contact_id'];
+    $values['source']     = CRM_Utils_Array::value( 'source', $params );
+    $values['skipRecentView'] = true;
     $ids     = array( );
     if ( CRM_Utils_Array::value( 'id', $params ) ) {
         $ids['contribution'] = $params['id'];
@@ -83,6 +83,14 @@ function &civicrm_contribution_add( &$params ) {
     _civicrm_object_to_array($contribution, $contributeArray);
     
     return $contributeArray;
+}
+/*
+ * Deprecated wrapper function
+ * @deprecated
+ */
+function civicrm_contribution_add(&$params){
+  $result = civicrm_contribution_create( $params );
+  return $result;
 }
 
 /**
@@ -197,9 +205,9 @@ function &civicrm_contribution_search( &$params ) {
     $newParams =& CRM_Contact_BAO_Query::convertFormValues( $inputParams );
 
     $query = new CRM_Contact_BAO_Query( $newParams, $returnProperties, null );
-    list( $select, $from, $where ) = $query->query( );
+    list( $select, $from, $where, $having ) = $query->query( );
     
-    $sql = "$select $from $where";  
+    $sql = "$select $from $where $having";  
 
     if ( ! empty( $sort ) ) {
         $sql .= " ORDER BY $sort ";
@@ -404,7 +412,7 @@ function _civicrm_contribute_format_params( &$params, &$values, $create=false ) 
             break;
         case 'contribution_type_id' :
             if ( !CRM_Utils_Array::value( $value, CRM_Contribute_PseudoConstant::contributionType( ) ) ) {
-                return civicrm_create_error( "Invalid Contribution Type Id" );
+                return civicrm_create_error( 'Invalid Contribution Type Id' );
             }
             break;
         case 'contribution_type':
@@ -413,11 +421,11 @@ function _civicrm_contribute_format_params( &$params, &$values, $create=false ) 
             if ( $contributionTypeId ) {
                 if ( CRM_Utils_Array::value( 'contribution_type_id', $values ) &&
                      $contributionTypeId != $values['contribution_type_id'] ) {
-                    return civicrm_create_error( "Mismatched Contribution Type and Contribution Type Id" );
+                    return civicrm_create_error( 'Mismatched Contribution Type and Contribution Type Id' );
                 } 
                 $values['contribution_type_id'] = $contributionTypeId; 
             } else {
-                return civicrm_create_error( "Invalid Contribution Type" );
+                return civicrm_create_error( 'Invalid Contribution Type' );
             }
             break;
         case 'payment_instrument': 
@@ -524,7 +532,7 @@ function civicrm_contribute_transact($params) {
   }
 
   require_once 'CRM/Core/Payment.php';
-  $payment =& CRM_Core_Payment::singleton( $params['payment_processor_mode'], 'Contribute', $paymentProcessor );
+  $payment =& CRM_Core_Payment::singleton( $params['payment_processor_mode'], $paymentProcessor );
   if ( civicrm_error($payment) ) {
     return $payment ;
   }

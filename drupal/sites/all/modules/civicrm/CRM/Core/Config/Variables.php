@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -238,7 +238,7 @@ class CRM_Core_Config_Variables extends CRM_Core_Config_Defaults
      * Default user framework
      */
     public $userFramework               = 'Drupal';
-    public $userFrameworkVersion        = 6.3;
+    public $userFrameworkVersion        = 'Unknown';
     public $userFrameworkUsersTableName = 'users';
     public $userFrameworkClass          = 'CRM_Utils_System_Drupal';
     public $userHookClass               = 'CRM_Utils_Hook_Drupal';
@@ -257,7 +257,6 @@ class CRM_Core_Config_Variables extends CRM_Core_Config_Defaults
     public $maxImportFileSize = 1048576;
     public $maxAttachments    = 3;
     public $maxFileSize       = 2;
-    public $civiHRD           = 0;
 
     /**
      * The custom locale strings. Note that these locale strings are stored
@@ -299,6 +298,12 @@ class CRM_Core_Config_Variables extends CRM_Core_Config_Defaults
      * @var boolean
      */
     public $contactUndelete = true;
+
+    /**
+     * Whether database-level logging should be performed
+     * @var boolean
+     */
+    public $logging = false;
 
     /**
      * Whether CiviCRM should check for newer versions

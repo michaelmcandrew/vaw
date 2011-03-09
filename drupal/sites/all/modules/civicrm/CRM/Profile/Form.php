@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -131,6 +131,12 @@ class CRM_Profile_Form extends CRM_Core_Form
 
     protected $_defaults = null;
 
+    /**
+     * Store profile ids if multiple profile ids are passed using comma separated.
+     * Currently lets implement this functionality only for dialog mode
+     */
+    protected $_profileIds = array( );
+
     /** 
      * pre processing work done here. 
      * 
@@ -146,15 +152,38 @@ class CRM_Profile_Form extends CRM_Core_Form
         require_once 'CRM/Core/BAO/UFGroup.php';
         require_once "CRM/Core/BAO/UFField.php";
         
-        $this->_id       = $this->get( 'id'  );
-        $this->_gid      = $this->get( 'gid' ); 
-        $this->_grid     = CRM_Utils_Request::retrieve( 'grid', 'Integer', $this   );
-        $this->_context  = CRM_Utils_Request::retrieve( 'context', 'String', $this );
+        $this->_id         = $this->get( 'id'  );
+        $this->_gid        = $this->get( 'gid' ); 
+        $this->_profileIds = $this->get( 'profileIds' );
+        $this->_grid       = CRM_Utils_Request::retrieve( 'grid', 'Integer', $this   );
+        $this->_context    = CRM_Utils_Request::retrieve( 'context', 'String', $this );
         
         $this->_duplicateButtonName = $this->getButtonName( 'upload',  'duplicate' );
         
-        if ( ! $this->_gid ) {
-            $this->_gid = CRM_Utils_Request::retrieve('gid', 'Positive', $this, false, 0, 'GET');
+        $gids = explode( ',', CRM_Utils_Request::retrieve('gid', 'String', CRM_Core_DAO::$_nullObject, false, 0, 'GET') );
+        
+        if ( ( count( $gids ) > 1 )  && !$this->_profileIds && empty( $this->_profileIds ) ) {
+            if ( !empty( $gids ) ) {
+                foreach( $gids as $pfId  ) {
+                   $this->_profileIds[ ] = CRM_Utils_Type::escape( $pfId, 'Positive' ); 
+                }
+            }
+            
+            // check if we are rendering mixed profiles
+            if ( CRM_Core_BAO_UFGroup::checkForMixProfiles( $this->_profileIds ) ) {
+                CRM_Core_Error::fatal( ts( 'You cannot combine profiles of multiple types.' ) );
+            } 
+
+            // for now consider 1'st profile as primary profile and validate it 
+            // i.e check for profile type etc.
+            // FIX ME: validations for other than primary
+            $this->_gid = $this->_profileIds[0];
+            $this->set( 'gid', $this->_gid );
+            $this->set( 'profileIds', $this->_profileIds );
+        }
+        
+        if ( !$this->_gid ) {
+           $this->_gid = CRM_Utils_Request::retrieve('gid', 'Positive', $this, false, 0, 'GET');
         } 
         
         //get values for captch and dupe update.
@@ -167,7 +196,13 @@ class CRM_Profile_Form extends CRM_Core_Form
             }
             $dao->free( );
         }
-        
+
+        if ( empty( $this->_profileIds ) ) {
+            $gids = $this->_gid;
+        } else {
+            $gids = $this->_profileIds; 
+        }
+       
         // if we dont have a gid use the default, else just use that specific gid
         if ( ( $this->_mode == self::MODE_REGISTER || $this->_mode == self::MODE_CREATE ) && ! $this->_gid ) {
             $this->_ctype  = CRM_Utils_Request::retrieve( 'ctype', 'String', $this, false, 'Individual', 'REQUEST' );
@@ -176,12 +211,12 @@ class CRM_Profile_Form extends CRM_Core_Form
             $this->_fields  = CRM_Core_BAO_UFGroup::getListingFields( $this->_action,
                                                                       CRM_Core_BAO_UFGroup::PUBLIC_VISIBILITY | CRM_Core_BAO_UFGroup::LISTINGS_VISIBILITY,
                                                                       false,
-                                                                      $this->_gid,
+                                                                      $gids,
                                                                       true, null,
                                                                       $this->_skipPermission,
                                                                       CRM_Core_Permission::SEARCH ); 
         } else { 
-            $this->_fields  = CRM_Core_BAO_UFGroup::getFields( $this->_gid, false, null,
+            $this->_fields  = CRM_Core_BAO_UFGroup::getFields( $gids, false, null,
                                                                null, null,
                                                                false, null,
                                                                $this->_skipPermission,
@@ -199,25 +234,25 @@ class CRM_Profile_Form extends CRM_Core_Form
                         $emailField = true;
                     }
                 }
-                if ( ! $emailField ) {
+                
+                if ( !$emailField ) {
                     $session = CRM_Core_Session::singleton( );
                     $status = ts( "Email field should be included in profile if you want to use Group(s) when Profile double-opt in process is enabled." ); 
                     $session->setStatus( $status );
                 }
             }
         }
-        if (! is_array($this->_fields)) {
+
+        if ( !is_array( $this->_fields ) ) {
             $session = CRM_Core_Session::singleton( );
             CRM_Core_Session::setStatus(ts('This feature is not currently available.'));
-            
             return CRM_Utils_System::redirect( CRM_Utils_System::url( 'civicrm', 'reset=1' ) );
         }
         
-        if( $this->_mode != self::MODE_SEARCH ) {
+        if ( $this->_mode != self::MODE_SEARCH ) {
             CRM_Core_BAO_UFGroup::setRegisterDefaults(  $this->_fields, $defaults );
             $this->setDefaults( $defaults );    
         }
-        
         
         $this->setDefaultsValues();
     }
@@ -254,14 +289,15 @@ class CRM_Profile_Form extends CRM_Core_Form
                     $url = CRM_Core_BAO_CustomField::getFileURL( $this->_id, $customFieldID );
                     
                     if ( $url ) {
-                        $customFiles[$field['name']]['displayURL'] = "Attached File : {$url['file_url']}";
+                        $customFiles[$field['name']]['displayURL'] = ts("Attached File") . ": {$url['file_url']}";
                         
-                        $deleteExtra = "Are you sure you want to delete attached file ?";
+                        $deleteExtra = ts("Are you sure you want to delete attached file?");
                         $fileId      = $url['file_id'];
                         $deleteURL   = CRM_Utils_System::url( 'civicrm/file',
                                                               "reset=1&id={$fileId}&eid=$this->_id&fid={$customFieldID}&action=delete" );
+                        $text = ts("Delete Attached File");
                         $customFiles[$field['name']]['deleteURL'] =
-                            "<a href=\"{$deleteURL}\" onclick = \"if (confirm( ' $deleteExtra ' )) this.href+='&amp;confirmed=1'; else return false;\">Delete Attached File</a>";
+                            "<a href=\"{$deleteURL}\" onclick = \"if (confirm( ' $deleteExtra ' )) this.href+='&amp;confirmed=1'; else return false;\">$text</a>";
                     }
                 } 
             }
@@ -295,6 +331,8 @@ class CRM_Profile_Form extends CRM_Core_Form
         $return = false;
         $statusMessage = null;
         
+        require_once 'CRM/Core/BAO/Address.php';
+        CRM_Core_BAO_Address::checkContactSharedAddressFields( $this->_fields, $this->_id );
         //we should not allow component and mix profiles in search mode
         if ( $this->_mode != self::MODE_REGISTER ) {
             //check for mix profile fields (eg:  individual + other contact type)
@@ -765,14 +803,16 @@ class CRM_Profile_Form extends CRM_Core_Form
         //if the profile double option in is enabled
         $mailingType = array( );
         $config = CRM_Core_Config::singleton( );
-        if ( $config->profileDoubleOptIn && CRM_Utils_Array::value( 'group', $params ) ) {
-            $result = null;
-            foreach ( $params as $name => $values ) {
-                if ( substr( $name, 0, 6 ) == 'email-' ) {
-                    $result['email'] = $values ;
-                }
+
+        $result = null;
+        foreach ( $params as $name => $values ) {
+            if ( substr( $name, 0, 6 ) == 'email-' ) {
+                $result['email'] = $values ;
             }
-            $groupSubscribed = array( );
+        }
+
+        if ( $config->profileDoubleOptIn && CRM_Utils_Array::value( 'group', $params ) ) {
+           $groupSubscribed = array( );
             if ( CRM_Utils_Array::value( 'email' , $result ) ) {
                 require_once 'CRM/Contact/DAO/Group.php';
                 //array of group id, subscribed by contact
@@ -795,7 +835,7 @@ class CRM_Profile_Form extends CRM_Core_Form
                     }
                     $groupTypes = CRM_Core_DAO::getFieldValue( 'CRM_Contact_DAO_Group',
                                                                $key, 'group_type', 'id' );
-                    $groupType = explode( CRM_Core_BAO_CustomOption::VALUE_SEPERATOR, 
+                    $groupType = explode( CRM_Core_DAO::VALUE_SEPARATOR, 
                                           substr( $groupTypes, 1, -1 ) );
                     //filter group of mailing type and unset it from params
                     if ( in_array( 2, $groupType ) ) {
@@ -813,23 +853,28 @@ class CRM_Profile_Form extends CRM_Core_Form
         if ( CRM_Utils_Array::value( 'add_to_group', $params ) ) {
             $addToGroupId = $params['add_to_group'];
 
-            // since we are directly adding contact to group lets unset it from mailing
-            if ( $key = array_search( $addToGroupId, $mailingType ) ) {
-                unset( $mailingType[$key] );
+            if ( !$config->profileAddToGroupDoubleOptIn ) {   
+                // since we are directly adding contact to group lets unset it from mailing
+                if ( $key = array_search( $addToGroupId, $mailingType ) ) {
+                    unset( $mailingType[$key] );
+                }
+            } else {
+                $mailingType[] = $addToGroupId;
+                $addToGroupId = null;
             }            
         }
         
         if ( $this->_grid ){
             $params['group'] = $groupSubscribed;
         }
-        
+
         // commenting below code, since we potentially
         // triggered maximum name field formatting cases during CRM-4430.
         // CRM-4343
         // $params['preserveDBName'] = true;
 
         $this->_id = CRM_Contact_BAO_Contact::createProfileContact($params, $this->_fields,
-                                                                   $this->_id, $this->_addToGroupID,
+                                                                   $this->_id, $addToGroupId,
                                                                    $this->_gid, $this->_ctype,
                                                                    true );
         //mailing type group
@@ -876,6 +921,15 @@ class CRM_Profile_Form extends CRM_Core_Form
             $template =& CRM_Core_Form::getTemplate( );
             if ( $template->template_exists( $templateFile ) ) {
                 return $templateFile;
+            }
+
+            // lets see if we have customized by name
+            $ufGroupName = CRM_Core_DAO::getFieldValue( 'CRM_Core_DAO_UFGroup', $this->_gid, 'name' );
+            if ( $ufGroupName ) {
+                $templateFile = "CRM/Profile/Form/{$ufGroupName}/{$this->_name}.tpl";
+                if ( $template->template_exists( $templateFile ) ) {
+                    return $templateFile;
+                }
             }
         }
         return parent::getTemplateFileName( );

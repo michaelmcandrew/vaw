@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -138,8 +138,7 @@ class CRM_Case_XMLProcessor_Report extends CRM_Case_XMLProcessor {
             require_once 'CRM/Case/BAO/Case.php';
             $case['caseType']     = CRM_Case_BAO_Case::getCaseType( $caseID );
             $case['caseTypeName'] = CRM_Case_BAO_Case::getCaseType( $caseID, 'name' );
-            $case['status']       = CRM_Core_OptionGroup::getLabel( 'case_status',
-                                                                    $dao->status_id );
+            $case['status']       = CRM_Core_OptionGroup::getLabel( 'case_status', $dao->status_id, false );
         }
         return $case;
     }
@@ -417,7 +416,7 @@ WHERE      a.id = %1
         if ( $activityDAO->medium_id ) {
             $activity['fields'][] = array( 'label' => 'Medium',
                                            'value' => CRM_Core_OptionGroup::getLabel( 'encounter_medium',
-                                                                                      $activityDAO->medium_id ),
+                                                                                      $activityDAO->medium_id, false ),
                                            'type'  => 'String' );
         }
         
@@ -478,8 +477,8 @@ WHERE      a.id = %1
                     
                     // Note: this is already taken care in getDisplayValue above, but sometimes 
                     // strings like '^A^A' creates problem. So to fix this special case -
-                    if ( strstr($value, CRM_Core_BAO_CustomOption::VALUE_SEPERATOR) ) {
-                        $value = trim($value, CRM_Core_BAO_CustomOption::VALUE_SEPERATOR);
+                    if ( strstr($value, CRM_Core_DAO::VALUE_SEPARATOR) ) {
+                        $value = trim($value, CRM_Core_DAO::VALUE_SEPARATOR);
                     }
                     if ( CRM_Utils_Array::value('type', $typeValue) == 'String' ||
                          CRM_Utils_Array::value('type', $typeValue) == 'Memo' ) {

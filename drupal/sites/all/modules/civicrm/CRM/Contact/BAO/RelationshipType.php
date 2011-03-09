@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -165,7 +165,7 @@ UPDATE civicrm_membership_type
         CRM_Core_DAO::executeQuery( $query, $params );
 
         //fixed for CRM-3323
-        require_once "CRM/Core/DAO/MappingField.php";
+        require_once 'CRM/Core/DAO/MappingField.php';
         $mappingField = new CRM_Core_DAO_MappingField( );            
         $mappingField->relationship_type_id = $relationshipTypeId;
         $mappingField->find();

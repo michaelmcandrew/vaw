@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -50,12 +50,12 @@ cj( document ).ready( function( ) {
           }
           htmlContent += '<input type="text" class="form-text" id="sort_name_navigation" name="sort_name" style="width: 12em; margin-left: -45px;" />' + 
                          '<input type="text" id="sort_contact_id" style="display: none" />';
-          cj( '#quickSearch' ).append( htmlContent );            
+          cj( '#quickSearch' ).html( htmlContent );            
       } else {
           htmlContent += '<input type="text" class="form-text" id="sort_name_navigation" name="sort_name" style="width: 12em;" />' + 
                          '<input type="hidden" id="sort_contact_id" value="" />' + 
                          '<input type="submit" value="{ts}Go{/ts}" name="_qf_Basic_refresh" class="form-submit default" style="display: none;" />';    
-          cj( '#quickSearch' ).append( htmlContent );
+          cj( '#quickSearch' ).html( htmlContent );
    }
 });
 function getSearchURLValue( )
@@ -82,12 +82,15 @@ function getSearchURLValue( )
     }
 }
 
-/* Need to fix this properly*/
 cj( function() {
-    cj("#admin-menu").find("li :contains('CiviCRM')").click(function() {
-        cj("#civicrm-menu").toggle();
-        return false;
-    });
+    cj( "#admin-menu>ul>li>a" ).each( function( ) {
+        if ( cj( this ).html( ) == 'CiviCRM' ) {
+            cj( this ).click ( function( ) {
+                cj( "#civicrm-menu" ).toggle( );
+                return false;
+            });
+        }
+     });
 
     var contactUrl = {/literal}"{crmURL p='civicrm/ajax/rest' q='className=CRM_Contact_Page_AJAX&fnName=getContactList&json=1&context=navigation' h=0 }"{literal};
 
@@ -103,7 +106,7 @@ cj( function() {
 });
 
 var framework = "{/literal}{$config->userFramework}{literal}";
-if( framework != 'Joomla') {
+if ( framework != 'Joomla') {
 	cj('body').prepend( cj("#menu-container").html() );
 
 	//Track Scrolling

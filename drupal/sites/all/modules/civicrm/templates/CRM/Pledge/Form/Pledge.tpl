@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -58,6 +58,9 @@
    {else}
       <table class="form-layout-compressed">
         {if $context eq 'standalone'}
+	    {if !$email and $outBound_option != 2}
+	      {assign var='profileCreateCallback' value=1 }
+	    {/if}
             {include file="CRM/Contact/Form/NewContact.tpl"}
         {else}
           <tr class="crm-pledge-form-block-displayName">
@@ -100,11 +103,20 @@
 	    {elseif $context eq 'standalone' and $outBound_option != 2 }
                 <tr id="acknowledgment-receipt" style="display:none;"><td class="label">{$form.is_acknowledge.label}</td><td>{$form.is_acknowledge.html} <span class="description">{ts}Automatically email an acknowledgment of this pledge to {/ts}<span id="email-address"></span>?</span></td></tr>
         {/if}
+        <tr id="fromEmail" style="display:none;">
+            <td class="label">{$form.from_email_address.label}</td>
+            <td>{$form.from_email_address.html}</td>
+        </tr>
         <tr id="acknowledgeDate"><td class="label" class="crm-pledge-form-block-acknowledge_date">{$form.acknowledge_date.label}</td>
             <td>{include file="CRM/common/jcalendar.tpl" elementName=acknowledge_date}<br />
             <span class="description">{ts}Date when an acknowledgment of the pledge was sent.{/ts}</span></td></tr>
             <tr class="crm-pledge-form-block-contribution_type_id"><td class="label">{$form.contribution_type_id.label}</td><td>{$form.contribution_type_id.html}<br />
             <span class="description">{ts}Sets the default contribution type for payments against this pledge.{/ts}</span></td></tr>
+
+	    {* CRM-7362 --add campaign *}
+	    {include file="CRM/Campaign/Form/addCampaignToComponent.tpl"
+	    campaignTrClass="crm-pledge-form-block-campaign_id"}
+
 	    <tr class="crm-pledge-form-block-contribution_page_id"><td class="label">{$form.contribution_page_id.label}</td><td>{$form.contribution_page_id.html}<br />
             <span class="description">{ts}Select an Online Contribution page that the user can access to make self-service pledge payments. (Only Online Contribution pages configured to include the Pledge option are listed.){/ts}</span></td></tr>
         
@@ -215,13 +227,15 @@ cj(function() {
     {if $context eq 'standalone' and $outBound_option != 2 }
     {literal}
     cj( function( ) {
-        cj("#contact").blur( function( ) {
+        cj("#contact_1").blur( function( ) {
             checkEmail( );
         });
         checkEmail( );
+	showHideByValue( 'is_acknowledge', '', 'acknowledgeDate', 'table-row', 'radio', true); 
+	showHideByValue( 'is_acknowledge', '', 'fromEmail', 'table-row', 'radio', false );
     });
     function checkEmail( ) {
-        var contactID = cj("input[name=contact_select_id]").val();
+        var contactID = cj("input[name=contact_select_id[1]]").val();
         if ( contactID ) {
             var postUrl = "{/literal}{crmURL p='civicrm/ajax/checkemail' h=0}{literal}";
             cj.post( postUrl, {contact_id: contactID},
@@ -234,7 +248,13 @@ cj(function() {
                     }
                 }
             );
-        }
+        } else {
+	  cj("#acknowledgment-receipt").hide( );
+	}
+    }
+    
+    function profileCreateCallback( blockNo ) {
+        checkEmail( );
     }
     {/literal}
     {/if}
@@ -248,6 +268,14 @@ cj(function() {
     target_element_type ="table-row"
     field_type          ="radio"
     invert              = 1
+}
+{include file="CRM/common/showHideByFieldValue.tpl" 
+    trigger_field_id    ="is_acknowledge"
+    trigger_value       =""
+    target_element_id   ="fromEmail" 
+    target_element_type ="table-row"
+    field_type          ="radio"
+    invert              = 0	
 }
 {/if}
 

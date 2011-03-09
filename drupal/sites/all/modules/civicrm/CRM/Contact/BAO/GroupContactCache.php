@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -66,11 +66,18 @@ class CRM_Contact_BAO_GroupContactCache extends CRM_Contact_DAO_GroupContactCach
         $smartGroupCacheTimeout = 
             isset( $config->smartGroupCacheTimeout ) && 
             is_numeric(  $config->smartGroupCacheTimeout ) ? $config->smartGroupCacheTimeout : 0;
+        
+        //make sure to give original timezone settings again.
+        $originalTimezone = date_default_timezone_get( );
+        date_default_timezone_set('UTC');
+        $now = date('YmdHis');
+        date_default_timezone_set( $originalTimezone );
+        
         $query  = "
 SELECT     g.id
 FROM       civicrm_group g
-WHERE      g.id IN ( {$groupID} ) AND g.saved_search_id = 1 AND 
-          (g.cache_date IS NULL OR (TIMESTAMPDIFF(MINUTE, g.cache_date, NOW()) >= $smartGroupCacheTimeout))
+WHERE      g.id IN ( {$groupID} ) AND ( g.saved_search_id IS NOT NULL OR g.children IS NOT NULL ) AND 
+          (g.cache_date IS NULL OR (TIMESTAMPDIFF(MINUTE, g.cache_date, $now) >= $smartGroupCacheTimeout))
 ";
 
         $dao      =& CRM_Core_DAO::executeQuery( $query );
@@ -94,21 +101,12 @@ WHERE      g.id IN ( {$groupID} ) AND g.saved_search_id = 1 AND
             $groupID = array( $groupID );
         }
 
-        $params['return.contact_id'] = 1;
-        $params['offset']            = 0;
-        $params['rowCount']          = 0;
-        $params['sort']              = null;
-        $params['smartGroupCache']   = false;
-
-        require_once 'api/v2/Contact.php';
-        
-        $values = array( );
-        foreach ( $groupID as $gid ) {
-            $params['group'] = array( );
-            $params['group'][$gid] = 1;
-
+        require_once 'CRM/Contact/BAO/Query.php';
+        $returnProperties = array('contact_id');
+        foreach ($groupID as $gid) {
+            $params = array(array('group', 'IN', array($gid => 1), 0, 0));
             // the below call update the cache table as a byproduct of the query
-            $contacts = civicrm_contact_search( $params );
+            CRM_Contact_BAO_Query::apiQuery($params, $returnProperties, null, null, 0, 0, false);
         }
     }
 
@@ -127,7 +125,11 @@ WHERE      g.id IN ( {$groupID} ) AND g.saved_search_id = 1 AND
         // only update cache entry if we had any values
         if ( $processed ) {
             // also update the group with cache date information
+            //make sure to give original timezone settings again.
+            $originalTimezone = date_default_timezone_get( );
+            date_default_timezone_set('UTC');
             $now = date('YmdHis');
+            date_default_timezone_set( $originalTimezone );
         } else {
             $now = 'null';
         }
@@ -161,8 +163,13 @@ WHERE  id IN ( $groupIDs )
         }
         
         //when there are difference in timezones for mysql and php.
-        //cache_date set null not behaving properly, CRM-6855 
+        //cache_date set null not behaving properly, CRM-6855
+
+        //make sure to give original timezone settings again.
+        $originalTimezone = date_default_timezone_get( );
+        date_default_timezone_set('UTC');
         $now = date( 'YmdHis' );
+        date_default_timezone_set( $originalTimezone );
         
         $config = CRM_Core_Config::singleton( );
         $smartGroupCacheTimeout = 
@@ -232,6 +239,15 @@ WHERE  id = %1
         if ( $savedSearchID ) {
             require_once 'CRM/Contact/BAO/SavedSearch.php';
             $ssParams =& CRM_Contact_BAO_SavedSearch::getSearchParams($savedSearchID);
+
+            // rectify params to what proximity search expects if there is a value for prox_distance
+            // CRM-7021
+            if ( !empty( $ssParams ) ) { 
+                require_once 'CRM/Contact/BAO/ProximityQuery.php';
+                CRM_Contact_BAO_ProximityQuery::fixInputParams( $ssParams );
+            }
+
+            
             $returnProperties = array();
             if (CRM_Core_DAO::getFieldValue( 'CRM_Contact_DAO_SavedSearch',
                                              $savedSearchID,
@@ -253,6 +269,7 @@ WHERE  id = %1
                 $searchSQL   = $customClass->contactIDs( );
                 $idName = 'contact_id';
             } else {
+                require_once 'CRM/Contact/BAO/Query.php';
                 $query = new CRM_Contact_BAO_Query($ssParams, $returnProperties, null,
                                                     false, false, 1,
                                                     true, true, false );

@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -114,13 +114,17 @@ class CRM_Activity_Selector_Activity extends CRM_Core_Selector_Base implements C
                           $sourceRecordId = null, 
                           $accessMailingReport = false, 
                           $activityId = null, 
-                          $key = null ) 
+                          $key = null,
+                          $compContext = null ) 
     {
         $activityTypes   = CRM_Core_PseudoConstant::activityType( false );
         $activityTypeIds = array_flip( CRM_Core_PseudoConstant::activityType( true, true, false, 'name' ) );
         
         $extraParams = ( $key ) ? "&key={$key}" : null;
-        
+        if ( $compContext ) {
+            $extraParams .= "&compContext={$compContext}";
+        }
+
         //show  edit link only for meeting/phone and other activities
         $showUpdate = false;
         $showDelete = false;
@@ -150,17 +154,17 @@ class CRM_Activity_Selector_Activity extends CRM_Core_Selector_Base implements C
         } elseif ( $activityTypeId == $activityTypeIds['Inbound Email'] ) {
             $url      = 'civicrm/contact/view/activity';
             $qsView   = "atype={$activityTypeId}&action=view&reset=1&id=%%id%%&cid=%%cid%%&context=%%cxt%%{$extraParams}";
-        } elseif ( $activityTypeId == $activityTypeIds['Open Case'] ||
-                   $activityTypeId == $activityTypeIds['Change Case Type'] ||
-                   $activityTypeId == $activityTypeIds['Change Case Status'] ||
-                   $activityTypeId == $activityTypeIds['Change Case Start Date'] ) {
+        } elseif ( $activityTypeId == CRM_Utils_Array::value( 'Open Case', $activityTypeIds ) ||
+                   $activityTypeId == CRM_Utils_Array::value( 'Change Case Type', $activityTypeIds ) ||
+                   $activityTypeId == CRM_Utils_Array::value( 'Change Case Status', $activityTypeIds ) ||
+                   $activityTypeId == CRM_Utils_Array::value( 'Change Case Start Date', $activityTypeIds ) ) {
             $showUpdate =  $showDelete = false;
-            $url      = 'civicrm/contact/view/activity';
+            $url      = 'civicrm/activity';
             $qsView   = "atype={$activityTypeId}&action=view&reset=1&id=%%id%%&cid=%%cid%%&context=%%cxt%%{$extraParams}";
             $qsUpdate = "atype={$activityTypeId}&action=update&reset=1&id=%%id%%&cid=%%cid%%&context=%%cxt%%{$extraParams}";
         } else {
             $showUpdate = $showDelete = true;
-            $url      = 'civicrm/contact/view/activity';
+            $url      = 'civicrm/activity';
             $qsView   = "atype={$activityTypeId}&action=view&reset=1&id=%%id%%&cid=%%cid%%&context=%%cxt%%{$extraParams}";
             $qsUpdate = "atype={$activityTypeId}&action=update&reset=1&id=%%id%%&cid=%%cid%%&context=%%cxt%%{$extraParams}";
         }
@@ -186,10 +190,17 @@ class CRM_Activity_Selector_Activity extends CRM_Core_Selector_Base implements C
                                     );
         
         if ( $showUpdate ) {
+            $updateUrl = 'civicrm/activity/add';
+            if ( $activityTypeId == $activityTypeIds['Email'] ) {
+                $updateUrl = 'civicrm/activity/email/add';
+            } else if ( $activityTypeId == $activityTypeIds['Print PDF Letter'] ) {
+                $updateUrl = 'civicrm/activity/pdf/add';
+            }
+
             self::$_actionLinks = self::$_actionLinks +  array ( CRM_Core_Action::UPDATE => 
                                                                  array(
                                                                        'name'     => ts('Edit'),
-                                                                       'url'      => $url,
+                                                                       'url'      => $updateUrl,
                                                                        'qs'       => $qsUpdate,
                                                                        'title'    => ts('Update Activity') ) );
         }
@@ -199,8 +210,8 @@ class CRM_Activity_Selector_Activity extends CRM_Core_Selector_Base implements C
             self::$_actionLinks = self::$_actionLinks +  array ( CRM_Core_Action::ADD =>
                                                                  array( 
                                                                        'name'     => ts('File On Case'),
-                                                                       'url'      => CRM_Utils_System::currentPath( ),
-                                                                       'extra'    => 'onClick="Javascript:fileOnCase( \'file\', \'%%id%%\' ); return false;"',
+                                                                       'url'      => '#',
+                                                                       'extra'    => 'onclick="javascript:fileOnCase( \'file\', \'%%id%%\' ); return false;"',
                                                                        'title'    => ts('File On Case') ) );
         }
 
@@ -379,11 +390,6 @@ class CRM_Activity_Selector_Activity extends CRM_Core_Selector_Base implements C
                                                                   ));
             }
             
-            if($config->civiHRD){
-                require_once 'CRM/Core/OptionGroup.php';
-                $caseActivityType = CRM_Core_OptionGroup::values('case_activity_type');
-                $row['activitytag1'] =  $caseActivityType[CRM_Core_DAO::getFieldValue('CRM_Activity_DAO_Activity',$row['id'],'activity_tag1_id' )];
-            }
             unset($row);
         }
          

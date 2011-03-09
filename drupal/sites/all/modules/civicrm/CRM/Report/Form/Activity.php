@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -42,6 +42,8 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
     protected $_customGroupExtends = array( 'Activity' );
 
     function __construct( ) {
+        $config = CRM_Core_Config::singleton( );
+        $campaignEnabled = in_array( "CiviCampaign", $config->enableComponents );
         $this->_columns = array(  
                                 'civicrm_contact'      =>
                                 array( 'dao'     => 'CRM_Contact_DAO_Contact',
@@ -51,13 +53,11 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                                              array( 'name'       => 'id',
                                                     'alias'      => 'contact_civireport',
                                                     'no_display' => true, 
-                                                    'required'   => true, 
                                                     ),
                                              'contact_source'    =>
                                               array( 'name'      => 'display_name' ,
                                                      'title'     => ts( 'Source Contact Name' ),
                                                      'alias'     => 'contact_civireport',
-                                                     'required'  => true,
                                                      'no_repeat' => true ),
                                               'contact_assignee' =>
                                               array( 'name'      => 'display_name' ,
@@ -84,12 +84,18 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                                                      'title'     => ts( 'Assignee Contact Name' ),
                                                      'operator'  => 'like',
                                                      'type'      => CRM_Report_Form::OP_STRING ),
-                                             'contact_target'    => 
+                                              'contact_target'   => 
                                               array( 'name'      => 'sort_name' ,
                                                      'alias'     => 'civicrm_contact_target',
                                                      'title'     => ts( 'Target Contact Name' ),
                                                      'operator'  => 'like',
-                                                     'type'      => CRM_Report_Form::OP_STRING  ) ),
+                                                     'type'      => CRM_Report_Form::OP_STRING  ),
+                                              'current_user'     => 
+                                              array( 'name'      => 'current_user',
+                                                     'title'     => ts('Limit To Current User'),
+                                                     'type'      => CRM_Utils_Type::T_INT,
+                                                     'operatorType' => CRM_Report_Form::OP_SELECT,
+                                                     'options'   => array('0'=>ts('No'), '1'=>ts('Yes') ) ) ),
                                        'grouping' => 'contact-fields',
                                        ),
                                 
@@ -120,12 +126,13 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                                                       ),
                                                'activity_type_id'  => 
                                                array( 'title'      => ts( 'Activity Type' ),
-                                                      'default'    => true ,
+                                                      'default'    => true,
                                                       'type'       =>  CRM_Utils_Type::T_STRING 
                                                       ),
-                                               'subject'           => 
+                                               'activity_subject'  => 
                                                array( 'title'      => ts('Subject'),
-                                                      'default'    => true ),
+                                                      'default'    => true,
+                                                      ),
                                                'source_contact_id' => 
                                                array( 'no_display' => true ,
                                                       'required'   => true , ),
@@ -140,13 +147,12 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                                        array( 'activity_date_time'  => 
                                               array( 'default'      => 'this.month',
                                                      'operatorType' => CRM_Report_Form::OP_DATE),
-                                              'subject'             =>
-                                              array( 'title'        => ts( 'Activity Subject' ),
-                                                     'operator'     => 'like' ),
+                                              'activity_subject'    =>
+                                              array( 'title'        => ts( 'Activity Subject' ) ),
                                               'activity_type_id'    => 
                                               array( 'title'        => ts( 'Activity Type' ),
                                                      'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-                                                     'options'      => CRM_Core_PseudoConstant::activityType(), ), 
+                                                     'options'      => CRM_Core_PseudoConstant::activityType( true, false, false, 'label', true ), ), 
                                               'status_id'           => 
                                               array( 'title'        => ts( 'Activity Status' ),
                                                      'operatorType' => CRM_Report_Form::OP_MULTISELECT,
@@ -154,8 +160,7 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                                               ),
                                        'group_bys' =>             
                                        array( 'source_contact_id'  =>
-                                              array('title'    => ts( 'Source Contact' ),
-                                                    'default'  => true ),
+                                              array('title'    => ts( 'Source Contact' ) ),
                                               'activity_date_time' => 
                                               array( 'title'   => ts( 'Activity Date' ) ),
                                               'activity_type_id'   =>
@@ -198,6 +203,15 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
  
                                   );
         
+        if ( $campaignEnabled ) {
+            // Add display column and filter for Survey Results if CiviCampaign is enabled
+            $this->_columns['civicrm_activity']['fields']['result']   = array('title' => 'Survey Result',
+                                                                              'default' => 'false');
+            $this->_columns['civicrm_activity']['filters']['result']  = array( 'title'        => ts( 'Survey Result' ),
+                                                                               'operator'     => 'like',
+                                                                               'type'       =>  CRM_Utils_Type::T_STRING  );
+
+        }
         parent::__construct( );
     }
 
@@ -212,8 +226,13 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                         if ( $tableName == 'civicrm_email' ) {
                             $this->_emailField = true;
                         } 
-
-                        $select[] = "{$field['dbAlias']} as {$tableName}_{$fieldName}";
+                        if ( !CRM_Utils_Array::value( 'activity_type_id', $this->_params['group_bys'] ) &&
+                             ( in_array( $fieldName, array('contact_assignee', 'assignee_contact_id' ) ) || 
+                               in_array( $fieldName, array( 'contact_target', 'target_contact_id' ) ) ) ) { 
+                            $select[] = "GROUP_CONCAT(DISTINCT {$field['dbAlias']}  ORDER BY {$field['dbAlias']} ) as {$tableName}_{$fieldName}";
+                        } else {
+                            $select[] = "{$field['dbAlias']} as {$tableName}_{$fieldName}";
+                        }
                         $this->_columnHeaders["{$tableName}_{$fieldName}"]['type']  = CRM_Utils_Array::value( 'type', $field );
                         $this->_columnHeaders["{$tableName}_{$fieldName}"]['title'] = CRM_Utils_Array::value( 'title', $field );
                         $this->_columnHeaders["{$tableName}_{$fieldName}"]['no_display'] = CRM_Utils_Array::value( 'no_display', $field );
@@ -282,7 +301,7 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
 
                 foreach ( $table['filters'] as $fieldName => $field ) {
                     $clause = null;
-                    if ( $field['type'] & CRM_Utils_Type::T_DATE ) {
+                    if ( CRM_Utils_Array::value( 'type', $field ) & CRM_Utils_Type::T_DATE ) {
                         $relative = CRM_Utils_Array::value( "{$fieldName}_relative", $this->_params );
                         $from     = CRM_Utils_Array::value( "{$fieldName}_from"    , $this->_params );
                         $to       = CRM_Utils_Array::value( "{$fieldName}_to"      , $this->_params );
@@ -300,6 +319,21 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
                         }
                     }
                     
+                    if ( $field['name'] == 'current_user' ) {
+                        if ( CRM_Utils_Array::value( "{$fieldName}_value", $this->_params ) == 1 ) {
+                            // get current user
+                            $session = CRM_Core_Session::singleton( );
+                            if ( $contactID = $session->get( 'userID' ) ) {
+                                $clause = "( contact_civireport.id = "   . $contactID . 
+                                    " OR civicrm_contact_assignee.id = " . $contactID . 
+                                    " OR civicrm_contact_target.id = "   . $contactID . " )";
+                            } else {
+                                $clause = NULL;
+                            }
+                        } else { 
+                            $clause = NULL;
+                        }
+                    }
                     if ( ! empty( $clause ) ) {
                         $clauses[] = $clause;
                     }
@@ -372,7 +406,7 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
         // custom code to alter rows
         
         $entryFound     = false;
-        $activityType   = CRM_Core_PseudoConstant::activityType( true, true );
+        $activityType   = CRM_Core_PseudoConstant::activityType( true, true, false, 'label', true );
         $activityStatus = CRM_Core_PseudoConstant::activityStatus();
         $viewLinks      = false;
 
@@ -398,26 +432,35 @@ class CRM_Report_Form_Activity extends CRM_Report_Form {
             }
             
             if ( array_key_exists('civicrm_contact_contact_assignee', $row ) ) {
+                $assigneeNames = explode( ',', $row['civicrm_contact_contact_assignee'] );
                 if ( $value = $row['civicrm_activity_assignment_assignee_contact_id'] ) {
+                    $assigneeContactIds = explode( ',', $value );
+                    $link = array( );
                     if ( $viewLinks ) {
-                        $url = CRM_Utils_System::url( "civicrm/contact/view"  , 
-                                                      'reset=1&cid=' . $value ,
-                                                      $this->_absoluteUrl );
-                        $rows[$rowNum]['civicrm_contact_contact_assignee_link' ] = $url; 
-                        $rows[$rowNum]['civicrm_contact_contact_assignee_hover'] = $onHover;
+                        foreach ( $assigneeContactIds as $id => $value ) {
+                            $url = CRM_Utils_System::url( "civicrm/contact/view", 
+                                                            'reset=1&cid=' . $value );
+                            $link[] = "<a title='".$onHover."' href='" . $url . "'>{$assigneeNames[$id]}</a>";
+                        }
+                        $rows[$rowNum]['civicrm_contact_contact_assignee'] = implode( '; ',$link );
                     }
                     $entryFound = true; 
                 }
             }
             
             if ( array_key_exists('civicrm_contact_contact_target', $row ) ) {
+                $targetNames = explode( ',', $row['civicrm_contact_contact_target'] );
                 if ( $value = $row['civicrm_activity_target_target_contact_id'] ) {
+                    $targetContactIds = explode( ',', $value );
+                    $link = array( );
                     if ( $viewLinks ) {
-                        $url = CRM_Utils_System::url( "civicrm/contact/view"  , 
-                                                      'reset=1&cid=' . $value ,
-                                                      $this->_absoluteUrl );
-                        $rows[$rowNum]['civicrm_contact_contact_target_link' ] = $url; 
-                        $rows[$rowNum]['civicrm_contact_contact_target_hover'] = $onHover;
+                        foreach ( $targetContactIds as $id => $value ) {
+                            $url = CRM_Utils_System::url( "civicrm/contact/view", 
+                                                          'reset=1&cid=' . $value );
+                            $link[] = "<a title='".$onHover."' href='" . $url . "'>{$targetNames[$id]}</a>";
+                            
+                        }
+                        $rows[$rowNum]['civicrm_contact_contact_target'] = implode( '; ',$link );
                     }
                     $entryFound = true; 
                 }

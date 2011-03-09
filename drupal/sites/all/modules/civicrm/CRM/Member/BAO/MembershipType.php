@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -271,7 +271,7 @@ class CRM_Member_BAO_MembershipType extends CRM_Member_DAO_MembershipType
      * Function to calculate start date and end date for new membership 
      * 
      * @param int  $membershipTypeId membership type id
-     * @param date $joinDate join date ( in mysql date format ) 
+     * @param date $joinDate member since ( in mysql date format ) 
      * @param date $startDate start date ( in mysql date format ) 
      *
      * @return array associated array with  start date, end date and join date for the membership
@@ -296,12 +296,12 @@ class CRM_Member_BAO_MembershipType extends CRM_Member_DAO_MembershipType
         }
         
         $fixed_period_rollover = false;
-        if ( $membershipTypeDetails['period_type'] == 'rolling' ) {
+        if ( CRM_Utils_Array::value( 'period_type', $membershipTypeDetails)  == 'rolling' ) {
             if ( !$startDate ) {
                 $startDate = $joinDate;
             }
             $actualStartDate = $startDate;
-        } else if ( $membershipTypeDetails['period_type'] == 'fixed' ) {
+        } else if ( CRM_Utils_Array::value( 'period_type', $membershipTypeDetails ) == 'fixed' ) {
             //calculate start date
 
             // today is always join date, in case of Online join date
@@ -334,29 +334,35 @@ class CRM_Member_BAO_MembershipType extends CRM_Member_DAO_MembershipType
                 // check if rollover date is less than fixed start date,
                 // if yes increment, another edge case handling 
                 if ( $fixedRolloverDate <= $fixedStartDate  ) {
-                    $fixedRolloverDate = date('Y-m-d', mktime( 0, 0, 0, $rolloverMonth, $rolloverDay, $year + 1 ) );
+                    $year = $year + 1;
+                    $actualRolloverDate = date( 'Y-m-d', mktime( 0, 0, 0, $rolloverMonth, $rolloverDay, $year ) );
                 }
                 
-                // we need to minus year if join date is less than equal
-                // to fixed start date also check we should check if
-                // joining date doesnot come in rollover "window". Bit
-                // complicated but it works !!
+                // if join date is less than start date as well as rollover date
+                // then decrement the year by 1
                 if ( ( $joinDate < $fixedStartDate ) && ( $joinDate < $actualRolloverDate ) ) {
                     $year = $year - 1;
+                    $actualRolloverDate = date( 'Y-m-d', mktime( 0, 0, 0, $rolloverMonth, $rolloverDay, $year ) );
                 }
                 
-                //this is the actual start date that should be used for
-                //end date calculation
-                $actualStartDate = $year.'-'.$startMonth.'-'.$startDay;
-                
-                //calculate start date if join date is in rollover window
-                if ( $fixedRolloverDate <= $joinDate ) {
+                // calculate start date if join date is in rollover window
+                // if join date is greater than the rollover date,
+                // then consider the following year as the start date
+                if ( $actualRolloverDate <= $joinDate ) {
                     $fixed_period_rollover = true;
                     $year = $year + 1;
                 } 
                 
+                //CRM-7392 --now we have all dates in hand,
+                //in case join date is less than fixed start and 
+                //calculated roll over date, lets reduce year by one 
+                if ( ( $joinDate < $fixedStartDate ) && ( $joinDate < $actualRolloverDate ) ) {
+                    $year = $year - 1;
+                }
+                
+                $actualStartDate = date( 'Y-m-d', mktime( 0, 0, 0, $startMonth, $startDay, $year ) );
                 if ( !$startDate ) {
-                    $startDate = $year.'-'.$startMonth.'-'.$startDay;
+                    $startDate = $actualStartDate;
                 }
             } else if ( $membershipTypeDetails['duration_unit'] == 'month' ) {
                 //here start date is always from start of the joining
@@ -381,10 +387,6 @@ class CRM_Member_BAO_MembershipType extends CRM_Member_DAO_MembershipType
                 
             case 'year' :
                 $year  = $year + $membershipTypeDetails['duration_interval'];
-                
-                if ( $fixed_period_rollover ) {
-                    $year  = $year  + 1;
-                } 
                 
                 break;
             case 'month':
@@ -447,11 +449,14 @@ class CRM_Member_BAO_MembershipType extends CRM_Member_DAO_MembershipType
      * Function to calculate start date and end date for renewal membership 
      * 
      * @param int $membershipId 
+     * @param $changeToday 
+     * @param int $membershipTypeID - if provided, overrides the membership type of the $membershipID membership
      *
+     * CRM-7297 Membership Upsell - Added $membershipTypeID param to facilitate calculations of dates when membership type changes
      * @return Array array fo the start date, end date and join date of the membership
      * @static
      */
-    function getRenewalDatesForMembershipType( $membershipId, $changeToday = null ) 
+    function getRenewalDatesForMembershipType( $membershipId, $changeToday = null, $membershipTypeID = null ) 
     {
         require_once 'CRM/Member/BAO/Membership.php';
         require_once 'CRM/Member/BAO/MembershipStatus.php';
@@ -465,12 +470,24 @@ class CRM_Member_BAO_MembershipType extends CRM_Member_DAO_MembershipType
         
         $membershipDetails = CRM_Member_BAO_Membership::getValues( $params, $values );
         $statusID          = $membershipDetails[$membershipId]->status_id;
-        $membershipTypeDetails = self::getMembershipTypeDetails( $membershipDetails[$membershipId]->membership_type_id );
+        // CRM-7297 Membership Upsell
+        if ( is_null( $membershipTypeID ) ) {
+	        $membershipTypeDetails = self::getMembershipTypeDetails( $membershipDetails[$membershipId]->membership_type_id );
+        } else {
+        	$membershipTypeDetails = self::getMembershipTypeDetails( $membershipTypeID );
+        }
         $statusDetails  = CRM_Member_BAO_MembershipStatus::getMembershipStatus($statusID);
         
         if ( $statusDetails['is_current_member'] == 1 ) {
             $startDate    = $membershipDetails[$membershipId]->start_date;
-            $date         = explode('-', $membershipDetails[$membershipId]->end_date);
+            // CRM=7297 Membership Upsell: we need to handle null end_date in case we are switching 
+            // from a lifetime to a different membership type
+            if ( is_null( $membershipDetails[$membershipId]->end_date ) ) {
+            	$date = date('Y-m-d');
+            } else {
+            	$date = $membershipDetails[$membershipId]->end_date;
+            }
+            $date = explode('-', $date );
             $logStartDate = date('Y-m-d', mktime( 0, 0, 0,
                                                   (double) $date[1],
                                                   (double) ($date[2] + 1),
@@ -510,9 +527,9 @@ class CRM_Member_BAO_MembershipType extends CRM_Member_DAO_MembershipType
             
             $rollover = false;
                         
-            if ( $membershipTypeDetails['period_type'] == 'rolling' ) {
+            if ( CRM_Utils_Array::value( 'period_type', $membershipTypeDetails ) == 'rolling' ) {
                 $startDate = $logStartDate = CRM_Utils_Date::mysqlToIso( $today );
-            } else if ( $membershipTypeDetails['period_type'] == 'fixed' ) {
+            } else if ( CRM_Utils_Array::value( 'period_type', $membershipTypeDetails ) == 'fixed' ) {
                 // Renewing expired membership is two step process. 
                 // 1. Renew the start date
                 // 2. Renew the end date

@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -58,7 +58,12 @@ var checkSimilar =  {$checkSimilar};
            }
            msg = msg+ '<table class="matching-contacts-actions">';
            cj.each(data, function(i,contact){
+	   if ( contact.contact_id ) {
+	     if ( !(contact.email) ) {
+	       contact.email = '';
+	     }
              msg = msg + '<tr><td><a href="'+viewIndividual+contact.contact_id+'">'+ contact.display_name +'</a></td><td>'+contact.email+'</td><td class="action-items"><a class="action-item action-item-first" href="'+viewIndividual+contact.contact_id+'">{/literal}{ts}View{/ts}{literal}</a><a class="action-item" href="'+editIndividual+contact.contact_id+'">{/literal}{ts}Edit{/ts}{literal}</a></td></tr>';
+	   }
            });
            msg = msg+ '</table>';
            cj('#last_name').parent().parent().after(msg+'</div><td></tr>');
@@ -108,7 +113,7 @@ var checkSimilar =  {$checkSimilar};
     
     <tr>
         <td colspan="2">
-            {$form.current_employer.label}&nbsp;&nbsp;<br />
+            {$form.current_employer.label}&nbsp;{help id="id-current-employer" file="CRM/Contact/Form/Contact.hlp"}<br />
             {$form.current_employer.html|crmReplace:class:twenty}
             <div id="employer_address" style="display:none;"></div>
         </td>
@@ -158,7 +163,7 @@ cj("form").submit(function() {
 //current employer default setting
 var employerId = "{/literal}{$currentEmployer}{literal}";
 if ( employerId ) {
-    var dataUrl = "{/literal}{crmURL p='civicrm/ajax/rest' h=0 q="className=CRM_Contact_Page_AJAX&fnName=getContactList&json=1&context=contact&org=1&id=" }{literal}" + employerId ;
+    var dataUrl = "{/literal}{crmURL p='civicrm/ajax/rest' h=0 q="className=CRM_Contact_Page_AJAX&fnName=getContactList&json=1&context=contact&org=1&id=" }{literal}" + employerId + "&employee_id=" + cid ;
     cj.ajax({ 
         url     : dataUrl,   
         async   : false,

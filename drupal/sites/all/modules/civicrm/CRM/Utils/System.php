@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -880,12 +880,28 @@ class CRM_Utils_System {
         }
     }
 
+    /*
+     * Get logged in user's IP address. 
+     * 
+     * Get IP address from HTTP Header. If the CMS is Drupal then use the Drupal function 
+     * as this also handles reverse proxies (based on proper configuration in settings.php)
+     * 
+     * @return string ip address of logged in user
+     */
     static function ipAddress( ) {
         $address = CRM_Utils_Array::value( 'REMOTE_ADDR', $_SERVER );
+
+        $config   = CRM_Core_Config::singleton( );
+        if ( $config->userFramework == 'Drupal' ) {
+            //drupal function handles the server being behind a proxy securely
+            return ip_address( );   
+        }
+        
         // hack for safari
         if ( $address == '::1' ) {
             $address = '127.0.0.1';
         }
+
         return $address;
     }
 
@@ -1092,11 +1108,15 @@ class CRM_Utils_System {
 
     /**
      * load cms bootstrap
+     *
+     * @param $name string  optional username for login
+     * @param $pass string  optional password for login
      */
-    static function loadBootStrap( ) {
+    static function loadBootStrap($name = null, $pass = null, $uid = null)
+    {
         $config = CRM_Core_Config::singleton();
         require_once(str_replace('_', DIRECTORY_SEPARATOR, $config->userFrameworkClass) . '.php');
-        return eval('return '. $config->userFrameworkClass . '::loadBootStrap( );');
+        return call_user_func("{$config->userFrameworkClass}::loadBootStrap", $name, $pass, $uid);
     }
     
     /**
@@ -1119,6 +1139,72 @@ class CRM_Utils_System {
         $config = CRM_Core_Config::singleton( );
         require_once(str_replace('_', DIRECTORY_SEPARATOR, $config->userFrameworkClass) . '.php');
         return eval('return '. $config->userFrameworkClass . '::getLoggedInUfID( );');
+    }
+
+    static function baseCMSURL( ) {
+        static $_baseURL = null;
+        if ( ! $_baseURL ) {
+            $config =& CRM_Core_Config::singleton( );
+            $_baseURL = $userFrameworkBaseURL = $config->userFrameworkBaseURL;
+
+            if ( $config->userFramework == 'Joomla' ) {
+                // gross hack
+                // we need to remove the administrator/ from the end
+                $_baseURL = str_replace( "/administrator/", "/", $userFrameworkBaseURL );
+            } else {
+                // Drupal setting
+                global $civicrm_root;
+                if ( strpos( $civicrm_root,
+                             DIRECTORY_SEPARATOR . 'sites' .
+                             DIRECTORY_SEPARATOR . 'all'   .
+                             DIRECTORY_SEPARATOR . 'modules' ) === false ) {
+                    $startPos = strpos( $civicrm_root,
+                                        DIRECTORY_SEPARATOR . 'sites' . DIRECTORY_SEPARATOR );
+                    $endPos   = strpos( $civicrm_root,
+                                        DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR );
+                    if ( $startPos && $endPos ) {
+                        // if component is in sites/SITENAME/modules
+                        $siteName = substr( $civicrm_root,
+                                            $startPos + 7,
+                                            $endPos - $startPos - 7 );
+                        
+                        $_baseURL = $userFrameworkBaseURL . "sites/$siteName/";
+                    }
+                }
+            }
+        }
+        return $_baseURL;
+    }
+
+    static function relativeURL( $url ) {
+        // check if url is relative, if so return immediately
+        if ( substr( $url, 0, 4 ) != 'http' ) {
+            return $url;
+        }
+
+        // make everything relative from the baseFilePath
+        $baseURL = self::baseCMSURL( );
+
+        // check if baseURL is a substr of $url, if so
+        // return rest of string
+        if ( substr( $url, 0, strlen( $baseURL ) ) == $baseURL ) {
+            return substr( $url, strlen( $baseURL ) );
+        }
+        
+        // return the original value
+        return $url;
+    }
+
+    static function absoluteURL( $url ) {
+        // check if url is already absolute, if so return immediately
+        if ( substr( $url, 0, 4 ) == 'http' ) {
+            return $url;
+        }
+
+        // make everything absolute from the baseFileURL
+        $baseURL = self::baseCMSURL( );
+
+        return $baseURL . $url;
     }
     
 }

@@ -1,7 +1,7 @@
 <?php
   /*
    +--------------------------------------------------------------------+
-   | CiviCRM version 3.2                                                |
+   | CiviCRM version 3.3                                                |
    +--------------------------------------------------------------------+
    | This file is a part of CiviCRM.                                    |
    |                                                                    |
@@ -44,7 +44,7 @@ class JElementCiviprofiles extends JElement {
 		require_once 'CRM/Core/Config.php';
 		$config =& CRM_Core_Config::singleton( );
 		
-		require_once 'api/v2/UFGroup.php';
+        civicrm_api_include('uf_group');
         $ufGroups =civicrm_uf_profile_groups_get();
         $options[] = JHTML::_('select.option', '', JText::_('- Select Profile -') );
         foreach ( $ufGroups  as $key =>$values ) {

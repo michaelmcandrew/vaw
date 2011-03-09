@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -62,7 +62,8 @@ class CRM_Event_Page_EventInfo extends CRM_Core_Page
         // ensure that the user has permission to see this page
         if ( ! CRM_Core_Permission::event( CRM_Core_Permission::VIEW,
                                            $this->_id ) ) {
-            CRM_Core_Error::fatal( ts( 'You do not have permission to view this event' ) );
+            CRM_Utils_System::setUFMessage( ts( 'You do not have permission to view this event' ) );
+            return CRM_Utils_System::permissionDenied( );
         }
 
         $action  = CRM_Utils_Request::retrieve( 'action', 'String'  , $this, false );
@@ -122,7 +123,7 @@ class CRM_Event_Page_EventInfo extends CRM_Core_Page
                         }
                         
                         foreach ( $fieldValues['options'] as $optionId => $optionVal ) {
-                            $values['feeBlock']['value'][$fieldCnt] = $optionVal['value'];
+                            $values['feeBlock']['value'][$fieldCnt] = $optionVal['amount'];
                             $values['feeBlock']['label'][$fieldCnt] = $optionVal['label'];
                             $values['feeBlock']['lClass'][$fieldCnt] = $labelClass;
                             $fieldCnt++;

@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -23,9 +23,6 @@
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
 *}
-
-{* WizardHeader.tpl provides visual display of steps thru the wizard as well as title for current step *}
-{include file="CRM/common/WizardHeader.tpl"}
 <div id="help">
     {ts}Edit <strong>Premiums Settings</strong> to enable the Premiums section for this Online Contribution Page, and customize the title and introductory message (e.g ...in appreciation of your support, you will be able to select from a number of exciting thank-you gifts...). You can optionally provide a contact email address and/or phone number for inquiries.{/ts}
     {ts}Then select and review the premiums that you want to offer on this contribution page.{/ts}
@@ -46,14 +43,14 @@
     </table>
     <table id= "premiumFields" class="form-layout-compressed">
     <tr class="crm-contribution-contributionpage-premium-form-block-premiums_intro_title">
-       <td class="label">{$form.premiums_intro_title.label}{if $action == 2}{include file='CRM/Core/I18n/Dialog.tpl' table='civicrm_premiums' field='premiums_intro_title' id=$id}{/if}
+       <td class="label">{$form.premiums_intro_title.label}{if $action == 2}{include file='CRM/Core/I18n/Dialog.tpl' table='civicrm_premiums' field='premiums_intro_title' id=$contributionPageID}{/if}
        </td>
        <td class="html-adjust">{$form.premiums_intro_title.html}<br />
      	   <span class="description">{ts}Title to appear at the top of the Premiums section.{/ts}</span>
        </td>
     </tr>
     <tr class="crm-contribution-contributionpage-premium-form-block-premiums_intro_text">
-       <td class="label">{$form.premiums_intro_text.label}{if $action == 2}{include file='CRM/Core/I18n/Dialog.tpl' table='civicrm_premiums' field='premiums_intro_text' id=$id}{/if}
+       <td class="label">{$form.premiums_intro_text.label}{if $action == 2}{include file='CRM/Core/I18n/Dialog.tpl' table='civicrm_premiums' field='premiums_intro_text' id=$contributionPageID}{/if}
        </td>
        <td class="html-adjust">{$form.premiums_intro_text.html}<br />
        	   <span class="description">{ts}Enter content for the introductory message. This will be displayed below the Premiums section title. You may include HTML formatting tags. You can also include images, as long as they are already uploaded to a server - reference them using complete URLs.{/ts}</span>
@@ -86,7 +83,7 @@
     
 </div>
 
-
+{include file="CRM/Contribute/Page/Premium.tpl"}
 <script type="text/javascript">
     var myElement1 = document.getElementById('id_form');
     var myElement2 = document.getElementById('id_form_show');

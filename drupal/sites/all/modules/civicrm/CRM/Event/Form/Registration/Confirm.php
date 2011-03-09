@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -92,7 +92,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration
             //we lost rfp in case of additional participant. So set it explicitly.
             if ( $rfp || CRM_Utils_Array::value( 'additional_participants', $this->_params[0], false ) ) {
                 require_once 'CRM/Core/Payment.php'; 
-                $payment =& CRM_Core_Payment::singleton( $this->_mode, 'Event', $this->_paymentProcessor, $this );
+                $payment =& CRM_Core_Payment::singleton( $this->_mode, $this->_paymentProcessor, $this );
                 $expressParams = $payment->getExpressCheckoutDetails( $this->get( 'token' ) );
                              
                 $params['payer'       ] = $expressParams['payer'       ];
@@ -216,7 +216,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration
         $this->assignToTemplate( );
         if( $this->_params[0]['amount'] || $this->_params[0]['amount'] == 0 ) {
             $this->_amount = array();
-                        
+
             foreach( $this->_params as $k => $v ) {
                 if ( is_array( $v ) ) {
                     foreach (array ('first_name', 'last_name') as $name) {
@@ -377,21 +377,8 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration
         $this->assign( 'isRequireApproval', $this->_requireApproval );
         
         // Assign Participant Count to Lineitem Table
-        if ( $this->_priceSetId ) {
-            // Assign Participant Count to Lineitem Table
-            $query = "SELECT count from civicrm_price_field where price_set_id = %1 ";
-            $params = array( 1 => array( $this->_priceSetId, 'Integer' ));
-            $dao = CRM_Core_DAO::executeQuery( $query, $params );
-            $participantCount = array();
-            while ( $dao->fetch() ) {
-                if ( ! empty( $dao->count ) ){
-                    $participantCount[] = $dao->count;
-                } 
-            }
-            if ( !empty( $participantCount ) ) {
-                $this->assign( 'participantCount', $participantCount );
-            }
-        }
+        require_once "CRM/Price/BAO/Set.php";
+        $this->assign( 'pricesetFieldsCount', CRM_Price_BAO_Set::getPricesetCount( $this->_priceSetId ) );
     }
     
     /**
@@ -407,8 +394,12 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration
         $now           = date( 'YmdHis' );
         $config        = CRM_Core_Config::singleton( );
         $session       = CRM_Core_Session::singleton( );
-        $contactID     = parent::getContactID( );
         $this->_params = $this->get( 'params' );
+        if ( CRM_Utils_Array::value( 'contact_id', $this->_params[0] ) ) {
+            $contactID = $this->_params[0]['contact_id'];
+        } else {
+            $contactID = parent::getContactID( );
+        }
         
         // if a discount has been applied, lets now deduct it from the amount
         // and fix the fee level
@@ -513,7 +504,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration
             if ( $this->_values['event']['is_monetary'] ) {
                 require_once 'CRM/Core/Payment.php';
                 if ( is_array( $this->_paymentProcessor ) ) {
-                    $payment =& CRM_Core_Payment::singleton( $this->_mode, 'Event', $this->_paymentProcessor, $this );
+                    $payment =& CRM_Core_Payment::singleton( $this->_mode, $this->_paymentProcessor, $this );
                 }
                 $pending = false;
                 $result  = null;
@@ -705,7 +696,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration
             
             // do a transfer only if a monetary payment greater than 0
             if ( $this->_values['event']['is_monetary'] && $primaryParticipant && $payment ) {
-                $payment->doTransferCheckout( $primaryParticipant );
+                $payment->doTransferCheckout( $primaryParticipant, 'event' );
             }
             
         } else {
@@ -811,7 +802,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration
         }
         //CRM-4196        
         if ( $isAdditionalAmount ) {
-            $params['amount_level'] = $params['amount_level'].ts(' (multiple participants)'). CRM_Core_BAO_CustomOption::VALUE_SEPERATOR;
+            $params['amount_level'] = $params['amount_level'].ts(' (multiple participants)'). CRM_Core_DAO::VALUE_SEPARATOR;
         }
 
         $contribParams = array(
@@ -825,6 +816,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration
                                'currency'              => $params['currencyID'],
                                'source'                => $params['description'],
                                'is_pay_later'          => CRM_Utils_Array::value( 'is_pay_later', $params, 0 ),
+                               'campaign_id'           => CRM_Utils_Array::value( 'campaign_id', $params )
                                );
         
         if ( ! CRM_Utils_Array::value( 'is_pay_later', $params ) ) {
@@ -1004,31 +996,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration
                                                                          null,
                                                                          $ctype );
         } else {
-            // when we have allow_same_participant_emails = 1
-            // don't take email address in dedupe params - CRM-4886
-            // here we are making dedupe weak - so to make dedupe
-            // more effective please update individual 'Strict' rule.
-            $allowSameEmailAddress = CRM_Utils_Array::value( 'allow_same_participant_emails', $this->_values['event'] );
-            require_once 'CRM/Dedupe/Finder.php';
-            //suppress "email-Primary" when allow_same_participant_emails = 1
-            if ( $allowSameEmailAddress && 
-                 ( $email = CRM_Utils_Array::value( 'email-Primary', $params ) ) &&
-                 ( CRM_Utils_Array::value( 'registered_by_id', $params ) ) ) {
-                //skip dedupe check only for additional participants
-                unset($params['email-Primary']);
-            }
-            $dedupeParams = CRM_Dedupe_Finder::formatParams($params, 'Individual');
-            // disable permission based on cache since event registration is public page/feature.
-            $dedupeParams['check_permission'] = false;
-            $ids = CRM_Dedupe_Finder::dupesByParams($dedupeParams, 'Individual');
-            
-            // if we find more than one contact, use the first one
-            $contact_id  = $ids[0];
-            if ( isset( $email ) ) {
-                $params['email-Primary'] = $email;
-            }
-            
-            $contactID =& CRM_Contact_BAO_Contact::createProfileContact( $params, $fields, $contact_id, $addToGroups );
+            $contactID = CRM_Contact_BAO_Contact::createProfileContact( $params, $fields, null, $addToGroups );
             $this->set( 'contactID', $contactID );
         }
 

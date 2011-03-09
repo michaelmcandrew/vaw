@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -304,7 +304,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form
 
                 // ensure that processor has a valid config
                 $this->_paymentObject =&
-                    CRM_Core_Payment::singleton( $this->_mode, 'Contribute', $this->_paymentProcessor, $this );
+                    CRM_Core_Payment::singleton( $this->_mode, $this->_paymentProcessor, $this );
                 $error = $this->_paymentObject->checkConfig( );
                 if ( ! empty( $error ) ) {
                     CRM_Core_Error::fatal( $error );
@@ -370,6 +370,11 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form
                 //authenticate pledge user for pledge payment.
                 if ( $pledgeId ) {
                     $this->_values['pledge_id'] = $pledgeId;
+                    
+                    //lets override w/ pledge campaign.
+                    $this->_values['campaign_id'] = CRM_Core_DAO::getFieldValue( 'CRM_Pledge_DAO_Pledge', 
+                                                                                 $pledgeId,
+                                                                                 'campaign_id' );
                     self::authenticatePledgeUser( );
                 }
             }
@@ -533,6 +538,17 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form
         
         $this->_amount   = $this->get( 'amount' );
         
+        //CRM-6907
+        $config = CRM_Core_Config::singleton( );
+        $config->defaultCurrency = CRM_Utils_Array::value( 'currency', 
+                                                           $this->_values, 
+                                                           $config->defaultCurrency );
+        
+        //lets allow user to override campaign. 
+        $campID = CRM_Utils_Request::retrieve( 'campID', 'Positive', $this );
+        if ( $campID && CRM_Core_DAO::getFieldValue( 'CRM_Campaign_DAO_Campaign', $campID ) ) {
+            $this->_values['campaign_id'] = $campID;
+        }
     }
 
     /** 
@@ -722,7 +738,8 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form
                 
                 $fields = array_diff_assoc( $fields, $this->_fields );
                 $this->assign( $name, $fields );
-                
+                require_once 'CRM/Core/BAO/Address.php';
+                CRM_Core_BAO_Address::checkContactSharedAddressFields( $fields, $contactID );
                 $addCaptcha = false;
                 foreach($fields as $key => $field) {
                     if ( $viewOnly &&

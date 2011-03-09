@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -37,26 +37,29 @@
                     <ul id="actions">
                     	{* CRM-4418 *}
                         {* user should have edit permission to delete contact *}
-                        {if (call_user_func(array('CRM_Core_Permission','check'), 'delete contacts') and $permission == 'edit') or (call_user_func(array('CRM_Core_Permission','check'), 'access deleted contacts') and $is_deleted)}
-                        {if call_user_func(array('CRM_Core_Permission','check'), 'access deleted contacts') and $is_deleted}
+                        {if (call_user_func(array('CRM_Core_Permission','check'), 'access deleted contacts') and 
+                        $is_deleted)}
+
                         <li class="crm-delete-action crm-contact-restore">
                         <a href="{crmURL p='civicrm/contact/view/delete' q="reset=1&cid=$contactId&restore=1"}" class="delete button" title="{ts}Restore{/ts}">
                         <span><div class="icon restore-icon"></div>{ts}Restore from Trash{/ts}</span>
                         </a>
                         </li>
                         
+                        {if call_user_func(array('CRM_Core_Permission','check'), 'delete contacts')} 
                         <li class="crm-delete-action crm-contact-permanently-delete">
                         <a href="{crmURL p='civicrm/contact/view/delete' q="reset=1&delete=1&cid=$contactId&skip_undelete=1"}" class="delete button" title="{ts}Delete Permanently{/ts}">
                         <span><div class="icon delete-icon"></div>{ts}Delete Permanently{/ts}</span>
                         </a>
                         </li>
-                        {else}
+                        {/if}
+
+                        {elseif call_user_func(array('CRM_Core_Permission','check'), 'delete contacts')}
                         <li class="crm-delete-action crm-contact-delete">
                         <a href="{crmURL p='civicrm/contact/view/delete' q="reset=1&delete=1&cid=$contactId"}" class="delete button" title="{ts}Delete{/ts}">
                         <span><div class="icon delete-icon"></div>{ts}Delete{/ts}</span>
                         </a>
                         </li>
-                        {/if}
                         {/if}
                     
                     	{* Include the Actions button with dropdown if session has 'edit' permission *}
@@ -79,7 +82,7 @@
                         </li>
                         {/if}
                         
-                        {if $groupOrganizationUrl}
+                        {if !empty($groupOrganizationUrl)}
                         <li class="crm-contact-associated-groups">
                         <a href="{$groupOrganizationUrl}" class="associated-groups button" title="{ts}Associated Multi-Org Group{/ts}">
                         <span><div class="icon associated-groups-icon"></div>{ts}Associated Multi-Org Group{/ts}</span>
@@ -113,49 +116,49 @@
         </ul>
 
         <div title="Summary" id="contact-summary" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
-            {if $hookContentPlacement neq 3}
+            {if (isset($hookContentPlacement) and ($hookContentPlacement neq 3)) or empty($hookContentPlacement)}
                 
-                {if $hookContent and $hookContentPlacement eq 2}
+                {if !empty($hookContent) and isset($hookContentPlacement) and $hookContentPlacement eq 2}
                     {include file="CRM/Contact/Page/View/SummaryHook.tpl"}
                 {/if}
                 
-                {if $contact_type_label OR $current_employer_id OR $job_title OR $legal_name OR $sic_code OR $nick_name OR $contactTag OR $source}
+                {if !empty($contact_type_label) OR !empty($current_employer_id) OR !empty($job_title) OR !empty($legal_name) OR $sic_code OR !empty($nick_name) OR !empty($contactTag) OR !empty($source)}
                 <div id="contactTopBar">
                     <table>
-                        {if $contact_type_label OR $userRecordUrl OR $current_employer_id OR $job_title OR $legal_name OR $sic_code OR $nick_name}
+                        {if !empty($contact_type_label) OR !empty($userRecordUrl) OR !empty($current_employer_id) OR !empty($job_title) OR !empty($legal_name) OR $sic_code OR !empty($nick_name)}
                         <tr>
                             <td class="label">{ts}Contact Type{/ts}</td>
-                            <td>{$contact_type_label}</td>
-                            {if $current_employer_id}
+                            <td>{if isset($contact_type_label)}{$contact_type_label}{/if}</td>
+                            {if !empty($current_employer_id)}
                             <td class="label">{ts}Employer{/ts}</td>
                             <td><a href="{crmURL p='civicrm/contact/view' q="reset=1&cid=`$current_employer_id`"}" title="{ts}view current employer{/ts}">{$current_employer}</a></td>
                             {/if}
-                            {if $job_title}
+                            {if !empty($job_title)}
                             <td class="label">{ts}Position{/ts}</td>
                             <td>{$job_title}</td>
                             {/if}
-                            {if $legal_name}
+                            {if !empty($legal_name)}
                             <td class="label">{ts}Legal Name{/ts}</td>
                             <td>{$legal_name}</td>
                             {if $sic_code}
                             <td class="label">{ts}SIC Code{/ts}</td>
                             <td>{$sic_code}</td>
                             {/if}
-                            {elseif $nick_name}
+                            {elseif !empty($nick_name)}
                             <td class="label">{ts}Nickname{/ts}</td>
                             <td>{$nick_name}</td>
                             {/if}
                         </tr>
                         {/if}
-                        {if $contactTag OR $userRecordUrl OR $source}
+                        {if !empty($contactTag) OR !empty($userRecordUrl) OR !empty($source)}
                         <tr>
-                            {if $contactTag}
+                            {if !empty($contactTag)}
                             <td class="label" id="tagLink"><a href="{crmURL p='civicrm/contact/view' q="reset=1&cid=$contactId&selectedChild=tag"}" title="{ts}Edit Tags{/ts}">{ts}Tags{/ts}</a></td><td id="tags">{$contactTag}</td>
                             {/if}
-                            {if $userRecordUrl}
+                            {if !empty($userRecordUrl)}
                             <td class="label">{ts}User ID{/ts}</td><td><a title="View user record" class="user-record-link" href="{$userRecordUrl}">{$userRecordId}</a></div>
                             {/if}
-                            {if $source}
+                            {if !empty($source)}
                             <td class="label">{ts}Source{/ts}</td><td>{$source}</td>
                             {/if}
                         </tr>
@@ -185,9 +188,9 @@
                                 {/foreach}
                                 {if $website}
                                 {foreach from=$website item=item}
-                                    {if $item.url}
+                                    {if !empty($item.url)}
                                     <tr>
-                                        <td class="label">{$item.website_type}</td>
+                                        <td class="label">{$item.website_type} {ts}Website{/ts}</td>
                                         <td><a href="{$item.url}" target="_blank">{$item.url}</a></td>
                                         <td></td>
                                     </tr>
@@ -250,11 +253,11 @@
                                             <br /><a href="{crmURL p='civicrm/contact/map' q="reset=1&cid=`$contactId`&lid=`$add.location_type_id`"}" title="{ts 1='&#123;$add.location_type&#125;'}Map %1 Address{/ts}"><span class="geotag">{ts}Map{/ts}</span></a>
                                         {/if}</td>
                                     <td>
-                                        {if $householdName and $locationIndex eq 1}
-                                        <strong>{ts}Household Address:{/ts}</strong><br />
-                                        <a href="{crmURL p='civicrm/contact/view' q="reset=1&cid=`$mail_to_household_id`"}">{$householdName}</a><br />
-                                        {/if}
-                                        {$add.display|nl2br}
+                                        {if $sharedAddresses.$locationIndex.shared_address_display.name}
+                                             <strong>{ts}Shared with:{/ts}</strong><br />
+                                             {$sharedAddresses.$locationIndex.shared_address_display.name}<br />
+                                         {/if}
+                                         {$add.display|nl2br}
                                     </td>
                                 </tr>
                             </table>
@@ -324,11 +327,11 @@
 						{if $contact_type neq 'Organization'}
 						 <table>
 							<tr>
-								<td class="label">{ts}Email Greeting{/ts}{if $email_greeting_custom}<br/><span style="font-size:8px;">({ts}Customized{/ts})</span>{/if}</td>
+								<td class="label">{ts}Email Greeting{/ts}{if !empty($email_greeting_custom)}<br/><span style="font-size:8px;">({ts}Customized{/ts})</span>{/if}</td>
 								<td>{$email_greeting_display}</td>
 							</tr>
 							<tr>
-								<td class="label">{ts}Postal Greeting{/ts}{if $postal_greeting_custom}<br/><span style="font-size:8px;">({ts}Customized{/ts})</span>{/if}</td>
+								<td class="label">{ts}Postal Greeting{/ts}{if !empty($postal_greeting_custom)}<br/><span style="font-size:8px;">({ts}Customized{/ts})</span>{/if}</td>
 								<td>{$postal_greeting_display}</td>
 							</tr>
 						 </table>
@@ -337,7 +340,7 @@
 						<div class="contactCardRight">
 						 <table>
 							<tr>
-								<td class="label">{ts}Addressee{/ts}{if $addressee_custom}<br/><span style="font-size:8px;">({ts}Customized{/ts})</span>{/if}</td>
+								<td class="label">{ts}Addressee{/ts}{if !empty($addressee_custom)}<br/><span style="font-size:8px;">({ts}Customized{/ts})</span>{/if}</td>
 								<td>{$addressee_display}</td>
 							</tr>
 						 </table>
@@ -374,7 +377,7 @@
                     });
                 </script>
                 {/literal}
-                {if $hookContent and $hookContentPlacement eq 1}
+                {if !empty($hookContent) and isset($hookContentPlacement) and $hookContentPlacement eq 1}
                     {include file="CRM/Contact/Page/View/SummaryHook.tpl"}
                 {/if}
             {else}
@@ -430,7 +433,6 @@ function showHideSignature( blockId ) {
 
 		buttons: { 
 			"Done": function() { 
-				cj(this).dialog("close"); 
 				cj(this).dialog("destroy"); 
 			} 
 		} 
@@ -441,7 +443,7 @@ function showHideSignature( blockId ) {
 </script>
 {/literal}
 
-{if $isAddressCustomPresent}
+{if !empty($isAddressCustomPresent)}
     {literal}
         <script type="text/javascript">
             cj(function() {

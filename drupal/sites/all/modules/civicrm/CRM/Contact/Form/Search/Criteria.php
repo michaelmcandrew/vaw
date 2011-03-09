@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -95,9 +95,8 @@ class CRM_Contact_Form_Search_Criteria {
         }
 
         // add checkbox for cms users only
-        if (CIVICRM_UF != 'Standalone'){
-          $form->addYesNo( 'uf_user', ts( 'CMS User?' ) );
-        }
+        $form->addYesNo( 'uf_user', ts( 'CMS User?' ) );
+ 
         // add search profiles
         require_once 'CRM/Core/BAO/UFGroup.php';
 
@@ -119,7 +118,34 @@ class CRM_Contact_Form_Search_Criteria {
             }
         }
         
-        $form->addElement('select', 'uf_group_id', ts('Search Views'),  array('0' => ts('- default view -')) + $searchProfiles);
+        $form->addElement('select', 
+                          'uf_group_id', 
+                          ts('Search Views'), 
+                          array('0' => ts('- default view -')) + $searchProfiles );
+
+        require_once 'CRM/Contact/Form/Search.php';
+        $componentModes =& CRM_Contact_Form_Search::getModeSelect( );
+
+        // unset contributions or participants if user does not have
+        // permission on them
+        if ( ! CRM_Core_Permission::access( 'CiviContribute' ) ) {
+            unset ( $componentModes['2'] );
+        }
+
+        if ( ! CRM_Core_Permission::access( 'CiviEvent' ) ) {
+            unset ( $componentModes['3'] );
+        }
+
+        if ( ! CRM_Core_Permission::check( 'view all activities' ) ) {
+            unset ( $componentModes['4'] );
+        }
+
+        if ( count( $componentModes ) > 1 ) {
+            $form->addElement('select',
+                              'component_mode', 
+                              ts( 'Display Results As' ),
+                              $componentModes );
+        }
 
         // checkboxes for DO NOT phone, email, mail
         // we take labels from SelectValues
@@ -212,7 +238,11 @@ class CRM_Contact_Form_Search_Criteria {
                     $selectElements = array( '' => ts('- select -') ) 
                         + CRM_Core_PseudoConstant::$select( );
                     $element = $form->addElement('select', $name, $title, $selectElements );   
-                }
+                } else {
+                    $selectElements = array( '' => ts('- select -') ) 
+                        + CRM_Core_PseudoConstant::$select( );
+                    $element = $form->addElement('select', $name, $title, $selectElements );   
+		}
                 if ( $multiSelect ) {
                     $element->setMultiple( true );
                 }
@@ -227,6 +257,14 @@ class CRM_Contact_Form_Search_Criteria {
                                   CRM_Utils_Array::value( 'postal_code', $attributes ) );
             }
         }
+
+        // extend addresses with proximity search
+        $form->addElement('text', 'prox_distance', ts('Find contacts within'));
+        $form->addElement('select', 'prox_distance_unit', null, array('miles' => ts('Miles'), 'kilos' => ts('Kilometers') ));
+
+        // is there another form rule that does decimals besides money ? ...
+        $form->addRule('prox_distance', ts('Please enter positive number as a distance'), 'numeric');
+
         require_once 'CRM/Core/BAO/Address.php';
         CRM_Core_BAO_Address::addStateCountryMap( $stateCountryMap ); 
         $worldRegions =  array('' => ts('- any region -')) + CRM_Core_PseudoConstant::worldRegion( );
@@ -271,11 +309,14 @@ class CRM_Contact_Form_Search_Criteria {
 
         // block for change log
         $form->addElement('text', 'changed_by', ts('Modified By'), null);
-
-        $form->addDate( 'modified_date_low', ts('Modified Between'), false, array( 'formatType' => 'searchDate') );
-        $form->addDate( 'modified_date_high', ts('and'), false, array( 'formatType' => 'searchDate') );
+        
+        $dates  = array( 1 => ts( 'Added' ), 2 => ts( 'Modified' ) );
+        $form->addRadio( 'log_date', null, $dates, null, '<br />');
+        
+        $form->addDate( 'log_date_low', ts('Between'),false, array( 'formatType' => 'searchDate') );
+        $form->addDate( 'log_date_high',ts('and'), false, array( 'formatType' => 'searchDate') );
     }
-
+    
     static function task( &$form ) {
         $form->add( 'hidden', 'hidden_task', 1 );
 
@@ -338,6 +379,13 @@ class CRM_Contact_Form_Search_Criteria {
 
         $form->addDate( 'deceased_date_low', ts('Deceased Dates - From'), false, array( 'formatType' => 'birth') );
         $form->addDate( 'deceased_date_high', ts('To'), false, array( 'formatType' => 'birth') );
+
+		
+		// radio button for is_deceased
+        $deceasedOptions = array( );
+        $deceasedOptions[1] = HTML_QuickForm::createElement('radio', null, ts('Deceased'), 'Yes', 1);
+		$deceasedOptions[0] = HTML_QuickForm::createElement('radio', null, ts('Deceased'), 'No', 0);
+        $form->addGroup( $deceasedOptions, 'is_deceased', ts('Deceased'));
     }
     
     static function notes( &$form ) {
@@ -377,6 +425,8 @@ class CRM_Contact_Form_Search_Criteria {
                                                                false, false, true );
             }
         }
+
+        //TODO: validate for only one state if prox_distance isset
     }
 
     static function CiviCase( &$form ) {

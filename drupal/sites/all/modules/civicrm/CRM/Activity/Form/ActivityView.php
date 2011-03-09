@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -94,6 +94,13 @@ class CRM_Activity_Form_ActivityView extends CRM_Core_Form
                 $values[$key] = $value;
             }
         }  
+        
+        //get the campaign
+        if ( $campaignId = CRM_Utils_Array::value( 'campaign_id', $defaults ) ) {
+            require_once 'CRM/Campaign/BAO/Campaign.php';
+            $campaigns = CRM_Campaign_BAO_Campaign::getCampaigns( $campaignId );
+            $values['campaign'] = $campaigns[$campaignId];
+        }
         
         require_once 'CRM/Core/BAO/File.php';
         $values['attachment'] = CRM_Core_BAO_File::attachmentInfo( 'civicrm_activity',

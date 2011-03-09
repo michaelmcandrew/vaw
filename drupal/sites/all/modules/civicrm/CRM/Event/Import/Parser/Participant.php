@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -108,6 +108,7 @@ class CRM_Event_Import_Parser_Participant extends CRM_Event_Import_Parser
             case 'event_id':
                 $this->_eventIndex               = $index;
                 break;
+            case 'participant_status':
             case 'participant_status_id':
                 $this->_participantStatusIndex   = $index;
                 break;
@@ -214,14 +215,35 @@ class CRM_Event_Import_Parser_Participant extends CRM_Event_Import_Parser
                 } else {
                     CRM_Import_Parser_Contact::addToErrorMsg('Register Date', $errorMessage);
                 }
-            } else if( $val && ( $key == 'participant_role_id' ) ){
-                if (!CRM_Import_Parser_Contact::in_value($val,CRM_Event_PseudoConstant::participantRole())) {
-                    CRM_Import_Parser_Contact::addToErrorMsg('Participant Role', $errorMessage);
-                }   
-            } else if( $val && ( $key == 'participant_status_id' ) ){
-                if (!CRM_Import_Parser_Contact::in_value($val,CRM_Event_PseudoConstant::participantStatus())) {
-                    CRM_Import_Parser_Contact::addToErrorMsg('Participant Status', $errorMessage);
-                }   
+            } else if ( $val && ( $key == 'participant_role_id' || $key == 'participant_role' ) ) {
+                $roleIDs = CRM_Event_PseudoConstant::participantRole( );
+                $val = explode( ',', $val );
+                if ( $key == 'participant_role_id' ) {
+                    foreach ( $val as $role ) {
+                        if ( !in_array( trim( $role ), array_keys( $roleIDs ) ) ) {
+                            CRM_Import_Parser_Contact::addToErrorMsg( 'Participant Role Id', $errorMessage );
+                            break;
+                        }
+                    }
+                } else {
+                    foreach ( $val as $role ) {
+                        if ( !CRM_Import_Parser_Contact::in_value( trim( $role ), $roleIDs ) ) {
+                            CRM_Import_Parser_Contact::addToErrorMsg( 'Participant Role', $errorMessage );
+                            break;
+                        } 
+                    } 
+                }
+            } else if ( $val && ( ( $key == 'participant_status_id' ) || ( $key == 'participant_status' ) ) ) {
+                $statusIDs = CRM_Event_PseudoConstant::participantStatus( );
+                if ( $key == 'participant_status_id' ) {
+                    if ( !in_array( trim( $val ), array_keys( $statusIDs ) ) ) {
+                        CRM_Import_Parser_Contact::addToErrorMsg( 'Participant Status Id', $errorMessage );
+                        break;
+                    }
+                } else if ( !CRM_Import_Parser_Contact::in_value( $val, $statusIDs ) ) {
+                    CRM_Import_Parser_Contact::addToErrorMsg( 'Participant Status', $errorMessage );
+                    break;
+                }
             }
         }
         //date-Format part ends
@@ -286,20 +308,18 @@ class CRM_Event_Import_Parser_Participant extends CRM_Event_Import_Parser
             } 
         }
 
-        if ( ! $params['participant_role_id'] ) {
+        if ( !( $params['participant_role_id'] || $params['participant_role'] ) ) {
             if ( $params['event_id'] ) {
-                $roleId= 
+                $params['participant_role_id'] = 
                     CRM_Core_DAO::getFieldValue( "CRM_Event_DAO_Event", $params['event_id'] , 'default_role_id' );
             } else {
                 $eventTitle = $params['event_title'];
                 $qParams = array();
                 $dao = new CRM_Core_DAO();
-                $roleId =
+                $params['participant_role_id'] =
                     $dao->singleValueQuery("SELECT default_role_id FROM civicrm_event WHERE title = '$eventTitle' ",
                                            $qParams);
             }
-            require_once 'CRM/Event/PseudoConstant.php';
-            $params['participant_role_id'] = CRM_Event_PseudoConstant::participantRole( $roleId );
         } 
         //date-Format part ends
         static $indieFields = null;
@@ -318,7 +338,7 @@ class CRM_Event_Import_Parser_Participant extends CRM_Event_Import_Parser
         }
         
         $formatError = _civicrm_participant_formatted_param( $formatValues, $formatted, true );
-        require_once "api/v2/Participant.php";
+        civicrm_api_include('participant');
 
         if ( $formatError ) {
             array_unshift($values, $formatError['error_message']);
@@ -337,7 +357,7 @@ class CRM_Event_Import_Parser_Participant extends CRM_Event_Import_Parser
                                                                           'Participant' );
         } else {
             if ( $formatValues['participant_id'] ) {
-                require_once 'CRM/Event/BAO/Participant.php';
+                civicrm_api_include('participant');
                 $dao =  new CRM_Event_BAO_Participant();
                 $dao->id = $formatValues['participant_id'];
                 

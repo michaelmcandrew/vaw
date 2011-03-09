@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -33,7 +33,7 @@
  * @package CiviCRM_APIv2
  * @subpackage API_Contact
  * @copyright CiviCRM LLC (c) 2004-2010
- * $Id: Contact.php 30362 2010-10-27 07:08:54Z yashodha $
+ * $Id: Contact.php 32492 2011-02-14 21:06:52Z shot $
  *
  */
 
@@ -59,8 +59,14 @@ require_once 'CRM/Contact/BAO/Contact.php';
 function civicrm_contact_create( &$params )
 {
     // call update and tell it to create a new contact
+  _civicrm_initialize( true );
+  try {
+    civicrm_api_check_permission(__FUNCTION__, $params, true);
     $create_new = true;
     return civicrm_contact_update( $params, $create_new );
+  } catch (Exception $e) {
+    return civicrm_create_error( $e->getMessage() );
+  }
 }
 
 /**
@@ -69,7 +75,12 @@ function civicrm_contact_create( &$params )
  */
 function civicrm_contact_update( &$params, $create_new = false )
 {
-    _civicrm_initialize( );
+    _civicrm_initialize();
+    try {
+        civicrm_api_check_permission(__FUNCTION__, $params, true);
+    } catch (Exception $e) {
+        return civicrm_create_error($e->getMessage());
+    }
     require_once 'CRM/Utils/Array.php';
     $contactID = CRM_Utils_Array::value( 'contact_id', $params );
 
@@ -217,17 +228,22 @@ function &civicrm_contact_add( &$params )
  */
 function _civicrm_greeting_format_params( &$params ) 
 {
-    $greetingParams = array( 'greeting', 'greeting_id', 'greeting_custom' );
-    foreach ( array( 'email', 'postal' ) as $key ) {
+    $greetingParams = array( '', '_id', '_custom' );
+    foreach ( array( 'email', 'postal', 'addressee' ) as $key ) {
+        $greeting = '_greeting';
+        if ( $key == 'addressee' ) {
+            $greeting = '';   
+        } 
+
         $formatParams = false;
         // unset display value from params.
-        if ( isset( $params["{$key}_greeting_display"] ) ) {
-            unset( $params["{$key}_greeting_display"] );  
+        if ( isset( $params["{$key}{$greeting}_display"] ) ) {
+            unset( $params["{$key}{$greeting}_display"] );  
         }
-        
+
         // check if greetings are present in present
         foreach ( $greetingParams as $greetingValues ) {
-            if ( array_key_exists( "{$key}_{$greetingValues}", $params ) ) {
+            if ( array_key_exists( "{$key}{$greeting}{$greetingValues}", $params ) ) {
                 $formatParams = true;
                 break;
             }
@@ -236,22 +252,22 @@ function _civicrm_greeting_format_params( &$params )
         if ( !$formatParams ) continue;
     
         // format params
-        if ( CRM_Utils_Array::value( 'contact_type', $params ) == 'Organization' ) {
+        if ( CRM_Utils_Array::value( 'contact_type', $params ) == 'Organization' && $key != 'addressee' ) {
             return civicrm_create_error( ts( 'You cannot use email/postal greetings for contact type %1.', 
                                              array( 1 => $params['contact_type'] ) ) );
         }
         
         $nullValue      = false; 
         $filter         = array( 'contact_type'  => $params['contact_type'],
-                                 'greeting_type' => "{$key}_greeting" );
+                                 'greeting_type' => "{$key}{$greeting}" );
         
         $greetings      = CRM_Core_PseudoConstant::greeting( $filter );
-        $greetingId     = CRM_Utils_Array::value( "{$key}_greeting_id",     $params );
-        $greetingVal    = CRM_Utils_Array::value( "{$key}_greeting",        $params );
-        $customGreeting = CRM_Utils_Array::value( "{$key}_greeting_custom", $params );
+        $greetingId     = CRM_Utils_Array::value( "{$key}{$greeting}_id",     $params );
+        $greetingVal    = CRM_Utils_Array::value( "{$key}{$greeting}",        $params );
+        $customGreeting = CRM_Utils_Array::value( "{$key}{$greeting}_custom", $params );
         
         if ( !$greetingId && $greetingVal ) {
-            $params["{$key}_greeting_id"] = CRM_Utils_Array::key( $params["{$key}_greeting"], $greetings );
+            $params["{$key}{$greeting}_id"] = CRM_Utils_Array::key( $params["{$key}{$greeting}"], $greetings );
         }
         
         if ( $customGreeting && $greetingId &&
@@ -290,31 +306,32 @@ function _civicrm_greeting_format_params( &$params )
             $greetingId = CRM_Utils_Array::key( 'Customized', $greetings );
         }
 
-        $customValue = $params['contact_id'] ? CRM_Core_DAO::getFieldValue( 'CRM_Contact_DAO_Contact', $params['contact_id']
-                                                                            , "{$key}_greeting_custom" ) : false;
+        $customValue = $params['contact_id'] ? CRM_Core_DAO::getFieldValue( 'CRM_Contact_DAO_Contact', 
+                                                                            $params['contact_id'], 
+                                                                            "{$key}{$greeting}_custom" ) : false;
                 
-        if ( array_key_exists( "{$key}_greeting_id", $params ) && empty( $params["{$key}_greeting_id"] ) ) {
+        if ( array_key_exists( "{$key}{$greeting}_id", $params ) && empty( $params["{$key}{$greeting}_id"] ) ) {
             $nullValue = true;
-        } else if ( array_key_exists( "{$key}_greeting", $params ) && empty( $params["{$key}_greeting"] ) ) {
+        } else if ( array_key_exists( "{$key}{$greeting}", $params ) && empty( $params["{$key}{$greeting}"] ) ) {
             $nullValue = true;
-        } else if ( $customValue && array_key_exists( "{$key}_greeting_custom", $params ) 
-                    && empty( $params["{$key}_greeting_custom"] ) ) {
+        } else if ( $customValue && array_key_exists( "{$key}{$greeting}_custom", $params ) 
+                    && empty( $params["{$key}{$greeting}_custom"] ) ) {
             $nullValue = true;
         }
 
-        $params["{$key}_greeting_id"] = $greetingId;
+        $params["{$key}{$greeting}_id"] = $greetingId;
 
-        if ( !$customValue && !$customGreeting && array_key_exists( "{$key}_greeting_custom", $params ) ) {
-            unset( $params["{$key}_greeting_custom"] );
+        if ( !$customValue && !$customGreeting && array_key_exists( "{$key}{$greeting}_custom", $params ) ) {
+            unset( $params["{$key}{$greeting}_custom"] );
         }
         
         if ( $nullValue ) {
-            $params["{$key}_greeting_id"]     = '';
-            $params["{$key}_greeting_custom"] = '';
+            $params["{$key}{$greeting}_id"]     = '';
+            $params["{$key}{$greeting}_custom"] = '';
         }
                                 
-        if ( isset( $params["{$key}_greeting"] ) ) {
-            unset( $params["{$key}_greeting"] );
+        if ( isset( $params["{$key}{$greeting}"] ) ) {
+            unset( $params["{$key}{$greeting}"] );
         }
     }
 }
@@ -335,6 +352,20 @@ function civicrm_contact_get( &$params, $deprecated_behavior = false )
     
     if ($deprecated_behavior) {
         return _civicrm_contact_get_deprecated($params);
+    }
+    
+    // fix for CRM-7384 cater for soft deleted contacts
+    $params['contact_is_deleted'] = 0;
+    if (isset($params['showAll'])) {
+        if (strtolower($params['showAll']) == "active") {
+            $params['contact_is_deleted'] = 0;
+        }
+        if (strtolower($params['showAll']) == "trash") {
+            $params['contact_is_deleted'] = 1;
+        }
+        if (strtolower($params['showAll']) == "all" && isset($params['contact_is_deleted'])) {
+            unset($params['contact_is_deleted']);
+        }
     }
 
     $inputParams      = array( );
@@ -431,8 +462,9 @@ function civicrm_contact_delete( &$params )
     if ( $contactID ==  $session->get( 'userID' ) ) {
         return civicrm_create_error( ts( 'This contact record is linked to the currently logged in user account - and cannot be deleted.' ) );
     }
-
-    if ( CRM_Contact_BAO_Contact::deleteContact( $contactID ) ) {
+    $restore      = CRM_Utils_Array::value( 'restore', $params ) ? $params['restore'] : false;
+    $skipUndelete = CRM_Utils_Array::value( 'skip_undelete', $params ) ? $params['skip_undelete'] : false;
+    if ( CRM_Contact_BAO_Contact::deleteContact( $contactID , $restore, $skipUndelete) ) {
         return civicrm_create_success( );
     } else {
         return civicrm_create_error( ts( 'Could not delete contact' ) );

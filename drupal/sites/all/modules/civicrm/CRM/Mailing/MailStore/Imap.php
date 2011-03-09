@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -68,8 +68,17 @@ class CRM_Mailing_MailStore_Imap extends CRM_Mailing_MailStore
 
         if ($this->_debug) print 'mailboxes found: ' . implode(', ', $boxes) . "\n";
 
-        if (!in_array($this->_ignored,   $boxes)) $this->_transport->createMailbox($this->_ignored);
-        if (!in_array($this->_processed, $boxes)) $this->_transport->createMailbox($this->_processed);
+        if (!in_array(strtolower($this->_ignored), array_map('strtolower', $boxes))) $this->_transport->createMailbox($this->_ignored);
+        if (!in_array(strtolower($this->_processed), array_map('strtolower', $boxes))) $this->_transport->createMailbox($this->_processed);
+
+    }
+
+    /**
+     * Expunge the messages marked for deletion, CRM-7356
+     */
+    function expunge()
+    {
+        $this->_transport->expunge();
     }
 
     /**

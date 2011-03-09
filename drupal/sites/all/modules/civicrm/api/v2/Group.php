@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -31,7 +31,7 @@
  * @package CiviCRM_APIv2
  * @subpackage API_Group
  * @copyright CiviCRM LLC (c) 2004-2010
- * @version $Id: Group.php 28934 2010-07-28 18:44:12Z mover $
+ * @version $Id: Group.php 32518 2011-02-15 11:44:49Z kurund $
  */
 
 /**
@@ -72,10 +72,16 @@ function civicrm_group_add( &$params )
     if ( is_null( $group ) ) {
         return civicrm_create_error( 'Group not created' );
     } else {
-        return civicrm_create_success( $group->id );
+        return civicrm_create_success( $group );
     }
 }
-
+/*
+ * Wrapper for civicrm_group_add so function can take new (v3) name
+ */
+function civicrm_group_create( &$params ){
+  $result =  civicrm_group_add( $params );
+  return $result;
+}
 /**
  * Returns array of groups  matching a set of one or more group properties
  * 

@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -37,6 +37,11 @@
   {else}
       <td>&nbsp;</td>
   {/if} 
+ {if $form.activity_survey_id }
+    <td><label>{$form.activity_survey_id.label}</label> 
+    {$form.activity_survey_id.html}</td>
+  {/if} 
+
   {if $form.activity_tags }
     <td><label>{ts}Activity Tag(s){/ts}</label>
       <div id ="Tags" class="listing-box">
@@ -81,6 +86,12 @@
           {$form.activity_status.html} 
    </td>
 </tr>
+
+
+{* campaign in activity search *}
+{include file="CRM/Campaign/Form/addCampaignToComponent.tpl" 
+campaignContext="componentSearch" campaignTrClass='' campaignTdClass=''}
+
 {if $activityGroupTree}
 <tr id="activityCustom">
    <td id="activityCustomData" colspan="2">

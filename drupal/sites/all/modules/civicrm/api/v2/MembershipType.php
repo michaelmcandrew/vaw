@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -33,7 +33,7 @@
  * @subpackage API_Membership
  * 
  * @copyright CiviCRM LLC (c) 2004-2010
- * @version $Id: MembershipType.php 29933 2010-10-02 21:35:53Z michaelmcandrew $
+ * @version $Id: MembershipType.php 30171 2010-10-14 09:11:27Z mover $
  *
  */
 
@@ -164,6 +164,7 @@ function &civicrm_membership_type_update( &$params ) {
     $membershipTypeBAO->id = $params['id'];
     if ($membershipTypeBAO->find(true)) {
         $fields = $membershipTypeBAO->fields(); 
+        
         foreach ( $fields as $name => $field) {
             if (array_key_exists($field['name'], $params)) {
                 $membershipTypeBAO->$field['name'] = $params[$field['name']];

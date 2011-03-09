@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -122,6 +122,7 @@ class CRM_Friend_Form_Contribute extends CRM_Contribute_Form_ContributionPage
         }
         
         CRM_Friend_BAO_Friend::addTellAFriend( $formValues );
+        parent::endPostProcess( );
     }
 
     /** 

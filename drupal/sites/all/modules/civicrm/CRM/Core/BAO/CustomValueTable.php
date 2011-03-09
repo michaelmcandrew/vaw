@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -79,7 +79,10 @@ class CRM_Core_BAO_CustomValueTable
                     case 'StateProvince':
                         $type = 'Integer';
                         if ( is_array( $value ) ) {
-                            $value = CRM_Core_BAO_CustomOption::VALUE_SEPERATOR . implode( CRM_Core_BAO_CustomOption::VALUE_SEPERATOR, $value ) . CRM_Core_BAO_CustomOption::VALUE_SEPERATOR;    
+                            $value = 
+                                CRM_Core_DAO::VALUE_SEPARATOR .
+                                implode( CRM_Core_DAO::VALUE_SEPARATOR, $value ) .
+                                CRM_Core_DAO::VALUE_SEPARATOR;
                             $type  = 'String';
                         } else if ( ! is_numeric( $value ) ) {
                             //fix for multi select state, CRM-3437
@@ -97,7 +100,8 @@ class CRM_Core_BAO_CustomValueTable
                                 }
                                 $validStates[] = $states['state_province_id'];
                             }
-                            $value = implode( CRM_Core_BAO_CustomOption::VALUE_SEPERATOR, $validStates );
+                            $value = implode( CRM_Core_DAO::VALUE_SEPARATOR,
+                                              $validStates );
                             $type = 'String'; 
                         } else if ( ! $value ) {
                             // CRM-3415
@@ -111,7 +115,10 @@ class CRM_Core_BAO_CustomValueTable
                     case 'Country':
                         $type = 'Integer';
                         if ( is_array( $value ) ) {
-                            $value = CRM_Core_BAO_CustomOption::VALUE_SEPERATOR . implode( CRM_Core_BAO_CustomOption::VALUE_SEPERATOR, $value ) . CRM_Core_BAO_CustomOption::VALUE_SEPERATOR;
+                            $value = 
+                                CRM_Core_DAO::VALUE_SEPARATOR .
+                                implode( CRM_Core_DAO::VALUE_SEPARATOR, $value ) .
+                                CRM_Core_DAO::VALUE_SEPARATOR;
                             $type  = 'String';
                         } else if ( ! is_numeric( $value ) ) {
                             //fix for multi select country, CRM-3437
@@ -128,7 +135,8 @@ class CRM_Core_BAO_CustomValueTable
                                 }
                                 $validCountries[] = $countries['country_id'];
                             }
-                            $value = implode( CRM_Core_BAO_CustomOption::VALUE_SEPERATOR, $validCountries ); 
+                            $value = implode( CRM_Core_DAO::VALUE_SEPARATOR,
+                                              $validCountries ); 
                             $type = 'String';
                         } else if ( ! $value ) {
                             // CRM-3415
@@ -170,6 +178,7 @@ class CRM_Core_BAO_CustomValueTable
                            $type = 'Timestamp';
                         }
                         break;
+
                     case 'ContactReference':
                         if ( $value == null ) {
                             $type  = 'Timestamp'; 
@@ -222,8 +231,7 @@ class CRM_Core_BAO_CustomValueTable
                         $query = "$sqlOP SET $setClause $where";
                     }
                     $dao = CRM_Core_DAO::executeQuery( $query, $params );
-                   
-                    $dao->free( );
+
                     require_once 'CRM/Utils/Hook.php';
                     CRM_Utils_Hook::custom( $hookOP,
                                             $hookID,

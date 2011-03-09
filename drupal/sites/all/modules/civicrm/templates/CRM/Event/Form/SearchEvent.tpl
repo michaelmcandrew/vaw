@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -58,6 +58,11 @@
         </tr>
       </table> 
     </td></tr>  
+
+    {* campaign in event search *}
+    {include file="CRM/Campaign/Form/addCampaignToComponent.tpl" campaignContext="componentSearch" 
+    campaignTrClass='crm-event-searchevent-form-block-campaign_id' campaignTdClass=''}
+
   </table>
 </div>
 

@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 3.3                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2010                                |
  +--------------------------------------------------------------------+
@@ -202,6 +202,14 @@ class CRM_Event_Form_ManageEvent_EventInfo extends CRM_Event_Form_ManageEvent
                    array('' => ts('- select -')) + $event,
                    true, 
                    array('onChange' => "buildCustomData( 'Event', this.value );") );
+
+        //CRM-7362 --add campaigns.
+        require_once 'CRM/Campaign/BAO/Campaign.php';
+        $campaignId = null;
+        if ( $this->_id ) {
+            $campaignId = CRM_Core_DAO::getFieldValue( 'CRM_Event_DAO_Event', $this->_id, 'campaign_id' ); 
+        }
+        CRM_Campaign_BAO_Campaign::addCampaign( $this, $campaignId );
         
         $participantRole = CRM_Core_OptionGroup::values('participant_role');
         $this->add('select',
@@ -382,7 +390,10 @@ class CRM_Event_Form_ManageEvent_EventInfo extends CRM_Event_Form_ManageEvent
                 $tafParams['entity_id'] = $params['template_id'];
                 if (CRM_Friend_BAO_Friend::getValues($tafParams)) {
                     $tafParams['entity_id'] = $event->id;
-                    CRM_Friend_BAO_Friend::addTellAFriend($tafParams);
+                    if ( isset( $tafParams['id'] ) ) {
+                        unset( $tafParams['id'] );
+                    }
+                    CRM_Friend_BAO_Friend::addTellAFriend( $tafParams, $isTemplatePresent );
                 }
             }
         }

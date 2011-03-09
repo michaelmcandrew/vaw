@@ -107,8 +107,7 @@ if ( isset($_REQUEST['loadGenerated'] ) ) {
     $loadGenerated = 1;
 }
 
-require_once "$crmPath/CRM/Core/I18n/PseudoConstant.php";
-$langs =& CRM_Core_I18n_PseudoConstant::languages();
+require_once dirname(__FILE__) . CIVICRM_DIRECTORY_SEPARATOR . 'langs.php';
 foreach ($langs as $locale => $_) {
     if ($locale == 'en_US') continue;
     if (!file_exists(implode(CIVICRM_DIRECTORY_SEPARATOR, array($crmPath, 'sql', "civicrm_data.$locale.mysql")))) unset($langs[$locale]);
@@ -814,10 +813,12 @@ class Installer extends InstallRequirements {
                 $drupalURL     = civicrm_cms_base( );
                 $drupalPermissionsURL = "{$drupalURL}index.php?q=admin/user/permissions";
                 $drupalURL .= "index.php?q=civicrm/admin/configtask&reset=1";
+                $registerSiteURL = "http://civicrm.org/civicrm/profile/create?reset=1&gid=15";
                 
                 echo "<li>Drupal user permissions have been automatically set - giving anonymous and authenticated users access to public CiviCRM forms and features. We recommend that you <a target='_blank' href={$drupalPermissionsURL}>review these permissions</a> to ensure that they are appropriate for your requirements (<a target='_blank' href='http://wiki.civicrm.org/confluence/display/CRMDOC/Default+Permissions+and+Roles'>learn more...</a>)</li>
-                      <li>Use the <a target='_blank' href=\"$drupalURL\">Configuration Checklist</a> to review and configure settings for your new site</li>";
-                      
+                      <li>Use the <a target='_blank' href=\"$drupalURL\">Configuration Checklist</a> to review and configure settings for your new site</li>
+                      <li> Have you registered this site at CiviCRM.org? If not, please help strengthen the CiviCRM ecosystem by taking a few minutes to <a href='$registerSiteURL' target='_blank'>fill out the site registration form</a>. The information collected will help us prioritize improvements, target our communications and build the community. If you have a technical role for this site, be sure to check Keep in Touch to receive technical updates (a low volume  mailing list).</li>";
+                
                 // explicitly setting error reporting, since we cannot handle drupal related notices
                 error_reporting(1);
                 
