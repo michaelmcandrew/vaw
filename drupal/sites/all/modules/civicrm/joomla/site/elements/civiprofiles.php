@@ -1,7 +1,7 @@
 <?php
   /*
    +--------------------------------------------------------------------+
-   | CiviCRM version 4.0                                                |
+   | CiviCRM version 3.4                                                |
    +--------------------------------------------------------------------+
    | This file is a part of CiviCRM.                                    |
    |                                                                    |
@@ -28,7 +28,7 @@
   // Check to ensure this file is included in Joomla!
 defined('_JEXEC') or die( 'Restricted access' );
 
-class JFormFieldCiviProfiles extends JFormField {
+class JElementCiviprofiles extends JElement {
 	/**
 	 * Element name
 	 *
@@ -37,12 +37,9 @@ class JFormFieldCiviProfiles extends JFormField {
 	 */
 	var	$_name = 'CiviProfiles';
 	
-    protected function getInput( )
+	function fetchElement( $name, $value, &$node, $control_name )
 	{
-        $value = $this->value;
-        $name  = $this->name;
-        
-        // Initiate CiviCRM
+		// Initiate CiviCRM
 		require_once JPATH_ROOT.'/'.'administrator/components/com_civicrm/civicrm.settings.php';
 		require_once 'CRM/Core/Config.php';
 		$config =& CRM_Core_Config::singleton( );
@@ -52,7 +49,7 @@ class JFormFieldCiviProfiles extends JFormField {
         foreach ( $ufGroups  as $key =>$values ) {
             $options[] = JHTML::_( 'select.option', $key, $values );
         }
-        return JHTML::_( 'select.genericlist', $options, $name, null, 'value', 'text', $value );
+        return JHTML::_( 'select.genericlist', $options, 'params[gid]', null, 'value', 'text', $value );
 	}
 }
 ?>

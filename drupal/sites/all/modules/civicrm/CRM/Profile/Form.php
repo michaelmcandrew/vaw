@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -850,7 +850,6 @@ class CRM_Profile_Form extends CRM_Core_Form
             }
         }
         
-        $addToGroupId = null;
         if ( CRM_Utils_Array::value( 'add_to_group', $params ) ) {
             $addToGroupId = $params['add_to_group'];
 

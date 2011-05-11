@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -121,7 +121,7 @@ class CRM_Mailing_Page_Common extends CRM_Core_Page
             $session->pushUserContext( $confirmURL ); 
         }
         
-        return parent::run();
+        parent::run();
     }
 }
 

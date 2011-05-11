@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -243,7 +243,7 @@ class CRM_Core_BAO_Dashboard extends CRM_Core_DAO_Dashboard
                 $urlParam = CRM_Utils_System::explode( '&', $dao->url, 2 );
                 $url      = CRM_Utils_System::url( $urlParam[0], $urlParam[1], false, null, false );
             }
-
+            
             //get content from url
             $dao->content = CRM_Utils_System::getServerResponse( $url );
             $dao->created_date = date( "YmdHis" );
@@ -261,7 +261,7 @@ class CRM_Core_BAO_Dashboard extends CRM_Core_DAO_Dashboard
             }
             $dashletInfo['fullscreenUrl'] = $fullscreenUrl;
         }                     
-
+        
         return $dashletInfo;
     }
      
@@ -359,7 +359,7 @@ class CRM_Core_BAO_Dashboard extends CRM_Core_DAO_Dashboard
             $dashlet->id = $dashboardID;
         }
         
-        if ( is_array( CRM_Utils_Array::value( 'permission', $params ) ) ) {           
+        if ( is_array( $params['permission'] )) {           
             $params['permission'] = implode( ',', $params['permission'] );
         }
         $dashlet->copyValues( $params );

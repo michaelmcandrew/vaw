@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -94,9 +94,6 @@ class CRM_Contribute_Import_Parser_Contribution extends CRM_Contribute_Import_Pa
             $fields = array_merge( $fields, $pledgeFields );
         }
         foreach ($fields as $name => $field) {
-            $field['type']          = CRM_Utils_Array::value( 'type', $field, CRM_Utils_Type::T_INT );
-            $field['dataPattern']   = CRM_Utils_Array::value( 'dataPattern', $field, '//' );
-            $field['headerPattern'] = CRM_Utils_Array::value( 'headerPattern', $field, '//' );
             $this->addField( $name, $field['title'], $field['type'], $field['headerPattern'], $field['dataPattern'] );
         }
 
@@ -503,7 +500,7 @@ class CRM_Contribute_Import_Parser_Contribution extends CRM_Contribute_Import_Pa
             }
             
         } else {
-            if ( CRM_Utils_Array::value( 'external_identifier', $paramValues ) ) { 
+            if ( $paramValues['external_identifier'] ) { 
                 $checkCid = new CRM_Contact_DAO_Contact();
                 $checkCid->external_identifier = $paramValues['external_identifier'];
                 $checkCid->find(true);

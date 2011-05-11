@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -516,10 +516,10 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form
                 CRM_Contact_BAO_Contact_Utils::clearCurrentEmployer( $this->_values['current_employee_id'] );
             }
         } elseif ( $quickSave ) {
-            if ( CRM_Utils_Array::value( 'add_current_employee', $params ) &&
+            if ( $params['add_current_employee'] &&
                  $this->_allRelationshipNames[$relationshipTypeId]['name_a_b'] == 'Employee of' ) {
                 $params['employee_of'] = $params['rel_contact_id'];
-            } elseif ( CRM_Utils_Array::value( 'add_current_employer', $params ) &&
+            } elseif ( $params['add_current_employer'] &&
                        $this->_allRelationshipNames[$relationshipTypeId]['name_b_a'] == 'Employer of' ) {
                 $params['employer_of'] = array( $params['rel_contact_id'] => 1 );
             }
@@ -689,9 +689,9 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form
         }
         $contactTypeAdded = false;
         
-        $excludedContactIds = isset( $this->_contactId ) ? array( $this->_contactId ) : array( );
+        $excludedContactIds = array( $this->_contactId );
 
-        if ( CRM_Utils_Array::value( 'relationship_type_id', $params ) ) {
+        if ( $params['relationship_type_id'] ) {
             $relationshipType = new CRM_Contact_DAO_RelationshipType( );
             list( $rid, $direction ) = explode( '_', $params['relationship_type_id'], 2 );
            

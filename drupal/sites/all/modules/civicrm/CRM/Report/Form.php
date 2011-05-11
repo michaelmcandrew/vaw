@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -1880,7 +1880,6 @@ WHERE cg.extends IN ('" . implode( "','", $this->_customGroupExtends ) . "') AND
         $group = new CRM_Contact_DAO_Group( );
         $group->is_active = 1;
         $group->find();
-        $smartGroups = array( );
         while( $group->fetch( ) ) {
              if( in_array( $group->id, $this->_params['gid_value'] ) && $group->saved_search_id ) {
                  $smartGroups[] = $group->id;

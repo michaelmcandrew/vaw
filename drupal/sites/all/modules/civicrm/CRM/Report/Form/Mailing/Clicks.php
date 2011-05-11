@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -264,8 +264,6 @@ class CRM_Report_Form_Mailing_Clicks extends CRM_Report_Form {
     }
 
     function groupBy( ) {
-
-        $this->_groupBy = '';
         if ( CRM_Utils_Array::value('charts', $this->_params) ) {
             $this->_groupBy = " GROUP BY {$this->_aliases['civicrm_mailing']}.id";
         }

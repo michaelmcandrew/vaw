@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -89,7 +89,7 @@ class CRM_Utils_REST
         require_once 'CRM/Core/DAO.php';
 
         $result =& CRM_Utils_System::authenticate($name, $pass);
-
+        
         if (empty($result)) {
             return self::error( 'Could not authenticate user, invalid name or password.' );
         }
@@ -479,31 +479,27 @@ class CRM_Utils_REST
         if ( empty($args) || 
              $args[0] != 'civicrm' ||
              ( ( count( $args ) != 3 ) && ( $args[1] != 'login' ) && ( $args[1] != 'ping') ) ||
+             $args[1] == 'login' ||
              $args[1] == 'ping' ) {
-            return;
-        }
-
-        if ( !CRM_Utils_System::authenticateKey( false ) ) {
-            return;
-        }
-        
-        require_once 'CRM/Core/DAO.php';
-        if ( $args[1] == 'login' ) {
-            CRM_Utils_System::loadBootStrap( CRM_Core_DAO::$_nullArray, true, false );
             return;
         }
 
         $uid     = null;
         $session = CRM_Core_Session::singleton( );
 
+        if ( !CRM_Utils_System::authenticateKey( false ) ) {
+            return;
+        }
+        
         if ( $session->get('PHPSESSID') &&
              $session->get('cms_user_id') ) {
             $uid = $session->get('cms_user_id');
         }
-
+        
         if ( !$uid ) {
+            require_once 'CRM/Core/DAO.php';
             require_once 'CRM/Utils/Request.php';
-            
+
             $store      = null;
             $api_key    = CRM_Utils_Request::retrieve( 'api_key', 'String', $store, false, null, 'REQUEST' );
             $contact_id = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $api_key, 'id', 'api_key');
@@ -514,9 +510,8 @@ class CRM_Utils_REST
         }
 
         if ( $uid ) {
-            CRM_Utils_System::loadBootStrap( array( 'uid' => $uid ), true, false );
+            CRM_Utils_System::loadBootStrap( null, null, $uid );
         }
-        
     }
      
 }

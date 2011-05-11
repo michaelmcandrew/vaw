@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -117,7 +117,7 @@ class CRM_Admin_Page_ContactType extends CRM_Core_Page_Basic
         if( !$action ) {
             $this->browse( );
         }
-        return parent::run();    
+        parent::run();    
     }
     function browse()
     {   

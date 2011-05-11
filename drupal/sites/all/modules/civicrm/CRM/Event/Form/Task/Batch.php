@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -272,11 +272,11 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task
                                                                           'Participant' );
 
                 $value['id'] = $key;
-                if ( CRM_Utils_Array::value( 'participant_register_date', $value ) ) {
+                if ( $value['participant_register_date'] ) {
                     $value['register_date'] = CRM_Utils_Date::processDate( $value['participant_register_date'], $value['participant_register_date_time'] );
                 } 
                 
-                if ( CRM_Utils_Array::value( 'participant_role', $value ) ) {
+                if ( $value['participant_role'] ) {
                     $participantRoles = CRM_Event_PseudoConstant::participantRole( );
                     if ( is_array( $value['participant_role'] ) ) {
                         $value['role_id'] = implode( CRM_Core_DAO::VALUE_SEPARATOR, array_keys( $value['participant_role'] ) );   
@@ -287,7 +287,7 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task
 
                 //need to send mail when status change
                 $statusChange = false;
-                if ( CRM_Utils_Array::value( 'participant_status', $value ) ) {
+                if ( $value['participant_status'] ) {
                     $value['status_id'] = $value['participant_status'];
                     $fromStatusId = CRM_Utils_Array::value( $key, $this->_fromStatusIds );
                     if ( !$fromStatusId ) {
@@ -299,7 +299,7 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task
                     }
                 }
                 
-                if ( CRM_Utils_Array::value( 'participant_source', $value ) ) {
+                if ( $value['participant_source'] ) {
                     $value['source'] = $value['participant_source'];
                 }            
                 unset($value['participant_register_date']);

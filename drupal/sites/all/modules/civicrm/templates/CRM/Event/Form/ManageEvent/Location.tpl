@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -68,9 +68,10 @@
     
 
     <div id="newLocation">
-      <h3>Address</h3>
+	<fieldset><legend>Address</legend>
 		{* Display the address block *}
 		{include file="CRM/Contact/Form/Edit/Address.tpl"} 
+	</fieldset>
 	<table class="form-layout-compressed">
     {* Display the email block(s) *}  
     {include file="CRM/Contact/Form/Edit/Email.tpl"}

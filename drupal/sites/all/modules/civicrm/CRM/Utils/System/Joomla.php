@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -182,7 +182,7 @@ class CRM_Utils_System_Joomla {
         $config    = CRM_Core_Config::singleton( );
  		$separator = $htmlize ? '&amp;' : '&';
  		$Itemid    = '';
-        $script    = '';
+
         require_once 'CRM/Utils/String.php';
         $path = CRM_Utils_String::stripPathChars( $path );
 
@@ -191,7 +191,9 @@ class CRM_Utils_System_Joomla {
             if ( JRequest::getVar("Itemid") ) {
                 $Itemid = "{$separator}&Itemid=" . JRequest::getVar("Itemid");
             }
-        } 
+        } else {
+            $script = 'index2.php';
+        }
 
         if (isset($fragment)) {
             $fragment = '#'. $fragment;
@@ -269,14 +271,13 @@ class CRM_Utils_System_Joomla {
      *
      * @param string $name     the user name
      * @param string $password the password for the above user name
-     * @param $loadCMSBootstrap boolean load cms bootstrap?
      *
      * @return mixed false if no auth
      *               array( contactID, ufID, unique string ) if success
      * @access public
      * @static
      */
-    static function authenticate( $name, $password, $loadCMSBootstrap = false ) {
+    static function authenticate( $name, $password ) {
         require_once 'DB.php';
 
         $config = CRM_Core_Config::singleton( );
@@ -285,15 +286,6 @@ class CRM_Utils_System_Joomla {
         if ( DB::isError( $dbJoomla ) ) {
             CRM_Core_Error::fatal( "Cannot connect to joomla db via $config->userFrameworkDSN, " . $dbJoomla->getMessage( ) ); 
         }                                                      
-
-        if ( $loadCMSBootstrap ) {
-            $bootStrapParams = array( );
-            if ( $name && $password ) {
-                $bootStrapParams = array( 'name' => $name,
-                                          'pass' => $password ); 
-            }
-            CRM_Utils_System::loadBootStrap( $bootStrapParams );
-        }
 
         $strtolower = function_exists('mb_strtolower') ? 'mb_strtolower' : 'strtolower';
         $name      = $dbJoomla->escapeSimple( $strtolower( $name ) );
@@ -365,13 +357,11 @@ class CRM_Utils_System_Joomla {
     /* 
      * load joomla bootstrap
      *
-     * @param $params array with uid or name and password 
-     * @param $loadUser boolean load cms user?
-     * @param $throwError throw error on failure?
+     * @param $name string  optional username for login
+     * @param $pass string  optional password for login
      */
-    static function loadBootStrap( $params = array( ), $loadUser = true, $throwError = true )
+    static function loadBootStrap($user = null, $pass = null, $uid = null )
     {
-        // load BootStrap here if needed
         return true;
     }
     

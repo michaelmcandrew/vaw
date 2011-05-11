@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -236,19 +236,17 @@ class CRM_Contribute_Form_Task_Batch extends CRM_Contribute_Form_Task {
                                 
                 $ids['contribution'] = $key;
                 foreach ( $dates as $val ) {
-                    if ( isset( $value[$val] ) ) {
-                        $value[$val] = CRM_Utils_Date::processDate( $value[$val] );
-                    }
+                    $value[$val] = CRM_Utils_Date::processDate( $value[$val] );
                 }
                 if ($value['contribution_type']) {
                     $value['contribution_type_id'] = $value['contribution_type'];
                 }
 
-                if ( CRM_Utils_Array::value( 'payment_instrument', $value ) ) {
+                if ($value['payment_instrument']) {
                     $value['payment_instrument_id'] = $value['payment_instrument'];
                 }
                 
-                if ( CRM_Utils_Array::value( 'contribution_source', $value ) ) {
+                if ($value['contribution_source']) {
                     $value['source'] = $value['contribution_source'];
                 }
                 

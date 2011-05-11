@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -435,8 +435,8 @@ ORDER BY ov.label
                         }
                         
                         $select[] = "{$table['alias']}.{$fieldName} as {$tableName}_{$fieldName}";
-                        $this->_columnHeaders["{$tableName}_{$fieldName}"]['title'] = CRM_Utils_Array::value( 'title', $field );
-                        $this->_columnHeaders["{$tableName}_{$fieldName}"]['type']  = CRM_Utils_Array::value( 'type', $field );
+                        $this->_columnHeaders["{$tableName}_{$fieldName}"]['title'] = $field['title'];
+                        $this->_columnHeaders["{$tableName}_{$fieldName}"]['type']  = $field['type'];
                     }
                 }
             }
@@ -544,7 +544,7 @@ ORDER BY ov.label
             $age = $nowYear - $dobYear;
         } elseif ( $dobMonth == $nowMonth ) {
             //  Born in this month
-            if ( $dobDay <= $nowDay ) {
+            if ( $dobday <= $nowDay ) {
                 // Born before or on this day
                 $age = $nowYear - $dobYear;
             } else {

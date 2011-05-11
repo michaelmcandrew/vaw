@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -138,7 +138,7 @@ class CRM_Mailing_Page_View extends CRM_Core_Page
                                            $this->_mailing->from_email,
                                            $this->_mailing->from_email,
                                            true, $details, $attachments );
-        
+
         if ( isset( $this->_mailing->body_html ) ) {
             $header = 'Content-Type: text/html; charset=utf-8';
             $content = $mime->getHTMLBody();

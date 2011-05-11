@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -32,7 +32,7 @@
  * @subpackage API_Contribute
  *
  * @copyright CiviCRM LLC (c) 2004-2011
- * @version $Id: Contribution.php 33093 2011-03-16 10:42:29Z shot $
+ * @version $Id: Contribution.php 33064 2011-03-16 02:23:24Z eileen $
  *
  */
 

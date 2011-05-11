@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright Tech To The People http:tttp.eu (c) 2008                 |
  +--------------------------------------------------------------------+
@@ -94,7 +94,8 @@ class civicrm_CLI {
         // bootstrap CMS environment
         global $civicrm_root;
         $_SERVER['SCRIPT_FILENAME'] = "$civicrm_root/bin/cli.php";
-       
+        require_once 'CRM/Utils/System.php';
+        CRM_Utils_System::loadBootStrap($user, $pass);
     }
 
     function setEnv() {

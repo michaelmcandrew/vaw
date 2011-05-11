@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -91,9 +91,7 @@ class CRM_Utils_Mail
 
         $headers = array( );  
         $headers['From']                      = $params['from'];
-        $headers['To']                        = self::formatRFC822Email( CRM_Utils_Array::value( 'toName', $params ),
-                                                                         CRM_Utils_Array::value( 'toEmail', $params ),
-                                                                         false );
+        $headers['To']                        = self::formatRFC822Email( $params['toName'], $params['toEmail'], false );
         $headers['Cc']                        = CRM_Utils_Array::value( 'cc', $params );
         $headers['Bcc']                       = CRM_Utils_Array::value( 'bcc', $params );
         $headers['Subject']                   = CRM_Utils_Array::value( 'subject', $params );
@@ -233,11 +231,7 @@ class CRM_Utils_Mail
      */
     function pluckEmailFromHeader($header) {
         preg_match('/<([^<]*)>$/', $header, $matches);
-        
-        if ( isset($matches[1]) ) {
-            return $matches[1];
-        }
-        return null;
+        return $matches[1];
     }
     
     /**

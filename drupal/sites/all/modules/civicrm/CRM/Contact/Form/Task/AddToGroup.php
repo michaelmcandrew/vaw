@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -198,7 +198,7 @@ class CRM_Contact_Form_Task_AddToGroup extends CRM_Contact_Form_Task {
      */
     public function postProcess() {
         $params = $this->controller->exportValues( );
-        $groupOption = CRM_Utils_Array::value( 'group_option', $params, null );
+        $groupOption = $params['group_option'];
         if ( $groupOption ) {
             $groupParams = array();
             $groupParams['title'      ] = $params['title'];

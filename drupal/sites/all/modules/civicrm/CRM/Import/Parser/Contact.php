@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -1090,9 +1090,7 @@ class CRM_Import_Parser_Contact extends CRM_Import_Parser
         if ( CRM_Utils_Array::value('contact_sub_type', $params) ) {
             $csType = CRM_Utils_Array::value('contact_sub_type', $params);
         }
-        if ( !CRM_Utils_Array::value( 'contact_type', $params ) ) {
-            $params['contact_type'] = 'Individual';
-        }
+        
         $customFields = CRM_Core_BAO_CustomField::getFields( $params['contact_type'], false, false, $csType );
         
         $addressCustomFields = CRM_Core_BAO_CustomField::getFields( 'Address' );

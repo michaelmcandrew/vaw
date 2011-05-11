@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -36,7 +36,6 @@
 	<span> <div class="icon refresh-icon"></div>{ts}Refresh Dashboard Data{/ts}</span></a>
 
 </div>
-<div class="clear"></div>
 <div class="crm-block crm-content-block">
 {* Welcome message appears when there are no active dashlets for the current user. *}
 <div id="empty-message" class='hiddenElement'>

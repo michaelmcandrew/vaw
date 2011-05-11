@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -234,23 +234,23 @@ class CRM_Activity_Form_Task_Batch extends CRM_Activity_Form_Task {
                     $value['activity_date_time'] = CRM_Utils_Date::processDate( $value['activity_date_time'], $value['activity_date_time_time'] );
                 }
                 
-                if ( CRM_Utils_Array::value( 'activity_status_id', $value ) ) {
+                if ( $value['activity_status_id'] ) {
                     $value['status_id'] = $value['activity_status_id'];
                 }
                 
-                if ( CRM_Utils_Array::value( 'activity_details', $value ) ) {
+                if ( $value['activity_details'] ) {
                     $value['details'] = $value['activity_details'];
                 }
                 
-                if ( CRM_Utils_Array::value( 'activity_duration', $value ) ) {
+                if ( $value['activity_duration'] ) {
                     $value['duration'] = $value['activity_duration'];
                 }
                 
-                if ( CRM_Utils_Array::value( 'activity_location', $value ) ) {
+                if ( $value['activity_location'] ) {
                     $value['location'] = $value['activity_location'];
                 }
                 
-                if ( CRM_Utils_Array::value( 'activity_subject', $value ) ) {
+                if ( $value['activity_subject'] ) {
                     $value['subject'] = $value['activity_subject'];
                 }
                 

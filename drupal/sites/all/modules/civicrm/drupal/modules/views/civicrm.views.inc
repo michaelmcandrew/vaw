@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -916,7 +916,7 @@ function civicrm_views_data() {
                                                );
 
     //Address name
-    $link = l(t('In Global Settings'), 'civicrm/admin/setting/preferences/address', array('query' => array('reset=1')));
+    $link = l(t('In Global Settings'), 'civicrm/admin/setting/preferences/address', array('query' => 'reset=1'));
     $data['civicrm_address']['name'] = array(
                                              'title' => t('Address Name'),
                                              'help' => t('Be sure addres name is enabled %link', array('%link' => $link)),
@@ -5888,9 +5888,7 @@ function civicrm_views_add_fields( &$fields, &$data, &$skipFields, $tableName ) 
             continue;
         }
 
-        $type = CRM_Utils_Array::value( 'type', $value );
-
-        $data[CRM_Utils_Array::value('name', $value)] = array(
+        $data[$value['name']] = array(
                                       'title' => $value['title'],
                                       'help'  => $value['title'],
                                       'field' => array( 
@@ -5981,7 +5979,6 @@ function civicrm_views_custom_data_cache($data, $entity_type, $groupID, $subType
         $tree = CRM_Core_BAO_CustomGroup::getTree( $entity_type, CRM_Core_DAO::$_nullObject, null, $groupID);
     }
 
-    $jointable = null;
     switch ($entity_type) {
              
     case "Contact":
@@ -6033,7 +6030,6 @@ function civicrm_views_custom_data_cache($data, $entity_type, $groupID, $subType
                                   'Multi-Select State/Province', 'Autocomplete-Select' );
         $customMultiValueHTMLTypes = array( 'Multi-Select', 'AdvMulti-Select','Multi-Select Country',
                                             'Multi-Select State/Province');
-
         foreach ($currentgroupfields as $key => $currentfield) {
             if (empty($currentfield['help_post'])) { 
                 $currentfield['help_post'] = t('Custom Data Field');
@@ -6054,6 +6050,7 @@ function civicrm_views_custom_data_cache($data, $entity_type, $groupID, $subType
             } else {
                 $filter_handler = civicrm_get_filter_handler( $currentfield['data_type'] );
             }
+            
             //Create the Views Field
             $data[$currentgroup['table_name']][$currentfield['column_name']] = array(
                                                                                      'title' => $currentfield['label'],
@@ -6209,8 +6206,8 @@ function civicrm_get_sort_handler($type) {
     }
 }
 
-//Implementation of hook_date_views_fields().
-function civicrm_date_views_fields($field) {
+//Implementation of hook_date_api_fields
+function civicrm_date_api_fields($field) {
     $values = array(
                     // The type of date: DATE_UNIX, DATE_ISO, DATE_DATETIME.
                     'sql_type' => DATE_DATETIME,
@@ -6246,7 +6243,7 @@ function civicrm_date_views_fields($field) {
 /**
  * Implement hook_date_api_tables().
  */
-function civicrm_date_views_tables() {
+function civicrm_date_api_tables() {
     return array('civicrm_mailing_job',
                  'civicrm_event',
                  'civicrm_activity',

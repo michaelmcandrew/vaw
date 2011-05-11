@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -513,9 +513,7 @@ abstract class CRM_Activity_Import_Parser
     {
         $values = array();
         foreach ($this->_fields as $name => $field ) {
-            if ( isset( $field->_hasLocationType ) ) {
-                $values[$name] = $field->_hasLocationType;
-            }
+            $values[$name] = $field->_hasLocationType;
         }
         return $values;
     }
@@ -549,7 +547,7 @@ abstract class CRM_Activity_Import_Parser
                 $this->_fields[$name] = new CRM_Activity_Import_Field($name, $title, $type, $headerPattern, $dataPattern);
             } else {
                 require_once 'CRM/Import/Field.php';
-                $this->_fields[$name] = new CRM_Import_Field( $name, $title, $type, $headerPattern, $dataPattern, CRM_Utils_Array::value( 'hasLocationType', $tempField[$name] ) );
+                $this->_fields[$name] = new CRM_Import_Field($name, $title, $type, $headerPattern, $dataPattern,$tempField[$name]['hasLocationType']);
             }
                 
         }

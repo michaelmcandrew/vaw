@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -281,7 +281,8 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
         // e.g. if action is a valid JUMP, u basically do a redirect
         // to the appropriate place
         $this->wizardHeader( $pageName );
-        return $this->_pages[$pageName]->handle($action);
+        $this->_pages[$pageName]->handle($action);
+        return;
     }
 
     function validate( ) {

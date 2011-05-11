@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -128,7 +128,7 @@ class CRM_Contribute_Page_Premium extends CRM_Core_Page_Basic
         }
 
         // parent run 
-        return parent::run();
+        parent::run();
     }
 
     /**

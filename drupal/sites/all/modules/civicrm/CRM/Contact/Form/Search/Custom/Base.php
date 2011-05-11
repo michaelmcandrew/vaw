@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -41,8 +41,6 @@ class CRM_Contact_Form_Search_Custom_Base {
     protected $_formValues;
 
     protected $_columns;
-
-    protected $_stateID;
 
     function __construct( &$formValues ) {
         $this->_formValues =& $formValues;

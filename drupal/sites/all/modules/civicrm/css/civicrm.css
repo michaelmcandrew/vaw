@@ -578,7 +578,6 @@ div.spacer,
 
 #crm-container div.status {
     background-color:#FFFFCC;
-    background-image:none;
     border:1px solid #FFFF66;
     margin:0.5em 0px;
     padding:0.25em 0.5em;
@@ -2471,9 +2470,6 @@ span.icon {
 
 
 /* civicrm admin menu */
-#civicrm-menu {
-    height:27px;
-}
 
 #civicrm-menu .ac_input, #crm-container .ac_input {
     background:white url(../i/magnify.gif) no-repeat scroll right center;
@@ -2659,10 +2655,6 @@ div#crm-toolTip #hide-tooltip {
     position    : relative;
     z-index     : 1;
     margin-right : 45px;
-}
-
-#crm-container ul.token-input-list-facebook, ul.token-input-list-facebook li.leaf {
-  list-style-image:none;
 }
 
 /* "don't do this" icons */
@@ -3124,6 +3116,7 @@ div#crm-toolTip
 #crm-container .crm-row-highlight {
     background-color: #FFFFCC !important;
 }
+
 #crm-container .civicrm-drupal-wysiwyg .collapsed {
     background: transparent;
     padding-left: 0px;

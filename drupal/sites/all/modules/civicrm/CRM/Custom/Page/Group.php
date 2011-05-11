@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -156,7 +156,7 @@ class CRM_Custom_Page_Group extends CRM_Core_Page {
             $this->browse();
         }
         // parent run 
-        return parent::run();
+        parent::run();
     }
 
 

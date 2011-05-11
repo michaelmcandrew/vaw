@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -132,7 +132,7 @@ class CRM_Admin_Page_OptionValue extends CRM_Core_Page_Basic
             $this->_gName = CRM_Core_DAO::getFieldValue( 'CRM_Core_DAO_OptionGroup', $this->_gid, 'name');
         }
         
-        return parent::run();
+        parent::run();
     }
 
     /**

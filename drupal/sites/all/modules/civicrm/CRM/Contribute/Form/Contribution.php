@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -512,7 +512,7 @@ WHERE  contribution_id = {$this->_id}
                 CRM_Core_BAO_UFGroup::setProfileDefaults( $this->_contactID, $fields, $defaults  );
             }
             foreach ( $billingFields as $name => $billingName ) {
-                $defaults[$billingName] = CRM_Utils_Array::value( $name, $defaults );                
+                $defaults[$billingName] = $defaults[$name];
             }
             
             $config = CRM_Core_Config::singleton( );

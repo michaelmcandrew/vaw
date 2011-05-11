@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -131,11 +131,10 @@ class CRM_Utils_String {
      * @static
      */
     static function getClassName( $string, $char = '_' ) {
-        $names = array( );
         if( !is_array( $string ) ) {
             $names = explode( $char, $string );
         }
-        if( !empty( $names ) )  return array_pop( $names ); 
+        if( is_array( $names ) )  return array_pop( $names ); 
     }
     
     /**

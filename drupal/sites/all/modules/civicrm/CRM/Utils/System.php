@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -149,8 +149,7 @@ class CRM_Utils_System {
                 drupal_set_breadcrumb( '' );
                 drupal_maintenance_theme();
             }
-            $out = $content;
-            $ret = true;
+            $out = theme( $type, $content, $args );
         } else {
             $out = $content;
         }
@@ -462,7 +461,7 @@ class CRM_Utils_System {
         return true;
     }
 
-    static function authenticateScript( $abort = true, $name = null, $pass = null, $storeInSession = true, $loadCMSBootstrap = true ) {
+    static function authenticateScript( $abort = true, $name = null, $pass = null, $storeInSession = true ) {
         // auth to make sure the user has a login/password to do a shell
         // operation
         // later on we'll link this to acl's
@@ -480,7 +479,7 @@ class CRM_Utils_System {
             return false;
         }
 
-        $result = CRM_Utils_System::authenticate( $name, $pass, $loadCMSBootstrap );
+        $result = CRM_Utils_System::authenticate( $name, $pass );
         if ( ! $result ) {
             return self::authenticateAbort( "ERROR: Invalid username and/or password\n",
                                             $abort );
@@ -511,11 +510,11 @@ class CRM_Utils_System {
      * @access public 
      * @static 
      */ 
-    static function authenticate( $name, $password, $loadCMSBootstrap = false ) {
+    static function authenticate( $name, $password ) {
         $config = CRM_Core_Config::singleton( ); 
         require_once( str_replace( '_', DIRECTORY_SEPARATOR, $config->userFrameworkClass ) . '.php' );
         return  
-            eval( 'return ' . $config->userFrameworkClass . '::authenticate($name, $password, $loadCMSBootstrap);' ); 
+            eval( 'return ' . $config->userFrameworkClass . '::authenticate($name, $password);' ); 
 
     }
 
@@ -1118,17 +1117,14 @@ class CRM_Utils_System {
     /**
      * load cms bootstrap
      *
-     * @param $params   array with uid name and pass
-     * @param $loadUser boolean load user or not
+     * @param $name string  optional username for login
+     * @param $pass string  optional password for login
      */
-    static function loadBootStrap( $params = array( ), $loadUser = true , $throwError = true )
+    static function loadBootStrap($name = null, $pass = null, $uid = null)
     {
-        if ( !is_array($params) ) {
-            $params = array( ); 
-        }
         $config = CRM_Core_Config::singleton();
         require_once(str_replace('_', DIRECTORY_SEPARATOR, $config->userFrameworkClass) . '.php');
-        return call_user_func("{$config->userFrameworkClass}::loadBootStrap", $params, $loadUser, $throwError);
+        return call_user_func("{$config->userFrameworkClass}::loadBootStrap", $name, $pass, $uid);
     }
     
     /**
@@ -1224,26 +1220,7 @@ class CRM_Utils_System {
 
         return $baseURL . $url;
     }
-       
-    /**
-     * Function to clean url, replaces first '&' with '?' 
-     * 
-     * @param string $url
-     *
-     * @return string $url, clean url
-     * @static
-     */
-    static function cleanUrl( $url ) {
-        if ( !$url ) {
-            return null;
-        }
-        
-        if ( $pos = strpos($url, '&') ) {
-            $url = substr_replace( $url, '?', $pos, 1 );
-        }
-        
-        return $url;
-    }
+    
     
     /**
      * Format the url as per language Negotiation.
@@ -1259,50 +1236,48 @@ class CRM_Utils_System {
     {
         if ( empty( $url ) ) return $url;
         
-        //CRM-7803 -from d7 onward.
+        //upto d6 only, already we have code in place for d7 
         $config = CRM_Core_Config::singleton( );
         if ( $config->userFramework == 'Drupal' && 
-             function_exists( 'variable_get' ) && 
-             module_exists('locale') && 
-             function_exists( 'language_negotiation_get' ) ) {
+             function_exists('variable_get') && 
+             module_exists('locale') ) {
             global $language;
             
-            //does user configuration allow language 
-            //support from the URL (Path prefix or domain)
-            if ( language_negotiation_get( 'language' ) == 'locale-url' ) {
-                $urlType = variable_get( 'locale_language_negotiation_url_part' );
+            //get the mode.
+            $mode = variable_get('language_negotiation', LANGUAGE_NEGOTIATION_NONE );
+            
+            //url prefix / path.
+            if ( isset( $language->prefix ) &&
+                 $language->prefix &&
+                 in_array( $mode, array( LANGUAGE_NEGOTIATION_PATH,
+                                         LANGUAGE_NEGOTIATION_PATH_DEFAULT ) ) ) {
                 
-                //url prefix
-                if ( $urlType == LOCALE_LANGUAGE_NEGOTIATION_URL_PREFIX ) {
-                    if ( isset( $language->prefix ) && $language->prefix ) {
-                        if ( $addLanguagePart ) {
-                            $url .=  $language->prefix . '/';
-                        }
-                        if ( $removeLanguagePart ) {
-                            $url = str_replace( "/{$language->prefix}/", '/', $url );
-                        }
-                    }
+                if ( $addLanguagePart ) {
+                    $url .=  $language->prefix . '/';
                 }
-                //domain
-                if ( $urlType == LOCALE_LANGUAGE_NEGOTIATION_URL_DOMAIN ) {
-                    if ( isset( $language->domain ) && $language->domain ) {
-                        if ( $addLanguagePart ) {
-                            $url = CRM_Utils_File::addTrailingSlash( $language->domain, '/' );
-                        }
-                        if ( $removeLanguagePart && defined( 'CIVICRM_UF_BASEURL' ) ) {
-                            $url = str_replace( '\\', '/', $url );
-                            $parseUrl = parse_url( $url );
-                            
-                            //kinda hackish but not sure how to do it right		
-                            //hope http_build_url() will help at some point.
-                            if ( is_array( $parseUrl ) && !empty( $parseUrl ) ) {
-                                $urlParts   = explode( '/', $url );
-                                $hostKey    = array_search( $parseUrl['host'], $urlParts );
-                                $ufUrlParts = parse_url( CIVICRM_UF_BASEURL );
-                                $urlParts[$hostKey] = $ufUrlParts['host'];
-                                $url = implode( '/', $urlParts );
-                            }
-                        }
+                if ( $removeLanguagePart ) {
+                    $url = str_replace( "/{$language->prefix}/", '/', $url );
+                }
+            }
+            if ( isset( $language->domain ) &&
+                 $language->domain &&
+                 $mode == LANGUAGE_NEGOTIATION_DOMAIN ) {
+                
+                if ( $addLanguagePart ) {
+                    $url = CRM_Utils_File::addTrailingSlash( $language->domain, '/' );
+                }
+                if ( $removeLanguagePart && defined( 'CIVICRM_UF_BASEURL' ) ) {
+                    $url = str_replace( '\\', '/', $url );
+                    $parseUrl = parse_url( $url );
+                    
+                    //kinda hackish but not sure how to do it right		
+                    //hope http_build_url() will help at some point.
+                    if ( is_array( $parseUrl ) && !empty( $parseUrl ) ) {
+                        $urlParts   = explode( '/', $url );
+                        $hostKey    = array_search( $parseUrl['host'], $urlParts );
+                        $ufUrlParts = parse_url( CIVICRM_UF_BASEURL );
+                        $urlParts[$hostKey] = $ufUrlParts['host'];
+                        $url = implode( '/', $urlParts );
                     }
                 }
             }
@@ -1310,6 +1285,5 @@ class CRM_Utils_System {
         
         return $url;
     }
-    
     
   }

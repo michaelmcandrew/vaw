@@ -12,7 +12,7 @@
  *
  * @package CRM
  * @author Marshal Newrock <marshal@idealso.com>
- * $Id: AuthorizeNet.php 32198 2011-02-03 13:23:35Z shot $
+ * $Id: AuthorizeNet.php 32196 2011-02-03 13:14:05Z shot $
  */
 
 /* NOTE:

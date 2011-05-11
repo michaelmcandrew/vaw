@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -31,7 +31,7 @@
  * @package CiviCRM_APIv2
  * @subpackage API_Constant
  * @copyright CiviCRM LLC (c) 2004-2011
- * @version $Id: Constant.php 33007 2011-03-14 22:52:10Z kurund $
+ * @version $Id: Constant.php 32998 2011-03-14 22:00:35Z kurund $
  *
  */
 

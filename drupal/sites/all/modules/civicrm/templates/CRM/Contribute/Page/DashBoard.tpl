@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -119,8 +119,9 @@ function getChart( ) {
    if ( !charttype ) charttype = 'bvg';     
    if ( !year ) year           = currentYear;
 
-   var chartUrl = {/literal}"{crmURL p='civicrm/ajax/chart' q='snippet=4' h=0}"{literal};
-   chartUrl    += "&year=" + year + "&type=" + charttype;
+   var chartUrl = {/literal}"{crmURL p='civicrm/ajax/chart' h=0}"{literal};
+   chartUrl    += "&year=" + year + "&type=" + charttype + "&snippet=" + 4;
+
    cj.ajax({
        url     : chartUrl,
        async    : false,
@@ -132,7 +133,8 @@ function getChart( ) {
 }
 
 function buildTabularView( ) {
-    var tableUrl = {/literal}"{crmURL p='civicrm/contribute/ajax/tableview' q='showtable=1&snippet=4' h=0}"{literal};
+    var tableUrl = {/literal}"{crmURL p='civicrm/contribute/ajax/tableview' h=0}"{literal};
+    tableUrl    += "&showtable=1&snippet=" + 4;
     cj.ajax({
         url      : tableUrl,
         async    : false,

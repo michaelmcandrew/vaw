@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -44,18 +44,11 @@ class CRM_Admin_Page_Access extends CRM_Core_Page
 {
     function run( ) {
         $config = CRM_Core_Config::singleton( );
-
-        if ( $config->userFramework == 'Drupal' ) {
-            $this->assign('ufAccessURL', CRM_Utils_System::url( 'admin/people/permissions' ) );
-        } else {
-            JHTML::_( 'behavior.modal' );
-			$url = $config->userFrameworkBaseURL .
-                   "index.php?option=com_config&view=component&component=com_civicrm&tmpl=component";
-            $jparams = 'rel="{handler: \'iframe\', size: {x: 875, y: 550}, onClose: function() {}}" class="modal"';
-			$this->assign('ufAccessURL', $url );
-			$this->assign('jAccessParams', $jparams );
-        }
+        $ufAccessURL = CRM_Utils_System::url( 'admin/user/permissions' );
+        
+        $this->assign('ufAccessURL', $ufAccessURL);
         return parent::run();
     }
-
 }
+
+

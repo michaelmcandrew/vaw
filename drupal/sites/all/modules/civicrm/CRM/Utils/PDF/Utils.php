@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -43,7 +43,6 @@ class CRM_Utils_PDF_Utils {
                             $orientation = 'landscape',
                             $paperSize   = 'a3' ) {
         require_once 'packages/dompdf/dompdf_config.inc.php';
-        spl_autoload_register('DOMPDF_autoload');
         $dompdf = new DOMPDF( );
         
         $values = array( );

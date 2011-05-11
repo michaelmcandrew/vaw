@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -32,7 +32,7 @@
  * @package CiviCRM_APIv2
  * @subpackage API_Activity
  * @copyright CiviCRM LLC (c) 2004-2011
- * @version $Id: Activity.php 33756 2011-04-19 09:06:24Z kurund $
+ * @version $Id: Activity.php 33697 2011-04-17 18:03:58Z lobo $
  *
  */
 

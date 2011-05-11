@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -551,9 +551,8 @@ class CRM_Member_Import_Form_MapField extends CRM_Core_Form {
         $this->set( 'mapper'    , $mapper     );
                
         // store mapping Id to display it in the preview page 
-        if ( CRM_Utils_Array::value( 'mappingId', $params ) ) { 
-            $this->set('loadMappingId', $params['mappingId']);
-        }
+        $this->set('loadMappingId', $params['mappingId']);
+        
         //Updating Mapping Records
         if ( CRM_Utils_Array::value('updateMapping', $params)) {
             $mappingFields = new CRM_Core_DAO_MappingField();

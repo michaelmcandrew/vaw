@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.0                                                |
+ | CiviCRM version 3.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
@@ -78,7 +78,7 @@ class CRM_Export_BAO_Export
         $headerRows = $returnProperties = array();
         $primary    = $paymentFields    = false;
         $origFields = $fields;
-        $queryMode  = $relationField = null; 
+        $queryMode  = null; 
         
         $allCampaigns = array( );
         $exportCampaign = false;
@@ -223,7 +223,7 @@ class CRM_Export_BAO_Export
                 $returnProperties['contribution_id'] = 1;
             } else if ( $exportMode == CRM_Export_Form_Select::EVENT_EXPORT ) {
                 $returnProperties['participant_id'] = 1;
-                if ( CRM_Utils_Array::value( 'participant_role', $returnProperties ) ) {
+                if ( $returnProperties['participant_role'] ) {
                     unset( $returnProperties['participant_role'] );
                     $returnProperties['participant_role_id'] = 1;
                 }
@@ -491,7 +491,6 @@ class CRM_Export_BAO_Export
         
         $header = $addPaymentHeader = false;
         
-        $paymentDetails = array( );
         if ( $paymentFields ) {
             //special return properties for event and members
             $paymentHeaders = array( 'total_amount'        => ts('Total Amount'), 
@@ -841,7 +840,7 @@ class CRM_Export_BAO_Export
                 // add payment related information
                 if ( $paymentFields && isset( $paymentDetails[ $row[$paymentTableId] ] ) ) {
                     $row = array_merge( $row, $paymentDetails[ $row[$paymentTableId] ] );
-                } else if ( !empty($paymentDetails) ) {
+                } else if ( $paymentDetails ) {
                     $row = array_merge( $row, $nullContributionDetails );  
                 }
 
