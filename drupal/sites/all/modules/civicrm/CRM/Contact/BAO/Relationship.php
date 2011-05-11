@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -351,6 +351,10 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship
             // (i.e. the relationship is bi-directional)
             $relationshipType = array_unique( $relationshipType );
         }
+        
+        // sort the relationshipType in ascending order CRM-7736
+        asort( $relationshipType ); 
+
         return $relationshipType;
     }
 
@@ -1159,8 +1163,12 @@ SELECT relationship_type_id, relationship_direction
                 $membershipType = CRM_Member_BAO_MembershipType::getMembershipTypeDetails( $membershipValues['membership_type_id'] );
                 // Check if contact's relationship type exists in membership type
                 $relTypeDirs   = array( );
-                $relTypeIds    = explode( CRM_Core_DAO::VALUE_SEPARATOR,$membershipType['relationship_type_id'] );
-                $relDirections = explode( CRM_Core_DAO::VALUE_SEPARATOR,$membershipType['relationship_direction'] );
+                if ( CRM_Utils_Array::value( 'relationship_type_id', $membershipType ) ) {
+                    $relTypeIds = explode( CRM_Core_DAO::VALUE_SEPARATOR, $membershipType['relationship_type_id'] );
+                }
+                if ( CRM_Utils_Array::value( 'relationship_direction', $membershipType ) ) {
+                    $relDirections = explode( CRM_Core_DAO::VALUE_SEPARATOR, $membershipType['relationship_direction'] );
+                }
                 foreach( $relTypeIds as $key => $value ) {
                     $relTypeDirs[] = $value.'_'.$relDirections[$key];
                 }
@@ -1196,10 +1204,41 @@ SELECT relationship_type_id, relationship_direction
                     // membership=>relationship then we need to
                     // delete the membership record created for
                     // previous relationship.
-                    CRM_Member_BAO_Membership::deleteRelatedMemberships( $membershipId, $mainRelatedContactId );
+
+                    if ( self::isDeleteRelatedMembership( $relTypeIds, $contactId, $mainRelatedContactId, $relTypeId, CRM_Utils_Array::value('relationship_ids', $params) ) ) {
+                        CRM_Member_BAO_Membership::deleteRelatedMemberships( $membershipId, $mainRelatedContactId );
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * Helper function to check whether to delete the membership or
+     * not.
+     *
+     */
+    function isDeleteRelatedMembership( $relTypeIds, $contactId, $mainRelatedContactId, $relTypeId, $relIds ) {
+        if ( in_array($relTypeId, $relTypeIds ) ||
+             empty($relIds) ) {
+            return true;
+        }
+        
+        $relParamas = array( 1 => array( $contactId, 'Integer' ),
+                             2 => array( $mainRelatedContactId, 'Integer' )
+                             );
+        
+        if ( $contactId == $mainRelatedContactId ) {
+            $recordsFound = (int)CRM_Core_DAO::singleValueQuery( "SELECT COUNT(*) FROM civicrm_relationship WHERE relationship_type_id IN ( ". implode(',', $relTypeIds) ." )  AND contact_id_a IN ( %1 ) OR contact_id_b IN ( %1 ) AND id IN (". implode( ',', $relIds ) .")", $relParamas);
+            if ( $recordsFound ) return false;
+            return true;
+        }
+        
+        $recordsFound = (int)CRM_Core_DAO::singleValueQuery( "SELECT COUNT(*) FROM civicrm_relationship WHERE relationship_type_id IN ( ". implode(',', $relTypeIds) ." ) AND contact_id_a IN ( %1, %2 ) AND contact_id_b IN ( %1, %2 ) AND id NOT IN (". implode( ',', $relIds ) . ")", $relParamas );
+        
+        if ( $recordsFound ) return false;
+        
+        return true;
     }
 
     /**

@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -193,10 +193,6 @@ class CRM_Core_BAO_Navigation extends CRM_Core_DAO_Navigation
         $whereClause    = '';
 
         $config = CRM_Core_Config::singleton( );
-        if ( $config->userFramework == 'Joomla' ) {
-            $whereClause = " AND name NOT IN ('Access Control') ";
-            $cacheKeyString .= "_1";
-        }
 
         // check if we can retrieve from database cache
         require_once 'CRM/Core/BAO/Cache.php'; 
@@ -263,6 +259,7 @@ FROM civicrm_navigation WHERE domain_id = $domainID {$whereClause} ORDER BY pare
      */
     static function buildNavigationTree( &$navigationTree, $parentID, $navigationMenu = true ) 
     {
+
         $whereClause = " parent_id IS NULL";
 
         if (  $parentID ) {
@@ -282,11 +279,6 @@ ORDER BY parent_id, weight";
         $navigation = CRM_Core_DAO::executeQuery( $query );
         $config = CRM_Core_Config::singleton( );
         while ( $navigation->fetch() ) {
-            // CRM-5336
-            if ( $config->userFramework == 'Joomla' &&  $navigation->name == 'Access Control' ) {
-                continue;
-            }
-
             $label = $navigation->label;
             if ( !$navigationMenu ) {
                 $label = addcslashes( $label, '"' );
@@ -574,17 +566,18 @@ ORDER BY parent_id, weight";
             $homeNav         = array( );
             self::retrieve( $homeParams, $homeNav );
             if ( $homeNav ) {
-                $homeURL     = CRM_Utils_System::url( $homeNav['url'] );
+                list( $path, $q ) = explode( '&', $homeNav['url'] );
+                $homeURL     = CRM_Utils_System::url( $path, $q );                
                 $homeLabel   = $homeNav['label'];
+                if ($homeLabel == 'Home') $homeLabel = ts('Home');   // CRM-6804 (we need to special-case this as we don’t ts()-tag variables)
             } else {
                 $homeURL     = CRM_Utils_System::url( 'civicrm/dashboard', 'reset=1');
                 $homeLabel   = ts('Home');
             }
 
             if ( ( $config->userFramework == 'Drupal' ) && 
-                 function_exists( 'module_exists' ) &&
-                 module_exists('admin_menu') &&
-                 user_access('access administration menu') ) {
+                 ( ( module_exists('toolbar') && user_access('access toolbar') ) ||
+                   module_exists('admin_menu') && user_access('access administration menu') ) ) {
                 $prepandString = "<li class=\"menumain crm-link-home\">" . $homeLabel . "<ul id=\"civicrm-home\"><li><a href=\"{$homeURL}\">" . $homeLabel . "</a></li><li><a href=\"#\" onclick=\"cj.Menu.closeAll( );cj('#civicrm-menu').toggle( );\">" . ts('Drupal Menu') . "</a></li></ul></li>";
             } else {
                 $prepandString = "<li class=\"menumain crm-link-home\"><a href=\"{$homeURL}\" title=\"" . $homeLabel . "\">" . $homeLabel . "</a></li>";

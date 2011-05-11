@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -151,7 +151,7 @@ class CRM_Case_Form_Activity_OpenCase
         // calling this field activity_location to prevent conflict with contact location fields
         $form->add('text', 'activity_location', ts('Location'), CRM_Core_DAO::getAttribute( 'CRM_Activity_DAO_Activity', 'location' ) );
         
-	$form->addWysiwyg( 'activity_details', ts('Details'), array( 'rows' => 4, 'cols' => 60 ), false );
+        $form->addWysiwyg( 'activity_details', ts('Details'), array( 'rows' => 4, 'cols' => 60 ), false );
         
         $form->addButtons(array( 
                                 array ( 'type'      => 'upload', 
@@ -179,7 +179,7 @@ class CRM_Case_Form_Activity_OpenCase
         }
 
         // set the contact, when contact is selected
-        if ( $params['contact_select_id'][1] ) {
+        if ( isset( $params['contact_select_id'] ) && CRM_utils_Array::value( 1, $params['contact_select_id'] ) ) {
             $params['contact_id'] = $params['contact_select_id'][1];
             $form->_currentlyViewedContactId = $params['contact_id'];
         } elseif( $form->_allowMultiClient && $form->_context != 'case' ) {
@@ -209,7 +209,7 @@ class CRM_Case_Form_Activity_OpenCase
      * @static
      * @access public
      */
-    static function formRule( $values, $files, $form ) 
+    static function formRule( $fields, $files, $form ) 
     {
         if ( $form->_context == 'caseActivity' ) {
             return true;
@@ -221,7 +221,7 @@ class CRM_Case_Form_Activity_OpenCase
             $errors['contact[1]'] = ts('Please select a contact or create new contact');
         }
         //check selected contact for multi client option
-        if ( $form->_allowMultiClient && isset( $values[contact][1] ) && !$values[contact][1] ) {
+        if ( $form->_allowMultiClient && isset( $fields[contact][1] ) && !$fields[contact][1] ) {
             $errors['contact[1]'] = ts('Please select a valid contact or create new contact');
         }
         
@@ -239,7 +239,6 @@ class CRM_Case_Form_Activity_OpenCase
         if ( $form->_context == 'caseActivity' ) {
             return;
         }
-
 
         require_once 'CRM/Case/XMLProcessor/Process.php';
         $xmlProcessorProcess = new CRM_Case_XMLProcessor_Process( );
@@ -275,8 +274,6 @@ class CRM_Case_Form_Activity_OpenCase
             CRM_Case_BAO_Case::addCaseToContact( $contactParams );
             $client = $form->_currentlyViewedContactId;
         }
-
-
     
         // 2. initiate xml processor
         $xmlProcessor = new CRM_Case_XMLProcessor_Process( );

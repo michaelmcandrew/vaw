@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -270,6 +270,12 @@ define( 'CIVICRM_MEMCACHE_TIMEOUT', 3600 );
  */
 define( 'CIVICRM_MEMCACHE_PREFIX', '' );
 
+/**
+ * Enable this constant, if you want to send your email through the smarty
+ * templating engine(allows you to do conditional and more complex logic)
+ *
+ */
+define( 'CIVICRM_MAIL_SMARTY', 0 );
 
 /**
  *

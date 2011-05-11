@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -467,8 +467,9 @@ class CRM_Mailing_Form_Upload extends CRM_Core_Form
         $mailing->find(true);
 
         $session = CRM_Core_Session::singleton();
-        $values = array('contact_id' => $session->get('userID'), 'version' => 3);
-        $contact =& civicrm_api('contact', 'get', $values);
+        $values = array('contact_id' => $session->get('userID') );
+        require_once 'api/v2/Contact.php';
+        $contact =& civicrm_contact_get( $values );
         
         //CRM-4524
         $contact = reset( $contact );

@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -105,7 +105,4 @@ cj(function() {
 });
 </script>
 {/literal}
-{* We need to set jquery $ object back to $*}
-<script type="text/javascript">jQuery.noConflict(true);</script>
 </div> {* end crm-container div *}
-

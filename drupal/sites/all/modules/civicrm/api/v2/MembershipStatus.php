@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -32,8 +32,8 @@
  * @package CiviCRM_APIv2
  * @subpackage API_Membership
  * 
- * @copyright CiviCRM LLC (c) 2004-2010
- * @version $Id: MembershipStatus.php 31451 2010-12-27 10:52:08Z deepak $
+ * @copyright CiviCRM LLC (c) 2004-2011
+ * @version $Id: MembershipStatus.php 33007 2011-03-14 22:52:10Z kurund $
  *
  */
 

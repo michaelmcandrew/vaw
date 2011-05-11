@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -28,7 +28,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -59,11 +59,12 @@ class CRM_Dedupe_Merger
             $userRecordUrl = CRM_Utils_System::url( 'user/$ufid' );
             $title = ts('%1 User: %2; user id: %3', array(1 => $config->userFramework, 2 => '$ufname', 3 => '$ufid'));
         } else if ( $config->userFramework == 'Joomla' ) {
-            $userRecordUrl = $config->userFrameworkBaseURL . 
-                'index2.php?option=com_users&view=user&task=edit&cid[]=$ufid';
+            $userRecordUrl = $config->userFrameworkVersion > 1.5 ? 
+                $config->userFrameworkBaseURL ."index.php?option=com_users&view=user&task=user.edit&id=". '$ufid' : 
+                $config->userFrameworkBaseURL ."index2.php?option=com_users&view=user&task=edit&id[]=". '$ufid';
             $title = ts('%1 User: %2; user id: %3', array(1 => $config->userFramework, 2 => '$ufname', 3 => '$ufid'));
         }
-
+        
         if (!$relTables) {
             $relTables = array(
                 'rel_table_contributions' => array(
@@ -484,8 +485,8 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
      */
     function findDifferences($mainId, $otherId)
     {
-        $mainParams  = array('contact_id' => (int) $mainId,  'version' => 3);
-        $otherParams = array('contact_id' => (int) $otherId, 'version' => 3);
+        $mainParams  = array('contact_id' => (int) $mainId,  'version' => 2);
+        $otherParams = array('contact_id' => (int) $otherId, 'version' => 2);
         // API 2 has to have the requested fields spelt-out for it
         foreach (self::$validFields as $field) {
             $mainParams["return.$field"] = $otherParams["return.$field"] = 1;

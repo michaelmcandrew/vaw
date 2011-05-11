@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -33,7 +33,7 @@
  * @package CiviCRM_APIv3
  * @subpackage API_Event
  *
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * @version $Id: Event.php 30964 2010-11-29 09:41:54Z shot $
  *
  */
@@ -60,7 +60,6 @@ function civicrm_api3_event_create( $params )
 {
   _civicrm_api3_initialize( true );
   try {
-    civicrm_api3_api_check_permission(__FUNCTION__, $params, true);
     civicrm_api3_verify_mandatory ($params,'CRM_Event_DAO_Event',array ('start_date','event_type_id','title'));
 
     $ids['eventTypeId'] = (int) $params['event_type_id'];

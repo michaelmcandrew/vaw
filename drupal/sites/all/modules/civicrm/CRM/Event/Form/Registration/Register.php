@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -30,7 +30,7 @@
  *
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -522,7 +522,6 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration
             self::formatFieldsForOptionFull( $form );
             
             require_once 'CRM/Event/BAO/Participant.php';
-            $form->addGroup( $elements, 'amount', ts('Event Fee(s)'), '<br />' );      
             $form->add( 'hidden', 'priceSetId', $form->_priceSetId );
             
             require_once 'CRM/Price/BAO/Field.php';                       
@@ -637,8 +636,15 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration
                 $maxValue          = CRM_Utils_Array::value( 'max_value',  $option, 0 );
                 $dbTotalCount      = CRM_Utils_Array::value( $optId,       $recordedOptionsCount, 0 );
                 $currentTotalCount = CRM_Utils_Array::value( $optId,       $currentOptionsCount,  0 );
-                $totalCount        = $currentTotalCount + $dbTotalCount;
                 
+                // Do not consider current count for select field,
+                // since we are not going to freeze the options.
+                if ( $field['html_type'] == 'Select' ) {
+                    $totalCount = $dbTotalCount;
+                } else {
+                    $totalCount = $currentTotalCount + $dbTotalCount;
+                }
+
                 $isFull = false;
                 if ( $maxValue && 
                      ( ( $totalCount >= $maxValue ) || ( $totalCount + $count > $maxValue ) ) ) {
@@ -660,7 +666,7 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration
                 }
                 $option['is_full']            = $isFull;
                 $option['db_total_count']     = $dbTotalCount;
-                $option['total_option_count'] = $totalCount;
+                $option['total_option_count'] = $dbTotalCount + $currentTotalCount;
             }
             
             //ignore option full for offline registration.
@@ -846,7 +852,7 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration
 
         if ( !$this->_allowConfirmation ) {
             // check if the participant is already registered
-            if (!$self->_skipDupeRegistrationCheck) {
+            if (! $this->_skipDupeRegistrationCheck) {
                 $params['contact_id'] = self::checkRegistration( $params, $this, false, true );
             }
         }

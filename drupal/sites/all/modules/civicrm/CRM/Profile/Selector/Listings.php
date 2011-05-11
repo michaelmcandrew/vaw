@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -502,7 +502,7 @@ class CRM_Profile_Selector_Listings extends CRM_Core_Selector_Base implements CR
         }
 
         if ( $this->_linkToUF ) {
-            civicrm_api_include('uf_group', false, 3);
+            require_once 'api/v2/UFGroup.php';
         }
 
         // we need to determine of overlay profile should be shown

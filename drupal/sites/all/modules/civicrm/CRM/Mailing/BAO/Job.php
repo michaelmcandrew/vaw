@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -462,11 +462,13 @@ VALUES (%1, %2, %3, %4, %5, %6, %7)
                                                           $mailing->id );
 
 
-        if ( defined( 'CIVICRM_MAIL_SMARTY' ) ) {
+        if ( defined( 'CIVICRM_MAIL_SMARTY' ) &&
+             CIVICRM_MAIL_SMARTY ) {
             require_once 'CRM/Core/Smarty/resources/String.php';
             civicrm_smarty_register_string_resource( );
         }
-
+        
+        $isDelivered = false;
         // make sure that there's no more than $config->mailerBatchLimit mails processed in a run
         while ($eq->fetch()) {
             // if ( ( $mailsProcessed % 100 ) == 0 ) {
@@ -475,7 +477,9 @@ VALUES (%1, %2, %3, %4, %5, %6, %7)
 
             if ( $config->mailerBatchLimit > 0 &&
                  $mailsProcessed >= $config->mailerBatchLimit ) {
-                $this->deliverGroup( $fields, $mailing, $mailer, $job_date, $attachments );
+                if ( ! empty( $fields ) ) {
+                    $this->deliverGroup( $fields, $mailing, $mailer, $job_date, $attachments );
+                }
                 return false;
             }
             $mailsProcessed++;
@@ -493,12 +497,15 @@ VALUES (%1, %2, %3, %4, %5, %6, %7)
             }
         }
 
-        $isDelivered = $this->deliverGroup( $fields, $mailing, $mailer, $job_date, $attachments );
+        if ( ! empty( $fields ) ) {
+            $isDelivered = $this->deliverGroup( $fields, $mailing, $mailer, $job_date, $attachments );
+        }
         return $isDelivered;
     }
 
     public function deliverGroup ( &$fields, &$mailing, &$mailer, &$job_date, &$attachments ) {
-        if ( ! is_object( $mailer ) ) {
+        if ( ! is_object( $mailer ) ||
+             empty( $fields ) ) {
             CRM_Core_Error::fatal( );
         }
 

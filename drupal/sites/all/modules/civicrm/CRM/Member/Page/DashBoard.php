@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -250,6 +250,7 @@ class CRM_Member_Page_DashBoard extends CRM_Core_Page
         $renewCountPreMonth = $renewCountMonth = $renewCountYear = 0;
         
         $totalCountPreMonth = $totalCountMonth = $totalCountYear = $totalCountCurrent = $totalCountTotal = 0;
+        $totalCountPreMonth_owner = $totalCountMonth_owner = $totalCountYear_owner = $totalCountCurrent_owner = $totalCountTotal_owner = 0;
         foreach( $membershipSummary as $key => $value ) {
             $newCountPreMonth     = $newCountPreMonth     +  $value['premonth']['new']['count'];
             $renewCountPreMonth   = $renewCountPreMonth   +  $value['premonth']['renew']['count'];

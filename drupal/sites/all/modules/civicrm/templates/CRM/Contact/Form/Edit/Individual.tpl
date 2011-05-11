@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -84,23 +84,14 @@ var checkSimilar =  {$checkSimilar};
         {/if}
         <td>
             {$form.first_name.label}<br /> 
-            {if $action == 2}
-                {include file='CRM/Core/I18n/Dialog.tpl' table='civicrm_contact' field='first_name' id=$contactId}
-            {/if}
-            {$form.first_name.html}
+	    {$form.first_name.html}
         </td>
         <td>
             {$form.middle_name.label}<br />
-            {if $action == 2}
-                {include file='CRM/Core/I18n/Dialog.tpl' table='civicrm_contact' field='middle_name' id=$contactId}
-            {/if}
             {$form.middle_name.html}
         </td>
         <td>
             {$form.last_name.label}<br />
-            {if $action == 2}
-                {include file='CRM/Core/I18n/Dialog.tpl' table='civicrm_contact' field='last_name' id=$contactId}
-            {/if}
             {$form.last_name.html}
         </td>
 	{if $form.suffix_id}

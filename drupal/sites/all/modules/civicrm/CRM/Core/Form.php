@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -32,7 +32,7 @@
  * machine. Each form can also operate in various modes
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -786,7 +786,11 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
         if ( $editor == 'joomla default editor' ) {
             $editor = 'joomlaeditor';
         }
-        
+
+        if ( $editor == 'drupal default editor' ) {
+            $editor = 'drupalwysiwyg';
+        }
+ 
         $this->addElement( $editor, $name, $label, $attributes );
         $this->assign('editor', $editor);
     }    

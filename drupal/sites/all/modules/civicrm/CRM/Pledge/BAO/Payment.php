@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -199,6 +199,13 @@ WHERE     pledge_id = %1
      */
     static function add( $params )
     {
+        require_once 'CRM/Utils/Hook.php';
+        if ( CRM_Utils_Array::value( 'id', $params ) ) {
+            CRM_Utils_Hook::pre( 'edit',  'PledgePayment', $params['id'], $params );
+        } else {
+            CRM_Utils_Hook::pre( 'create',  'PledgePayment', null, $params ); 
+        }
+        
         require_once 'CRM/Pledge/DAO/Payment.php';
         $payment = new CRM_Pledge_DAO_Payment( );
         $payment->copyValues( $params );
@@ -210,7 +217,14 @@ WHERE     pledge_id = %1
         }
         
         $result = $payment->save( );
+
+        if ( CRM_Utils_Array::value( 'id', $params ) ) {
+            CRM_Utils_Hook::post( 'edit', 'PledgePayment', $payment->id, $payment);
+        } else {
+            CRM_Utils_Hook::post( 'create', 'PledgePayment', $payment->id, $payment );
+        }
         
+    
         return $result;
     }
 
@@ -319,9 +333,12 @@ WHERE     pledge_id = %1
      * update Pledge Payment Status
      *
      * @param int   $pledgeID, id of pledge
-     * @param array $paymentIDs, ids of pledge payment
-     * @param int   $paymentStatus, payment status
-     * @param int   $pledgeStatus, pledge status
+     * @param array $paymentIDs, ids of pledge payment(s) to update
+     * @param int   $paymentStatusID, payment status to set
+     * @param int   $pledgeStatus, pledge status to change (if needed)
+     * @param float $actualAmount, actual amount being paid
+     * @param bool  $adjustTotalAmount, is amount being paid different from scheduled amount?
+     * @param bool  $isScriptUpdate, is function being called from bin script? 
      *
      * @return int $newStatus, updated status id (or 0)
      */
@@ -333,12 +350,17 @@ WHERE     pledge_id = %1
                                         $adjustTotalAmount = false,
                                         $isScriptUpdate = false )
     {
-        //get all status
+        $totalAmountClause = '';
+        $paymentContributionId = null;
+        $editScheduled = false;        
+        
+        //get all statuses
         require_once 'CRM/Contribute/PseudoConstant.php';
         $allStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
         
         // if we get do not get contribution id means we are editing the scheduled payment.
         if ( !empty( $paymentIDs ) ) {
+            $editScheduled = false;
             $payments = implode( ',', $paymentIDs );
             $paymentContributionId  =  CRM_Core_DAO::getFieldValue( 'CRM_Pledge_DAO_Payment', 
                                                                     $payments,
@@ -374,6 +396,7 @@ WHERE     pledge_id = %1
                                                                'id'
                                                                );
             //  while editing scheduled  we need to check if we are editing last pending
+            $lastPending = false;
             if ( !$paymentContributionId ) {
                 $checkPendingCount = self::getOldestPledgePayment( $pledgeID, 2 );
                 if ( $checkPendingCount['count'] == 1 ) {
@@ -518,11 +541,19 @@ WHERE  civicrm_pledge.id = %2
      * Function to update pledge payment table
      *
      * @param int   $pledgeId pledge id
-     * @param array $paymentIds payment ids 
-     * @param int   $paymentStatusId payment status id
+     * @param array $paymentIds payment ids to be updated
+     * @param int   $paymentStatusId payment status id to set
+     * @param float $actualAmount, actual amount being paid
+     * @param int $contributionId, Id of associated contribution when payment is recorded
+     * @param bool  $isScriptUpdate, is function being called from bin script? 
      * @static
      */
-     static function updatePledgePayments( $pledgeId, $paymentStatusId, $paymentIds = null, $actualAmount = 0 ,$contributionId = null ,$isScriptUpdate = false )
+     static function updatePledgePayments( $pledgeId,
+                                           $paymentStatusId,
+                                           $paymentIds = null,
+                                           $actualAmount = 0,
+                                           $contributionId = null,
+                                           $isScriptUpdate = false )
      {
         $allStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
         $paymentClause = null;
@@ -531,6 +562,7 @@ WHERE  civicrm_pledge.id = %2
             $paymentClause = " AND civicrm_pledge_payment.id IN ( {$payments} )";
         }
         $actualAmountClause = NULL;
+        $contributionIdClause = NULL;
         if ( isset( $contributionId ) && !$isScriptUpdate ) {
             $contributionIdClause = ", civicrm_pledge_payment.contribution_id = {$contributionId}";
             $actualAmountClause =", civicrm_pledge_payment.actual_amount = {$actualAmount}";

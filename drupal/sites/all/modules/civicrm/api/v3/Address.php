@@ -1,4 +1,3 @@
-
 <?php
 /*
  +--------------------------------------------------------------------+
@@ -42,15 +41,6 @@
 require_once 'api/v3/utils.php';
 
 /**
- *  returns all the fields on this entity.
- */
-function civicrm_api3_address_getfields( &$params ) {
-    require_once 'CRM/Core/DAO/Address.php';
-    $addressDao = new CRM_Core_DAO_Address();
-    return ($addressDao->export());
-}
-
-/**
  *  Add an Address for a contact
  * 
  * Allowed @params array keys are:
@@ -63,7 +53,9 @@ function civicrm_api3_address_create( &$params )
 {
   _civicrm_api3_initialize( true );
   try {
-    civicrm_api3_verify_mandatory ($params, null, array ('contact_id', 'location_type_id'));
+    civicrm_api3_verify_one_mandatory ($params, null, 
+    array ('contact_id', 'id'));
+    civicrm_api3_verify_mandatory ($params, null, array('location_type_id'));
     
     require_once 'CRM/Core/BAO/Address.php';
 
@@ -127,6 +119,7 @@ function civicrm_api3_address_create( &$params )
  *
  * @param  array  $params
  * 
+ * {@schema Core/Address.xml}
  * {@example AddressDelete.php 0}
  * @return boolean | error  true if successfull, error otherwise
  * @access public
@@ -135,8 +128,8 @@ function civicrm_api3_address_delete( &$params )
 {
   _civicrm_api3_initialize( true );
   try {
-    civicrm_api3_verify_mandatory ($params,null,array ('address_id'));
-    $addressID = CRM_Utils_Array::value( 'address_id', $params );
+    civicrm_api3_verify_mandatory ($params,null,array ('id'));
+    $addressID = CRM_Utils_Array::value( 'id', $params );
 
     require_once 'CRM/Core/DAO/Address.php';
     $addressDAO = new CRM_Core_DAO_Address();

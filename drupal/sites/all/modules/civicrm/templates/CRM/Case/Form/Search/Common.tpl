@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -60,7 +60,10 @@
       {/foreach}
   </td>
 {/if}
-</tr>    
+</tr>
+
+<tr><td colspan="3">{include file="CRM/common/Tag.tpl" tagsetType='case'}</td></tr>
+
 {literal}
 <script type="text/javascript">
     var verifyCaseInput = new Array();

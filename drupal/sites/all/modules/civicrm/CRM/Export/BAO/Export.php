@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -78,7 +78,7 @@ class CRM_Export_BAO_Export
         $headerRows = $returnProperties = array();
         $primary    = $paymentFields    = false;
         $origFields = $fields;
-        $queryMode  = null; 
+        $queryMode  = $relationField = null; 
         
         $allCampaigns = array( );
         $exportCampaign = false;
@@ -223,7 +223,7 @@ class CRM_Export_BAO_Export
                 $returnProperties['contribution_id'] = 1;
             } else if ( $exportMode == CRM_Export_Form_Select::EVENT_EXPORT ) {
                 $returnProperties['participant_id'] = 1;
-                if ( $returnProperties['participant_role'] ) {
+                if ( CRM_Utils_Array::value( 'participant_role', $returnProperties ) ) {
                     unset( $returnProperties['participant_role'] );
                     $returnProperties['participant_role_id'] = 1;
                 }
@@ -262,17 +262,17 @@ class CRM_Export_BAO_Export
             switch ( $queryMode )  {
             case CRM_Contact_BAO_Query::MODE_EVENT :
                 $paymentFields  = true;
-                $paymentTableId = "participant_id";
+                $paymentTableId = 'participant_id';
                 break;
             case CRM_Contact_BAO_Query::MODE_MEMBER :
                 $paymentFields  = true;
-                $paymentTableId = "membership_id";
+                $paymentTableId = 'membership_id';
                 break;
             case CRM_Contact_BAO_Query::MODE_PLEDGE :
                 require_once 'CRM/Pledge/BAO/Query.php';
                 $extraReturnProperties = CRM_Pledge_BAO_Query::extraReturnProperties( $queryMode );
                 $paymentFields  = true;
-                $paymentTableId = "pledge_payment_id";
+                $paymentTableId = 'pledge_payment_id';
                 break;
             case CRM_Contact_BAO_Query::MODE_CASE :
                 require_once 'CRM/Case/BAO/Query.php';
@@ -334,7 +334,7 @@ class CRM_Export_BAO_Export
             $returnProperties = array_merge( $returnProperties, $moreReturnProperties );
         }
 
-        $query = new CRM_Contact_BAO_Query( 0, $returnProperties, null, false, false, $queryMode );
+        $query = new CRM_Contact_BAO_Query( null, $returnProperties, null, false, false, $queryMode );
         
         list( $select, $from, $where, $having ) = $query->query( );
         
@@ -363,7 +363,7 @@ class CRM_Export_BAO_Export
             if ( $relationReturnProperties = CRM_Utils_Array::value( $rel, $returnProperties ) ) {
                 $allRelContactArray[$rel] = array();
                 // build Query for each relationship
-                $relationQuery[$rel] = new CRM_Contact_BAO_Query( 0, $relationReturnProperties,
+                $relationQuery[$rel] = new CRM_Contact_BAO_Query( null, $relationReturnProperties,
                                                                   null, false, false, $queryMode );
                 list( $relationSelect, $relationFrom, $relationWhere, $relationHaving ) = $relationQuery[$rel]->query( );
                 
@@ -491,6 +491,7 @@ class CRM_Export_BAO_Export
         
         $header = $addPaymentHeader = false;
         
+        $paymentDetails = array( );
         if ( $paymentFields ) {
             //special return properties for event and members
             $paymentHeaders = array( 'total_amount'        => ts('Total Amount'), 
@@ -504,7 +505,7 @@ class CRM_Export_BAO_Export
             require_once 'CRM/Contribute/BAO/Contribution.php';
             $paymentDetails = CRM_Contribute_BAO_Contribution::getContributionDetails( $exportMode, $ids );
             if( !empty( $paymentDetails ) ) $addPaymentHeader = true;
-            $nullContributionDetails = array_fill_keys($paymentHeaders,null);    
+            $nullContributionDetails = array_fill_keys(array_keys($paymentHeaders), null);    
         }
 
         //get all campaigns.
@@ -580,8 +581,18 @@ class CRM_Export_BAO_Export
                             foreach ( $value as $relationField => $relationValue ) {
                                 // below block is same as primary block (duplicate)
                                 if ( isset( $relationQuery[$field]->_fields[$relationField]['title'] ) ) {
-                                    $headerName   = $field .'-' . $relationQuery[$field]->_fields[$relationField]['title'];
+                                    if ( $relationQuery[$field]->_fields[$relationField]['name'] == 'name' ) {
+                                        $headerName = $field .'-' . $relationField;
+                                    } else {
+                                        if ($relationField == 'current_employer') {
+                                            $headerName = $field .'-' . 'current_employer';
+                                        } else {
+                                            $headerName = $field .'-' . $relationQuery[$field]->_fields[$relationField]['name'];
+                                        }
+                                    }
+                                    
                                     $headerRows[] = $headerName;
+
                                     self::sqlColumnDefn( $query, $sqlColumns, $headerName );
                                 } else if ( $relationField == 'phone_type_id' ) {
                                     $headerName   = $field .'-' . 'Phone Type';
@@ -591,11 +602,16 @@ class CRM_Export_BAO_Export
                                     $headerName   = $field .'-' . 'Im Service Provider';
                                     $headerRows[] = $headerName;
                                     self::sqlColumnDefn( $query, $sqlColumns, $headerName );
+                                } else if ( $relationField == 'state_province_id' ) {
+                                    $headerName   = $field .'-' . 'state_province_id';
+                                    $headerRows[] = $headerName;
+                                    self::sqlColumnDefn( $query, $sqlColumns, $headerName );
                                 } else if ( is_array( $relationValue ) && $relationField == 'location' ) {
                                     // fix header for location type case
                                     foreach ( $relationValue as $ltype => $val ) {
                                         foreach ( array_keys( $val ) as $fld ) {
                                             $type = explode( '-', $fld );
+
                                             $hdr = "{$ltype}-" . $relationQuery[$field]->_fields[$type[0]]['title'];
 
                                             if ( CRM_Utils_Array::value( 1, $type ) ) {
@@ -639,7 +655,7 @@ class CRM_Export_BAO_Export
                             }
                             $fieldValue = implode( ',', $viewRoles );
                         }
-                    } else if ( $field == 'master_address_belongs_to' ) {
+                    } else if ( $field == 'master_id' ) {
                         $masterAddressId = null;
                         if ( isset( $dao->master_id ) ) {
                             $masterAddressId = $dao->master_id;
@@ -696,8 +712,9 @@ class CRM_Export_BAO_Export
                             } else {
                                 $fieldValue = '';
                             }
+                            $field = $field. '_';
                             if ( $relationField == 'id' ) {
-                                $row[$field . $relationField] = $relDAO->contact_id;
+                                $row[$field .$relationField] = $relDAO->contact_id;
                             } else  if ( is_array( $relationValue ) && $relationField == 'location' ) {
                                 foreach ( $relationValue as $ltype => $val ) {
                                     foreach ( array_keys( $val ) as $fld ) {
@@ -706,17 +723,21 @@ class CRM_Export_BAO_Export
                                         if ( CRM_Utils_Array::value( 1, $type ) ) {
                                             $fldValue .= "-" . $type[1];
                                         }
-                                        // CRM-3157: localise country, region (both have ‘country’ context) and state_province (‘province’ context)
+                                        // CRM-3157: localise country, region (both have ‘country’ context) 
+                                        // and state_province (‘province’ context)
                                         switch (true) {
                                         case in_array('country',      $type):
                                         case in_array('world_region', $type):
-                                            $row[$field . $fldValue] = $i18n->crm_translate($relDAO->$fldValue, array('context' => 'country'));
+                                            $row[$field . '_' .$fldValue] = $i18n->crm_translate($relDAO->$fldValue, 
+                                                                                                 array('context' => 'country'));
+                                            
                                             break;
                                         case in_array('state_province', $type):
-                                            $row[$field . $fldValue] = $i18n->crm_translate($relDAO->$fldValue, array('context' => 'province'));
+                                            $row[$field . '_' .$fldValue] = $i18n->crm_translate($relDAO->$fldValue, 
+                                                                                                 array('context' => 'province'));
                                             break;
                                         default:
-                                            $row[$field . $fldValue] = $relDAO->$fldValue;
+                                            $row[$field . '_' .$fldValue] = $relDAO->$fldValue;
                                             break;
                                         }
                                     }
@@ -804,7 +825,7 @@ class CRM_Export_BAO_Export
                 // add payment headers if required
                 if ( $addPaymentHeader && $paymentFields ) {
                     $headerRows = array_merge( $headerRows, $paymentHeaders );
-                    foreach ( $paymentHeaders as $paymentHdr ) {
+                    foreach ( array_keys($paymentHeaders) as $paymentHdr ) {
                         self::sqlColumnDefn( $query, $sqlColumns, $paymentHdr );
                     }
                     $addPaymentHeader = false;
@@ -820,12 +841,13 @@ class CRM_Export_BAO_Export
                 // add payment related information
                 if ( $paymentFields && isset( $paymentDetails[ $row[$paymentTableId] ] ) ) {
                     $row = array_merge( $row, $paymentDetails[ $row[$paymentTableId] ] );
-                } else if ( $paymentDetails ) {
+                } else if ( !empty($paymentDetails) ) {
                     $row = array_merge( $row, $nullContributionDetails );  
                 }
 
                 //remove organization name for individuals if it is set for current employer
-                if ( CRM_Utils_Array::value('contact_type', $row ) && $row['contact_type'] == 'Individual' && array_key_exists('organization_name', $row ) ) {
+                if ( CRM_Utils_Array::value('contact_type', $row ) && 
+                     $row['contact_type'] == 'Individual' && array_key_exists('organization_name', $row ) ) {
                     $row['organization_name'] = '';
                 }
 
@@ -843,34 +865,38 @@ class CRM_Export_BAO_Export
             $dao->free( );
             $offset += $rowCount;
         }
-        
-        self::writeDetailsToTable( $exportTempTable, $componentDetails, $sqlColumns );
 
-        // do merge same address and merge same household processing
-        if ( $mergeSameAddress ) {
-            self::mergeSameAddress( $exportTempTable, $headerRows, $sqlColumns, $drop );
+        if ( $exportTempTable ) {
+            self::writeDetailsToTable( $exportTempTable, $componentDetails, $sqlColumns );
+            
+            // do merge same address and merge same household processing
+            if ( $mergeSameAddress ) {
+                self::mergeSameAddress( $exportTempTable, $headerRows, $sqlColumns, $drop );
+            }
+            
+            // merge the records if they have corresponding households
+            if ( $mergeSameHousehold ) {
+                self::mergeSameHousehold( $exportTempTable, $headerRows, $sqlColumns, $relationKey );
+            }
+            
+            // fix the headers for rows with relationship type
+            if ( !empty( $relName ) ) {
+                self::manipulateHeaderRows( $headerRows, $contactRelationshipTypes );
+            }
+            
+            // call export hook
+            require_once 'CRM/Utils/Hook.php';
+            CRM_Utils_Hook::export( $exportTempTable, $headerRows, $sqlColumns, $exportMode );
+            
+            // now write the CSV file
+            self::writeCSVFromTable( $exportTempTable, $headerRows, $sqlColumns, $exportMode );
+            
+            // delete the export temp table and component table
+            $sql = "DROP TABLE IF EXISTS {$exportTempTable}";
+            CRM_Core_DAO::executeQuery( $sql );
+        } else {
+            CRM_Core_Error::fatal( ts( 'No records to export' ) );
         }
-        
-        // merge the records if they have corresponding households
-        if ( $mergeSameHousehold ) {
-            self::mergeSameHousehold( $exportTempTable, $headerRows, $sqlColumns, $relationKey );
-        }
-
-        // fix the headers for rows with relationship type
-        if ( !empty( $relName ) ) {
-            self::manipulateHeaderRows( $headerRows, $contactRelationshipTypes );
-        }
-
-        // call export hook
-        require_once 'CRM/Utils/Hook.php';
-        CRM_Utils_Hook::export( $exportTempTable, $headerRows, $sqlColumns, $exportMode );
-        
-        // now write the CSV file
-        self::writeCSVFromTable( $exportTempTable, $headerRows, $sqlColumns, $exportMode );
-
-        // delete the export temp table and component table
-        $sql = "DROP TABLE IF EXISTS {$exportTempTable}";
-        CRM_Core_DAO::executeQuery( $sql );
 
         CRM_Utils_System::civiExit( );
     }
@@ -1004,7 +1030,7 @@ class CRM_Export_BAO_Export
              substr( $field, -4 ) == '_b_a' ) {
             return;
         }
-        
+
         $fieldName = CRM_Utils_String::munge( strtolower( $field ), '_', 64 );
         if ( $fieldName == 'id' ) {
             $fieldName = 'civicrm_primary_id';
@@ -1085,7 +1111,7 @@ class CRM_Export_BAO_Export
     }
 
     static function writeDetailsToTable( $tableName, &$details, &$sqlColumns )
-    {
+    {        
         if ( empty( $details ) ) {
             return;
         }
@@ -1123,8 +1149,9 @@ FROM   $tableName
 INSERT INTO $tableName $sqlColumnString
 VALUES $sqlValueString
 ";
-        
+
         CRM_Core_DAO::executeQuery( $sql );
+
     }
 
     static function createTempTable( &$sqlColumns )
@@ -1294,22 +1321,13 @@ DROP  $drop";
 
         // name map of the non standard fields in header rows & sql columns
         $mappingFields = array (
-                                'civicrm_primary_id'  => 'internal contact id',
-                                'url'                 => 'website',
-                                'contact_sub_type'    => 'contact_subtype',
-                                'is_opt_out'          => 'no_bulk_emails__user_opt_out_',
-                                'external_identifier' => 'external_identifier__match_to_contact_',
-                                'contact_source'      => 'source_of_contact_data',
-                                'user_unique_id'      => 'unique_id__openid_',
-                                'contact_source'      => 'source_of_contact_data',
-                                'state_province'      => 'state',
-                                'is_bulkmail'         => 'use_for_bulk_mail',
-                                'im'                  => 'im_screen_name',
-                                'groups'              => 'group_s_',
-                                'tags'                => 'tag_s_',
-                                'notes'               => 'note_s_',
-                                'provider_id'         => 'im_service_provider',
-                                'phone_type_id'       => 'phone_type'
+                                'civicrm_primary_id'        => 'id',
+                                'contact_source'            => 'source',
+                                'current_employer_id'       => 'employer_id',
+                                'contact_is_deleted'        => 'is_deleted',
+                                'name'                      => 'address_name',
+                                'provider_id'               => 'im_service_provider',
+                                'phone_type_id'             => 'phone_type'
                                 );
 
         //figure out which columns are to be replaced by which ones

@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -579,7 +579,7 @@ class CRM_Pledge_Form_Pledge extends CRM_Core_Form
 
         $dates = array( 'create_date', 'start_date', 'acknowledge_date', 'cancel_date' );
         foreach ( $dates as $d ) {
-            if ( $this->_id && !$this->_isPending ) {
+            if ( $this->_id && ( !$this->_isPending ) && CRM_Utils_Array::value( $d, $this->_values ) ) {
                 if ( $d == 'start_date' ) {
                     $params['scheduled_date'] = CRM_Utils_Date::processDate( $this->_values[$d] );
                 }

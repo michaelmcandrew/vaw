@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -84,6 +84,9 @@ class CRM_Activity_Import_Parser_Activity extends CRM_Activity_Import_Parser
                                                                          'headerPattern' => '/(activity.)?type label?/i') ) );
         
         foreach ($fields as $name => $field) {
+            $field['type']          = CRM_Utils_Array::value( 'type', $field, CRM_Utils_Type::T_INT );
+            $field['dataPattern']   = CRM_Utils_Array::value( 'dataPattern', $field, '//' );
+            $field['headerPattern'] = CRM_Utils_Array::value( 'headerPattern', $field, '//' );
             $this->addField( $name, $field['title'], $field['type'], $field['headerPattern'], $field['dataPattern']);
         }
 
@@ -190,7 +193,7 @@ class CRM_Activity_Import_Parser_Activity extends CRM_Activity_Import_Parser
         //for date-Formats
         $session = CRM_Core_Session::singleton();
         $dateType = $session->get("dateTypes");
-        $params['source_contact_id'] = $session->get( 'userID' );
+        if(!isset($params['source_contact_id'])) $params['source_contact_id'] = $session->get( 'userID' );
         foreach ($params as $key => $val) {
             if ( $key == 'activity_date_time' ) {
                 if ( $val ) {
@@ -201,12 +204,16 @@ class CRM_Activity_Import_Parser_Activity extends CRM_Activity_Import_Parser
                         CRM_Import_Parser_Contact::addToErrorMsg( 'Activity date', $errorMessage );  
                     }
                 }
+            } else if ( $key == 'activity_engagement_level' && $val &&
+                        !CRM_Utils_Rule::positiveInteger( $val ) ) {
+                CRM_Import_Parser_Contact::addToErrorMsg( 'Activity Engagement Index', $errorMessage ); 
             }
         }
         //date-Format part ends
 
         //checking error in custom data
-        $params['contact_type'] =  $this->_contactType;
+        $params['contact_type'] = isset($this->_contactType) ? $this->_contactType : null;
+
         CRM_Import_Parser_Contact::isErrorInCustomData($params, $errorMessage);
 
         if ( $errorMessage ) {
@@ -244,7 +251,7 @@ class CRM_Activity_Import_Parser_Activity extends CRM_Activity_Import_Parser
         //for date-Formats
         $session = CRM_Core_Session::singleton();
         $dateType = $session->get("dateTypes");
-        $params['source_contact_id'] = $session->get( 'userID' );
+        if(!isset($params['source_contact_id'])) $params['source_contact_id'] = $session->get( 'userID' );
         $formatted = array();
         $customFields = CRM_Core_BAO_CustomField::getFields( CRM_Utils_Array::value( 'contact_type',$params ) );
         

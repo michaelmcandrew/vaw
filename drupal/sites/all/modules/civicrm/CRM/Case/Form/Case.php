@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -299,7 +299,7 @@ class CRM_Case_Form_Case extends CRM_Core_Form
     {
         // check if dedupe button, if so return.
         $buttonName = $this->controller->getButtonName( );
-        if ( $buttonName == $this->_dedupeButtonName ) {
+        if ( isset( $this->_dedupeButtonName ) && $buttonName == $this->_dedupeButtonName ) {
             return;
         }
 
@@ -365,9 +365,9 @@ class CRM_Case_Form_Case extends CRM_Core_Form
         CRM_Core_BAO_EntityTag::create( $tagParams, 'civicrm_case', $caseObj->id );
         
         //save free tags
-        if ( isset( $params['taglist'] ) && !empty( $params['taglist'] ) ) {
+        if ( isset( $params['case_taglist'] ) && !empty( $params['case_taglist'] ) ) {
             require_once 'CRM/Core/Form/Tag.php';
-            CRM_Core_Form_Tag::postProcess( $params['taglist'], $caseObj->id, 'civicrm_case', $this );
+            CRM_Core_Form_Tag::postProcess( $params['case_taglist'], $caseObj->id, 'civicrm_case', $this );
         }
         
         // user context

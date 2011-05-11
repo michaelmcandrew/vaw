@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -100,7 +100,7 @@ class CRM_Core_Block {
                                                                    'weight'     => -100,
                                                                    'status'     => 1,
                                                                    'pages'      => 'civicrm*',
-                                                                   'region'     => 'left' ),
+                                                                   'region'     => 'sidebar_first' ),
                                        self::RECENTLY_VIEWED => array(  'template'   => 'RecentlyViewed.tpl',
                                                                          'info'       => ts('CiviCRM Recent Items'),
                                                                          'subject'    => ts('Recent Items'),
@@ -110,7 +110,7 @@ class CRM_Core_Block {
                                                                          'weight'     => -99,
                                                                          'status'     => 1,
                                                                          'pages'      => 'civicrm*',
-                                                                         'region'     => 'left' ),                
+                                                                         'region'     => 'sidebar_first' ),                
                                        self::DASHBOARD   => array( 'template'   => 'Dashboard.tpl',
                                                                    'info'       => ts('CiviCRM Contact Dashboard'),
                                                                    'subject'    => '',
@@ -120,7 +120,7 @@ class CRM_Core_Block {
                                                                    'weight'     => -98,
                                                                    'status'     => 1,
                                                                    'pages'      => 'civicrm*',
-                                                                   'region'     => 'left' ),
+                                                                   'region'     => 'sidebar_first' ),
                                        self::ADD         => array( 'template'   => 'Add.tpl',
                                                                    'info'       => ts('CiviCRM Quick Add'),
                                                                    'subject'    => ts('New Individual'),
@@ -130,7 +130,7 @@ class CRM_Core_Block {
                                                                    'weight'     => -97,
                                                                    'status'     => 1,
                                                                    'pages'      => 'civicrm*',
-                                                                   'region'     => 'left' ),
+                                                                   'region'     => 'sidebar_first' ),
                                        self::LANGSWITCH  => array( 'template'   => 'LangSwitch.tpl',
                                                                    'info'       => ts('CiviCRM Language Switcher'),
                                                                    'subject'    => '',
@@ -141,7 +141,7 @@ class CRM_Core_Block {
                                                                    'weight'     => -96,
                                                                    'status'     => 1,
                                                                    'pages'      => 'civicrm*',
-                                                                   'region'     => 'left' ),
+                                                                   'region'     => 'sidebar_first' ),
                                        self::EVENT      => array( 'template'   => 'Event.tpl',
                                                                    'info'       => ts('CiviCRM Upcoming Events'),
                                                                    'subject'    => ts('Upcoming Events'),
@@ -152,7 +152,7 @@ class CRM_Core_Block {
                                                                    'weight'     => -95,
                                                                    'status'     => 0,
                                                                    'pages'      => 'civicrm*',
-                                                                   'region'     => 'left' ),
+                                                                   'region'     => 'sidebar_first' ),
                                        self::FULLTEXT_SEARCH => array(  'template'   => 'FullTextSearch.tpl',
                                                                         'info'       => ts('CiviCRM Full-text Search'),
                                                                         'subject'    => ts('Full-text Search'),
@@ -162,7 +162,7 @@ class CRM_Core_Block {
                                                                         'weight'     => -94,
                                                                         'status'     => 0,
                                                                         'pages'      => 'civicrm*',
-                                                                        'region'     => 'left' )
+                                                                        'region'     => 'sidebar_first' )
                                        );
         
             ksort(self::$_properties);
@@ -182,7 +182,7 @@ class CRM_Core_Block {
         if (!(self::$_properties)) {
             self::initProperties();
         }
-        return self::$_properties[$id][$property];
+        return isset( self::$_properties[$id][$property] ) ? self::$_properties[$id][$property] : null;
     }
 
     /**

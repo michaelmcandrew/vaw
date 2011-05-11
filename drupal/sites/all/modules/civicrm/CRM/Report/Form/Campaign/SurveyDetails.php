@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.4                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -223,8 +223,8 @@ class CRM_Report_Form_Campaign_SurveyDetails extends CRM_Report_Form {
                     if ( $fieldName == 'survey_response' ) continue;
                     
                     $select[] = "{$field['dbAlias']} as {$tableName}_{$fieldName}";
-                    $this->_columnHeaders["{$tableName}_{$fieldName}"]['title'] = $field['title'];
-                    $this->_columnHeaders["{$tableName}_{$fieldName}"]['type']  = $field['type'];
+                    $this->_columnHeaders["{$tableName}_{$fieldName}"]['title'] = CRM_Utils_Array::value('title', $field);
+                    $this->_columnHeaders["{$tableName}_{$fieldName}"]['type']  = CRM_Utils_Array::value('type', $field);
                 }
             }
         }
@@ -236,7 +236,7 @@ class CRM_Report_Form_Campaign_SurveyDetails extends CRM_Report_Form {
         $this->_from = " FROM civicrm_contact {$this->_aliases['civicrm_contact']} {$this->_aclFrom} ";
         
         //get the activity table joins.
-        $this->_from .= " INNER JOIN civicrm_activity_target {$this->_aliases['civicrm_activity_target']} ON ( {$this->_aliases['civicrm_contact']}.id = civicrm_activity_target.target_contact_id )\n";
+        $this->_from .= " INNER JOIN civicrm_activity_target ON ( {$this->_aliases['civicrm_contact']}.id = civicrm_activity_target.target_contact_id )\n";
         $this->_from .= " INNER JOIN civicrm_activity {$this->_aliases['civicrm_activity']} ON ( {$this->_aliases['civicrm_activity']}.id = civicrm_activity_target.activity_id )\n";
         $this->_from .= " INNER JOIN civicrm_activity_assignment {$this->_aliases['civicrm_activity_assignment']} ON ( {$this->_aliases['civicrm_activity']}.id = {$this->_aliases['civicrm_activity_assignment']}.activity_id )\n";
         
@@ -259,7 +259,7 @@ class CRM_Report_Form_Campaign_SurveyDetails extends CRM_Report_Form {
                 foreach ( $table['filters'] as $fieldName => $field ) {
                     $clause = null;
                     
-                    if ( $field['type'] & CRM_Utils_Type::T_DATE ) {
+                    if ( CRM_Utils_Array::value('type', $field) & CRM_Utils_Type::T_DATE ) {
                         $relative = CRM_Utils_Array::value( "{$fieldName}_relative", $this->_params );
                         $from     = CRM_Utils_Array::value( "{$fieldName}_from"    , $this->_params );
                         $to       = CRM_Utils_Array::value( "{$fieldName}_to"      , $this->_params );
@@ -485,7 +485,8 @@ class CRM_Report_Form_Campaign_SurveyDetails extends CRM_Report_Form {
         }
         
         //now pickup all options.
-        $query = '
+        if ( !empty( $fieldIds ) ) {
+            $query = '
     SELECT  field.id as id,
             val.label as label,
             val.value as value
@@ -493,11 +494,12 @@ class CRM_Report_Form_Campaign_SurveyDetails extends CRM_Report_Form {
 INNER JOIN  civicrm_option_value val ON ( val.option_group_id = field.option_group_id )
      WHERE  field.id IN (' . implode( ' , ', $fieldIds ) . ' )
   Order By  val.weight';
-        $field = CRM_Core_DAO::executeQuery( $query );
-        $options = array( );
-        while ( $field->fetch( ) ) {
-            $name =  "custom_{$field->id}";
-            $surveyResponseFields[$name]['options'][$field->value] = $field->label;
+            $field = CRM_Core_DAO::executeQuery( $query );
+            $options = array( );
+            while ( $field->fetch( ) ) {
+                $name =  "custom_{$field->id}";
+                $surveyResponseFields[$name]['options'][$field->value] = $field->label;
+            }
         }
         
         //get the result values.
@@ -621,8 +623,12 @@ INNER JOIN  civicrm_survey survey ON ( survey.result_id = grp.id )
         $statusId = CRM_Utils_Array::value( 'status_id_value', $this->_params );
         $respondentStatus = CRM_Utils_Array::value( $statusId, self::$_surveyRespondentStatus );
         
+        $surveyId = CRM_Utils_Array::value( 0, $surveyIds );
         foreach ( $rows as &$row ) {
-            $result      = CRM_Utils_Array::value( $row['civicrm_activity_survey_id'], $resultSet, array( ) );
+            if ( CRM_Utils_Array::value( 'civicrm_activity_survey_id', $row ) ) {
+                $surveyId = $row['civicrm_activity_survey_id'];
+            }
+            $result      = CRM_Utils_Array::value( $surveyId, $resultSet, array( ) );
             $resultLabel = CRM_Utils_Array::value( 'civicrm_activity_result', $row );
             if ( $respondentStatus == 'Reserved' ) {
                 $row['civicrm_activity_result'] = implode( ' | ', array_keys( $result ) ); 
@@ -797,6 +803,7 @@ INNER  JOIN  civicrm_custom_field cf ON ( cg.id = cf.custom_group_id )
             }
             if ( array_key_exists( $fieldName, $this->_columns[$resTable]['fields'] ) ) {
                 $this->_columns[$resTable]['fields'][$fieldName]['required'] = true;
+                $this->_columns[$resTable]['fields'][$fieldName]['isSurveyResponseField'] = true;
                 continue;
             }
             

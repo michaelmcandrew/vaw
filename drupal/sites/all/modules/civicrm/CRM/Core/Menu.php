@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -30,7 +30,7 @@
  * This file contains the various menus of the CiviCRM module
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -99,13 +99,6 @@ class CRM_Core_Menu
 
         $xml = simplexml_load_file( $name );
         foreach ( $xml->item as $item ) {
-            
-            //do not expose 'Access Control' link for Joomla, CRM-3550
-            if ( $item->path == 'civicrm/admin/access' &&
-                 $config->userFramework == 'Joomla' ) {
-                continue;
-            }
-            
             if ( ! (string ) $item->path ) {
                 CRM_Core_Error::debug( 'i', $item );
                 CRM_Core_Error::fatal( );

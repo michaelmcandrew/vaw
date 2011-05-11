@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,12 +29,13 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
 
 require_once 'CRM/Core/Form.php';
+require_once 'CRM/Core/BAO/CustomField.php';
 require_once 'CRM/Campaign/BAO/Campaign.php';
 require_once 'CRM/Custom/Form/CustomData.php';
 require_once 'CRM/Campaign/PseudoConstant.php';
@@ -220,7 +221,7 @@ class CRM_Campaign_Form_Campaign extends CRM_Core_Form
         //lets assign custom data type and subtype.
         $this->assign( 'customDataType',    'Campaign' );
         $this->assign( 'entityID',          $this->_campaignId );
-        $this->assign( 'customDataSubType', $this->_values['campaign_type_id'] );
+        $this->assign( 'customDataSubType', CRM_Utils_Array::value('campaign_type_id', $this->_values) );
         
         $attributes = CRM_Core_DAO::getAttribute('CRM_Campaign_DAO_Campaign');
         
@@ -367,7 +368,7 @@ class CRM_Campaign_Form_Campaign extends CRM_Core_Form
                                                              CRM_Utils_Array::value( 'campaign_type_id', $params ) );
         $params['custom'] = CRM_Core_BAO_CustomField::postProcess( $params,
                                                                    $customFields,
-                                                                   $this->_id,
+                                                                   $this->_campaignId,
                                                                    'Campaign' );
         
         require_once 'CRM/Campaign/BAO/Campaign.php';

@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -153,18 +153,20 @@ class CRM_Contribute_BAO_Query
                     $query->_useDistinct = true;
                 }
                 if ( $query->_params[$id][0] == 'contribution_test' ) {
-                    $isTest = true;
-                }
-                $grouping = $query->_params[$id][3];
-                self::whereClauseSingle( $query->_params[$id], $query );
-            }
-        }
+                     $isTest = true;
+                 }
+                 $grouping = $query->_params[$id][3];
+                 self::whereClauseSingle( $query->_params[$id], $query );
+             }
+         }
 
-        if ( $grouping !== null &&
-             ! $isTest ) {
-            $values = array( 'contribution_test', '=', 0, $grouping, 0 );
-            self::whereClauseSingle( $values, $query );
-        }
+         if ( $grouping !== null &&
+              ! $isTest &&
+              // we dont want to include all tests for sql OR CRM-7827
+              $query->getOperator( ) != 'OR' ) {
+             $values = array( 'contribution_test', '=', 0, $grouping, 0 );
+             self::whereClauseSingle( $values, $query );
+         }
     }
 
     static function whereClauseSingle( &$values, &$query ) 
@@ -176,6 +178,7 @@ class CRM_Contribute_BAO_Query
         if ( !empty ( $value ) ) {
             $quoteValue = "\"$value\"";
         }
+
 
         $strtolower = function_exists('mb_strtolower') ? 'mb_strtolower' : 'strtolower';
 
@@ -196,7 +199,9 @@ class CRM_Contribute_BAO_Query
         case 'contribution_amount_high':
             // process min/max amount
             $query->numberRangeBuilder( $values,
-                                        'civicrm_contribution', 'contribution_amount', 'total_amount', 'Contribution Amount' );
+                                        'civicrm_contribution', 'contribution_amount',
+                                        'total_amount', 'Contribution Amount',
+                                        null );
             return;
 
         case 'contribution_total_amount':
@@ -715,6 +720,11 @@ class CRM_Contribute_BAO_Query
         //add contribution table
         if ( CRM_Utils_Array::value( 'civicrm_product', $tables ) ) {
             $tables = array_merge( array( 'civicrm_contribution' => 1), $tables );
+        }
+
+        if ( CRM_Utils_Array::value( 'civicrm_contribution_product', $tables ) &&
+             !CRM_Utils_Array::value( 'civicrm_product', $tables ) ) {
+            $tables['civicrm_product'] = 1;
         }
     }
 }

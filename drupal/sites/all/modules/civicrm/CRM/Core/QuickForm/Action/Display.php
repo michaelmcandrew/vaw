@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -30,7 +30,7 @@
  * Redefine the display action.
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -101,7 +101,8 @@ class CRM_Core_QuickForm_Action_Display extends CRM_Core_QuickForm_Action {
         if (isset($validate) && $validate) {
             $page->validate();
         }
-
+        //will this work generally as TRUE (i.e., return output)
+        //was default, i.e., FALSE
         return $this->renderForm($page);
     }
 
@@ -152,6 +153,7 @@ class CRM_Core_QuickForm_Action_Display extends CRM_Core_QuickForm_Action {
             CRM_Utils_System::civiExit( );
         }
 
+        print $html;
     }
 
     /**

@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -550,7 +550,7 @@ class CRM_Core_Payment_BaseIPN {
         // get the billing location type
         require_once "CRM/Core/PseudoConstant.php";
         $locationTypes  =& CRM_Core_PseudoConstant::locationType( );
-        $ids['billing'] =  array_search( 'Billing',  $locationTypes );
+        $ids['billing'] =  array_search( ts('Billing'),  $locationTypes );
         if ( ! $ids['billing'] ) {
             CRM_Core_Error::debug_log_message( ts( 'Please set a location type of %1', array( 1 => 'Billing' ) ) );
             echo "Failure: Could not find billing location type<p>";
@@ -588,7 +588,7 @@ class CRM_Core_Payment_BaseIPN {
                 $relatedContact = CRM_Contribute_BAO_Contribution::getOnbehalfIds( $contribID,
                                                                                    $contribution->contact_id );
                 // if this is onbehalf of contribution then set related contact
-                if ( $relatedContactId = $relatedContact['individual_id'] ) {
+                if ( $relatedContactId = CRM_Utils_Array::value( 'individual_id', $relatedContact ) ) {
                     $values['related_contact'] = $ids['related_contact'] = $relatedContactId;
                 }
                 

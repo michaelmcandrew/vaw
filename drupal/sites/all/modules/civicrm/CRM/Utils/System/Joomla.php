@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -149,8 +149,8 @@ class CRM_Utils_System_Joomla {
 
             // CRM-6819 + CRM-7086
             $lang     = substr($config->lcMessages, 0, 2);
-            $l10nFile = "{$config->smartyDir}../jquery/jquery-ui-1.8.5/development-bundle/ui/i18n/jquery.ui.datepicker-{$lang}.js";
-            $l10nURL  = "{$config->resourceBase}packages/jquery/jquery-ui-1.8.5/development-bundle/ui/i18n/jquery.ui.datepicker-{$lang}.js";
+            $l10nFile = "{$config->smartyDir}../jquery/jquery-ui-1.8.11/development-bundle/ui/i18n/jquery.ui.datepicker-{$lang}.js";
+            $l10nURL  = "{$config->resourceBase}packages/jquery/jquery-ui-1.8.11/development-bundle/ui/i18n/jquery.ui.datepicker-{$lang}.js";
             if (file_exists($l10nFile)) {
                 $template->assign('l10nURL', $l10nURL);
             }
@@ -182,7 +182,7 @@ class CRM_Utils_System_Joomla {
         $config    = CRM_Core_Config::singleton( );
  		$separator = $htmlize ? '&amp;' : '&';
  		$Itemid    = '';
-
+        $script    = '';
         require_once 'CRM/Utils/String.php';
         $path = CRM_Utils_String::stripPathChars( $path );
 
@@ -191,9 +191,7 @@ class CRM_Utils_System_Joomla {
             if ( JRequest::getVar("Itemid") ) {
                 $Itemid = "{$separator}&Itemid=" . JRequest::getVar("Itemid");
             }
-        } else {
-            $script = 'index2.php';
-        }
+        } 
 
         if (isset($fragment)) {
             $fragment = '#'. $fragment;
@@ -214,7 +212,9 @@ class CRM_Utils_System_Joomla {
         // gross hack for joomla, we are in the backend and want to send a frontend url
         if ( $frontend &&
              $config->userFramework == 'Joomla' ) {
+            // handle both joomla v1.5 and v1.6, CRM-7939
             $url = str_replace( '/administrator/index2.php', '/index.php', $url );
+            $url = str_replace( '/administrator/index.php' , '/index.php', $url );
         }
         return $url;
     }
@@ -269,13 +269,14 @@ class CRM_Utils_System_Joomla {
      *
      * @param string $name     the user name
      * @param string $password the password for the above user name
+     * @param $loadCMSBootstrap boolean load cms bootstrap?
      *
      * @return mixed false if no auth
      *               array( contactID, ufID, unique string ) if success
      * @access public
      * @static
      */
-    static function authenticate( $name, $password ) {
+    static function authenticate( $name, $password, $loadCMSBootstrap = false ) {
         require_once 'DB.php';
 
         $config = CRM_Core_Config::singleton( );
@@ -284,6 +285,15 @@ class CRM_Utils_System_Joomla {
         if ( DB::isError( $dbJoomla ) ) {
             CRM_Core_Error::fatal( "Cannot connect to joomla db via $config->userFrameworkDSN, " . $dbJoomla->getMessage( ) ); 
         }                                                      
+
+        if ( $loadCMSBootstrap ) {
+            $bootStrapParams = array( );
+            if ( $name && $password ) {
+                $bootStrapParams = array( 'name' => $name,
+                                          'pass' => $password ); 
+            }
+            CRM_Utils_System::loadBootStrap( $bootStrapParams );
+        }
 
         $strtolower = function_exists('mb_strtolower') ? 'mb_strtolower' : 'strtolower';
         $name      = $dbJoomla->escapeSimple( $strtolower( $name ) );
@@ -355,11 +365,13 @@ class CRM_Utils_System_Joomla {
     /* 
      * load joomla bootstrap
      *
-     * @param $name string  optional username for login
-     * @param $pass string  optional password for login
+     * @param $params array with uid or name and password 
+     * @param $loadUser boolean load cms user?
+     * @param $throwError throw error on failure?
      */
-    static function loadBootStrap($user = null, $pass = null, $uid = null )
+    static function loadBootStrap( $params = array( ), $loadUser = true, $throwError = true )
     {
+        // load BootStrap here if needed
         return true;
     }
     

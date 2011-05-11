@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -61,7 +61,7 @@ class CRM_Admin_Form_Setting_UF extends CRM_Admin_Form_Setting
              $config->dsn != $config->userFrameworkDSN ) {
             $dsnArray      = DB::parseDSN($config->dsn);
             $tableNames    = CRM_Core_DAO::GetStorageValues(null, 0, 'Name');
-            $tablePrefixes = '$db_prefix = array(';
+            $tablePrefixes = '$databases[\'default\'][\'default\'][\'prefix\']= array(';
             foreach ( $tableNames as $tableName => $value ) {
                 $tablePrefixes .= "\n  '" . str_pad($tableName . "'", 41) . " => '`{$dsnArray['database']}`.',";
             }

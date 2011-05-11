@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -64,7 +64,7 @@ class CRM_Contact_Form_Search_Custom_Group
         $this->_allSearch = false; 
         $this->_groups    = false;
         $this->_tags      = false;
-        $this->_andOr      = $this->_formValues['andOr'];
+        $this->_andOr     = CRM_Utils_Array::value( 'andOr', $this->_formValues );
         
 
         //make easy to check conditions for groups and tags are

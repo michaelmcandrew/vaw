@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -178,7 +178,7 @@ class CRM_UF_Page_Group extends CRM_Core_Page
             $this->browse();
         }
         // parent run 
-        parent::run();
+        return parent::run();
     }
     
     /**
@@ -230,7 +230,7 @@ class CRM_UF_Page_Group extends CRM_Core_Page
         // FIXME: (CRM-3587) hack to make standalone profile in joomla work
         // without administrator login 
         if ( $config->userFramework == 'Joomla' ) {
-            $profile = str_replace( '/administrator/index2.php', '/index.php', $profile );
+            $profile = str_replace( '/administrator/index.php', '/index.php', $profile );
         }
 
         // add jquery files

@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CiviCRM_Hook
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id: $
  *
  */
@@ -755,5 +755,50 @@ class CRM_Utils_Hook {
             eval( 'return ' .
                   $config->userHookClass .
                   '::invoke( 5, $type, $params, $mail, $result, $action, \'civicrm_emailProcessor\' );' );
+    }
+
+    
+	/**
+     * This hook is called after a row has been processed and the
+     * record (and associated records imported
+     * 
+     * @param string  $object     - object being imported (for now Contact only, later Contribution, Activity, Participant and Member)
+     * @param string  $usage      - hook usage/location (for now process only, later mapping and others)
+     * @param string  $objectRef  - import record object
+     * @param array   $params     - array with various key values: currently
+     *                  contactID       - contact id
+     *                  importID        - row id in temp table
+     *                  importTempTable - name of tempTable
+     *                  fieldHeaders    - field headers
+     *                  fields          - import fields
+     *  
+     * @return void
+     * @access public 
+     */
+    static function import( $object, $usage, &$objectRef, &$params ) {
+        $config = CRM_Core_Config::singleton( );
+        require_once( str_replace( '_', DIRECTORY_SEPARATOR, $config->userHookClass ) . '.php' );
+        $null =& CRM_Core_DAO::$_nullObject;
+        return   
+            eval( 'return ' .
+                  $config->userHookClass .
+                  '::invoke( 4, $object, $usage, $objectRef, $params, $null, $null, \'civicrm_import\' );' );
+    }
+
+    /**
+     * This hook is called when API permissions are checked (cf. civicrm_api3_api_check_permission()
+     * in api/v3/utils.php and _civicrm_api3_permissions() in CRM/Core/DAO/.permissions.php).
+     *
+     * @param string $entity       the API entity (like contact)
+     * @param string $action       the API action (like get)
+     * @param array &$params       the API parameters
+     * @param array &$permisisons  the associative permissions array (probably to be altered by this hook)
+     */
+    static function alterAPIPermissions($entity, $action, &$params, &$permissions)
+    {
+        $config = CRM_Core_Config::singleton();
+        require_once(str_replace('_', DIRECTORY_SEPARATOR, $config->userHookClass) . '.php');
+        $null =& CRM_Core_DAO::$_nullObject;
+        return eval("return {$config->userHookClass}::invoke(4, \$entity, \$action, \$params, \$permissions, \$null, 'civicrm_alterAPIPermissions');");
     }
 }

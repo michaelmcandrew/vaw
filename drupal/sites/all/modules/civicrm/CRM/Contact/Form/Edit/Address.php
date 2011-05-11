@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -264,7 +264,7 @@ class CRM_Contact_Form_Edit_Address
     {
         $errors = array( );
         // check for state/county match if not report error to user.
-        if ( is_array( $fields['address'] ) ) {
+        if ( CRM_Utils_Array::value( 'address', $fields ) && is_array( $fields['address'] ) ) {
             foreach ( $fields['address'] as $instance => $addressValues ) {
                 if ( CRM_Utils_System::isNull( $addressValues ) ) {
                     continue;

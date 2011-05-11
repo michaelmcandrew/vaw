@@ -1,9 +1,9 @@
 <?php
 /*
 +--------------------------------------------------------------------+
-| CiviCRM version 3.3                                                |
+| CiviCRM version 4.0                                                |
 +--------------------------------------------------------------------+
-| Copyright CiviCRM LLC (c) 2004-2010                                |
+| Copyright CiviCRM LLC (c) 2004-2011                                |
 +--------------------------------------------------------------------+
 | This file is a part of CiviCRM.                                    |
 |                                                                    |
@@ -27,7 +27,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -521,7 +521,7 @@ class CRM_Core_DAO_Address extends CRM_Core_DAO
                 'master_id' => array(
                     'name' => 'master_id',
                     'type' => CRM_Utils_Type::T_INT,
-                    'title' => ts('Master Address ID') ,
+                    'title' => ts('Master Address Belongs To') ,
                     'import' => true,
                     'where' => 'civicrm_address.master_id',
                     'headerPattern' => '',
@@ -541,8 +541,7 @@ class CRM_Core_DAO_Address extends CRM_Core_DAO
      */
     function getTableName()
     {
-        global $dbLocale;
-        return self::$_tableName . $dbLocale;
+        return self::$_tableName;
     }
     /**
      * returns if this table needs to be logged

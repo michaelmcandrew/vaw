@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -279,7 +279,9 @@ class CRM_Report_Form_Contribute_TopDonor extends CRM_Report_Form {
         while ( $dao->fetch( ) ) {
             $row = array( );
             foreach ( $this->_columnHeaders as $key => $value ) {
-                $row[$key] = $dao->$key;
+                if ( property_exists( $dao, $key ) ) {
+                    $row[$key] = $dao->$key;
+                }
             }
             $rows[] = $row;
         }

@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -243,8 +243,8 @@ INNER JOIN civicrm_contribution       con ON ( mp.contribution_id = con.id )
         
         if ( !$dao->fetch( ) ) return $result;
         
-        $ppID = $dao->ppID1 ? $dao->ppID1 : $dao->ppID2;
-        $mode = ( $dao->is_test ) ? 'test' : 'live';
+        $ppID = ( isset($dao->ppID1) && $dao->ppID1 ) ? $dao->ppID1 : ( isset($dao->ppID2) ? $dao->ppID2 : null );
+        $mode = ( isset($dao->is_test) && $dao->is_test ) ? 'test' : 'live';
         if ( !$ppID || $type == 'id' ) {
             $result = $ppID;
         } else if ( $type == 'info' ) {

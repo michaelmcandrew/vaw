@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -120,21 +120,21 @@ class CRM_Export_Form_Select extends CRM_Core_Form
         $componentMode = $this->get( 'component_mode' );
         switch ( $componentMode ) {
         case 2:
-            require_once "CRM/Contribute/Form/Task.php";
+            require_once 'CRM/Contribute/Form/Task.php';
             CRM_Contribute_Form_Task::preProcessCommon( $this, true );
             $this->_exportMode = self::CONTRIBUTE_EXPORT;
             $componentName = array( '', 'Contribute' );
             break;
 
         case 3:
-            require_once "CRM/Event/Form/Task.php";
+            require_once 'CRM/Event/Form/Task.php';
             CRM_Event_Form_Task::preProcessCommon( $this, true );
             $this->_exportMode = self::EVENT_EXPORT;
             $componentName = array( '', 'Event' );
             break;
 
         case 4:
-            require_once "CRM/Activity/Form/Task.php";
+            require_once 'CRM/Activity/Form/Task.php';
             CRM_Activity_Form_Task::preProcessCommon( $this, true );
             $this->_exportMode = self::ACTIVITY_EXPORT;
             $componentName = array( '', 'Activity' );
@@ -147,13 +147,14 @@ class CRM_Export_Form_Select extends CRM_Core_Form
         if ( $this->_exportMode == self::CONTACT_EXPORT ) {
             $contactTasks = CRM_Contact_Task::taskTitles(); 
             $taskName = $contactTasks[$this->_task]; 
-            
-            require_once "CRM/Contact/Form/Task.php";
+            $component = false;
+            require_once 'CRM/Contact/Form/Task.php';
             CRM_Contact_Form_Task::preProcessCommon( $this, true );
         } else {
             $this->assign( 'taskName', "Export $componentName[1]" ); 
             eval( '$componentTasks = CRM_'. $componentName[1] .'_Task::tasks();' );
             $taskName = $componentTasks[$this->_task];
+            $component = true;
         }
 
         if ( $this->_componentTable ) {
@@ -167,7 +168,7 @@ FROM   {$this->_componentTable}
         }
         $this->assign( 'totalSelectedRecords', $totalSelectedRecords );
         $this->assign('taskName', $taskName);
-
+        $this->assign('component', $component);
         // all records actions = save a search 
         if (($values['radio_ts'] == 'ts_all') || ($this->_task == CRM_Contact_Task::SAVE_SEARCH)) { 
             $this->_selectAll = true;
@@ -243,7 +244,7 @@ FROM   {$this->_componentTable}
     public function postProcess( ) 
     {
         $exportOption = $this->controller->exportValue( $this->_name, 'exportOption' ); 
-        $merge_same_address = $this->controller->exportValue( $this->_name, 'merge_same_address' );
+        $merge_same_address   = $this->controller->exportValue( $this->_name, 'merge_same_address' );
         $merge_same_household = $this->controller->exportValue( $this->_name, 'merge_same_household' );
 
         $mappingId = $this->controller->exportValue( $this->_name, 'mapping' ); 
@@ -265,7 +266,7 @@ FROM   {$this->_componentTable}
         $this->set('mergeSameHousehold', $mergeSameHousehold );
         
         if ( $exportOption == self::EXPORT_ALL ) {
-            require_once "CRM/Export/BAO/Export.php";
+            require_once 'CRM/Export/BAO/Export.php';
             CRM_Export_BAO_Export::exportComponents( $this->_selectAll,
                                                      $this->_componentIds,
                                                      $this->get( 'queryParams' ),
@@ -334,7 +335,7 @@ FROM   {$this->_componentTable}
             break;
         }
         
-        require_once "CRM/Core/BAO/Mapping.php";
+        require_once 'CRM/Core/BAO/Mapping.php';
         $mappingTypeId = CRM_Core_OptionGroup::getValue( 'mapping_type', $exportType, 'name' );
         $this->set( 'mappingTypeId', $mappingTypeId );
 

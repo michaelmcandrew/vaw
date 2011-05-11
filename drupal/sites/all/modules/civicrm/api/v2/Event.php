@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -33,8 +33,8 @@
  * @package CiviCRM_APIv2
  * @subpackage API_Event
  * 
- * @copyright CiviCRM LLC (c) 2004-2010
- * @version $Id: Event.php 32067 2011-01-27 22:00:09Z lobo $
+ * @copyright CiviCRM LLC (c) 2004-2011
+ * @version $Id: Event.php 33007 2011-03-14 22:52:10Z kurund $
  *
  */
 

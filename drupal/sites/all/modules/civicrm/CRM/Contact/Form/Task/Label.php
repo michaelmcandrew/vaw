@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -475,7 +475,7 @@ class CRM_Contact_Form_Task_Label extends CRM_Contact_Form_Task
         # exclude individuals belonging to selected households
         require_once 'CRM/Contact/DAO/Relationship.php';
         foreach ( $households as $household_id => $row ) {
-            $dao =& new CRM_Contact_DAO_Relationship();
+            $dao = new CRM_Contact_DAO_Relationship();
             $dao->contact_id_b = $household_id;
             $dao->find( );
             while ( $dao->fetch( ) ) {

@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -31,8 +31,8 @@
  * @package CiviCRM_APIv2
  * @subpackage API_Contribute
  *
- * @copyright CiviCRM LLC (c) 2004-2010
- * @version $Id: Contribution.php 32507 2011-02-15 08:14:14Z kurund $
+ * @copyright CiviCRM LLC (c) 2004-2011
+ * @version $Id: Contribution.php 33093 2011-03-16 10:42:29Z shot $
  *
  */
 
@@ -228,6 +228,7 @@ function &civicrm_contribution_search( &$params ) {
  *
  * @param <type> $params
  * @return <type> 
+ * @deprecated
  */
 function &civicrm_contribution_format_create( &$params ) {
     _civicrm_initialize( );

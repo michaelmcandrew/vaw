@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -178,20 +178,27 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
         
         $diffs = CRM_Dedupe_Merger::findDifferences($cid, $oid);
         
-        $mainParams  = array('contact_id' => $cid, 'return.display_name' => 1, 'return.contact_sub_type' => 1, 'version' => 3);
-        $otherParams = array('contact_id' => $oid, 'return.display_name' => 1, 'return.contact_sub_type' => 1, 'version' => 3);
+        $mainParams  = array('contact_id' => $cid, 'return.display_name' => 1, 'return.contact_sub_type' => 1, 'version' => 2);
+        $otherParams = array('contact_id' => $oid, 'return.display_name' => 1, 'return.contact_sub_type' => 1, 'version' => 2);
         // API 2 has to have the requested fields spelt-out for it
         foreach (CRM_Dedupe_Merger::$validFields as $field) {
             $mainParams["return.$field"] = $otherParams["return.$field"] = 1;
         }
-        $main  =& civicrm_api('contact', 'get', $mainParams);
+
+        $mainParams  = array('contact_id' => $cid, 'return.display_name' => 1, 'return.contact_sub_type' => 1);
+        $otherParams = array('contact_id' => $oid, 'return.display_name' => 1, 'return.contact_sub_type' => 1);
+        // API 2 has to have the requested fields spelt-out for it
+        foreach (CRM_Dedupe_Merger::$validFields as $field) {
+            $mainParams["return.$field"] = $otherParams["return.$field"] = 1;
+        }
+        $main  =& civicrm_contact_get($mainParams);
         //CRM-4524
         $main  = reset( $main );
         if ( $main['contact_id'] != $cid ) {
             CRM_Core_Error::fatal( ts( 'The main contact record does not exist' ) );
         }
 
-        $other =& civicrm_api('contact', 'get', $otherParams);
+        $other =& civicrm_contact_get($otherParams);
         //CRM-4524
         $other = reset( $other );
         if ( $other['contact_id'] != $oid ) {
@@ -202,8 +209,8 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
         $subtypes = CRM_Contact_BAO_ContactType::subTypePairs( null, true, '' );
 
         $this->assign('contact_type', $main['contact_type']);
-        $this->assign('main_contact_subtype',  $subtypes[$main['contact_sub_type']]);
-        $this->assign('other_contact_subtype', $subtypes[$other['contact_sub_type']]);
+        $this->assign('main_contact_subtype',  CRM_Utils_Array::value( 'contact_sub_type', $subtypes[$main['contact_sub_type']] ) );
+        $this->assign('other_contact_subtype', CRM_Utils_Array::value( 'contact_sub_type', $subtypes[$other['contact_sub_type']] ) );
         $this->assign('main_name',    $main['display_name']);
         $this->assign('other_name',   $other['display_name']);
         $this->assign('main_cid',     $main['contact_id']);
@@ -266,8 +273,11 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
         }
         
         // handle location blocks.
-        $locations['main']  =& civicrm_api('location', 'get', $mainParams);
-        $locations['other'] =& civicrm_api('location', 'get', $otherParams);
+        require_once 'api/v2/Location.php';
+        $mainParams['version'] = $otherParams['version'] = '3.0';
+        
+        $locations['main']  =& civicrm_location_get($mainParams);
+        $locations['other'] =& civicrm_location_get($otherParams);
         $allLocationTypes   = CRM_Core_PseudoConstant::locationType( );
         
         $mainLocAddress = array();
@@ -381,7 +391,8 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
                 unset($relTables[$name]);
                 continue;
             }
-            $this->addElement('checkbox', "move_$name");
+            $el = $this->addElement('checkbox', "move_$name");
+            $el->setChecked (true);
             $relTables[$name]['main_url']  = str_replace('$cid', $cid, $relTables[$name]['url']);
             $relTables[$name]['other_url'] = str_replace('$cid', $oid, $relTables[$name]['url']);
             if ( $name == 'rel_table_users' ) {
@@ -704,7 +715,7 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
         
         // move other's belongings and delete the other contact
         CRM_Dedupe_Merger::moveContactBelongings( $this->_cid, $this->_oid );
-        $otherParams = array('contact_id' => $this->_oid, 'version' => 3);
+        $otherParams = array('id' => $this->_oid, 'version' => 3);
 
         if ( CRM_Core_Permission::check( 'merge duplicate contacts' ) && 
              CRM_Core_Permission::check( 'delete contacts' ) ) {
@@ -713,7 +724,7 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
                 $query = "UPDATE civicrm_contact SET external_identifier = null WHERE id = {$this->_oid}";
                 CRM_Core_DAO::executeQuery( $query );
             }
-            civicrm_api('contact', 'delete', $otherParams);
+            civicrm_contact_delete($otherParams);
             CRM_Core_BAO_PrevNextCache::deleteItem( $this->_oid );
         } else {
             CRM_Core_Session::setStatus( ts('Do not have sufficient permission to delete duplicate contact.') );
@@ -742,7 +753,7 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
             $cacheKey .= $this->_gid  ? "_{$this->_gid}"  : '_0';
         
             $join  = "LEFT JOIN civicrm_dedupe_exception de ON ( pn.entity_id1 = de.contact_id1 AND 
-                                                             pn.entity_id2 = de.contact_id2 )";
+                                                                 pn.entity_id2 = de.contact_id2 )";
             $where = "de.id IS NULL";   
 
             $pos = CRM_Core_BAO_PrevNextCache::getPositions( $cacheKey, null, null, $this->_mergeId, $join, $where );

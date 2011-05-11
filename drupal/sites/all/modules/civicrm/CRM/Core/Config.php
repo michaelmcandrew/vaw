@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -32,7 +32,7 @@
  * The default values in general, should reflect production values (minimizes chances of screwing up)
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -249,18 +249,10 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
 
         if ( defined( 'CIVICRM_UF_BASEURL' ) ) {
             $this->userFrameworkBaseURL = CRM_Utils_File::addTrailingSlash( CIVICRM_UF_BASEURL, '/' );
-            if ($userFramework == 'Drupal' and function_exists('variable_get')) {
-                global $language;
-                if (module_exists('locale') && $mode = variable_get('language_negotiation', LANGUAGE_NEGOTIATION_NONE)) {
-                    if (isset($language->prefix) and $language->prefix
-                        and ($mode == LANGUAGE_NEGOTIATION_PATH_DEFAULT or $mode == LANGUAGE_NEGOTIATION_PATH)) {
-                        $this->userFrameworkBaseURL .= $language->prefix . '/';
-                }
-                    if (isset($language->domain) and $language->domain and $mode == LANGUAGE_NEGOTIATION_DOMAIN) {
-                        $this->userFrameworkBaseURL = CRM_Utils_File::addTrailingSlash( $language->domain, '/' );
-                    }
-                }
-            }
+            
+            //format url for language negotiation, CRM-7803 
+            $this->userFrameworkBaseURL = CRM_Utils_System::languageNegotiationURL( $this->userFrameworkBaseURL );
+            
             if ( isset( $_SERVER['HTTPS'] ) &&
                  strtolower( $_SERVER['HTTPS'] ) != 'off' ) {
                 $this->userFrameworkBaseURL     = str_replace( 'http://', 'https://', 
@@ -610,6 +602,7 @@ class CRM_Core_Config extends CRM_Core_Config_Variables
         $queries = array( 'TRUNCATE TABLE civicrm_acl_cache',
                           'TRUNCATE TABLE civicrm_acl_contact_cache',
                           'TRUNCATE TABLE civicrm_cache',
+                          'TRUNCATE TABLE civicrm_prevnext_cache',
                           'UPDATE civicrm_group SET cache_date = NULL',
                           'TRUNCATE TABLE civicrm_group_contact_cache',
                           'TRUNCATE TABLE civicrm_menu',

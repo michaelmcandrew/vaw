@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -30,7 +30,7 @@
  *
  * @package CiviCRM_APIv3
  * @subpackage API_Group
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * @version $Id: Group.php 30171 2010-10-14 09:11:27Z mover $
  */
 
@@ -107,17 +107,15 @@ function civicrm_api3_group_get( $params )
     }
 
     $groupObjects = CRM_Contact_BAO_Group::getGroups( $params, $returnProperties );
-
-    if ( count( $groupObjects ) == 0 ) {
-      return civicrm_api3_create_error( 'No such group exists' );
-    }
-
+    if ( empty( $groupObjects ) ) {
+        return civicrm_api3_create_error( 'No such group exists' );
+    } 
     $groups       = array( );
     foreach( $groupObjects as $group ) {
       _civicrm_api3_object_to_array( $group, $groups[$group->id] );
     }
 
-    return $groups;
+    return civicrm_api3_create_success ($groups);
   } catch (PEAR_Exception $e) {
     return civicrm_api3_create_error( $e->getMessage() );
   } catch (Exception $e) {

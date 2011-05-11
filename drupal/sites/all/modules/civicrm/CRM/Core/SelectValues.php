@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -32,7 +32,7 @@
  * smart caching scheme on a per domain basis
  * 
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -265,7 +265,8 @@ class CRM_Core_SelectValues
             unset( $contactTypes[''] ); 
             $contactTypes = !empty( $contactTypes ) ? array( 'Contact' => 'Contacts' ) 
                 + $contactTypes : array( );
-            $customGroupExtends = array_merge( $contactTypes, $customGroupExtends );
+            $extendObjs   = CRM_Core_OptionGroup::values( 'cg_extend_objects' );
+            $customGroupExtends = array_merge( $contactTypes, $customGroupExtends, $extendObjs );
         }
         return $customGroupExtends;
     }
@@ -512,7 +513,8 @@ class CRM_Core_SelectValues
                              '{domain.phone}'          => ts('Domain (organization) phone'),
                              '{domain.email}'          => ts('Domain (organization) email'),
                              '{mailing.name}'          => ts('Mailing name'),
-                             '{mailing.group}'         => ts('Mailing group')    
+                             '{mailing.group}'         => ts('Mailing group'),
+                             '{mailing.viewUrl}'	   => ts('Mailing permalink'),
                           );
         }
         return $tokens;
@@ -550,7 +552,7 @@ class CRM_Core_SelectValues
                 } 
                 //keys for $tokens should be constant. $token Values are changed for Custom Fields. CRM-3734
                 if ( $customFieldId = CRM_Core_BAO_CustomField::getKeyID( $val ) ) {
-                    $tokens["{contact.$val}"] = $customFields[$customFieldId]['label']." :: ".$customFields[$customFieldId]['groupTitle'];
+                   $tokens["{contact.$val}"] =  CRM_Utils_Array::value($customFieldId, $customFields) ? $customFields[$customFieldId]['label']." :: ".$customFields[$customFieldId]['groupTitle'] : '';
                 } else {
                     $tokens["{contact.$val}"] = $exportFields[$val]['title'];
                 }

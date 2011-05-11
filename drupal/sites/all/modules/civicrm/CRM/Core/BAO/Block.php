@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -28,7 +28,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  * add static functions to include some common functionality
@@ -140,7 +140,7 @@ class CRM_Core_BAO_Block
     static function dataExists( $blockFields, &$params ) 
     {
         foreach ( $blockFields as $field ) {
-            if ( CRM_Utils_System::isNull( $params[$field] ) ) {
+            if ( CRM_Utils_System::isNull( CRM_Utils_Array::value( $field, $params ) ) ) {
                 return false;
             }
         }
@@ -267,7 +267,7 @@ class CRM_Core_BAO_Block
         foreach ( $params[$blockName] as $count => $value ) {
             if ( !is_array( $value ) ) continue;
             $contactFields = array( 'contact_id'       => $contactId,
-                                    'location_type_id' => $value['location_type_id'] );
+                                    'location_type_id' => CRM_Utils_Array::value( 'location_type_id', $value ) );
             
             //check for update 
             if ( !CRM_Utils_Array::value( 'id', $value ) && 

@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -167,12 +167,31 @@ SELECT  count( id ) as statusCount
                                             'UpdatePledgeRecord.php ' );
                 $message .= '<br />' . ts( 'The following files have been renamed to have a ".php" extension instead of a ".php.txt" extension' ) . ': ' . implode( ', ', $renamedBinScripts );
             }
+
+            // set pre-upgrade warnings if any -
+            self::setPreUpgradeMessage( $preUpgradeMessage, $currentVer, $latestVer );
+            
+            //turning some tables to monolingual during 3.4.beta3, CRM-7869
+            $upgradeTo   = str_replace( '4.0.', '3.4.', $latestVer  );
+            $upgradeFrom = str_replace( '4.0.', '3.4.', $currentVer );
+            if ( $upgrade->multilingual && 
+                 version_compare( $upgradeFrom, '3.4.beta3'  ) == -1 &&
+                 version_compare( $upgradeTo,   '3.4.beta3'  ) >=  0  ) {
+                $config = CRM_Core_Config::singleton( );
+                $preUpgradeMessage .= '<br />' . ts( "As per <a href='%1'>the related blog post</a>, we are making contact names, addresses and mailings monolingual; the values entered for the default locale (%2) will be preserved and values for other locales removed.", array( 1 => 'http://civicrm.org/blogs/shot/multilingual-civicrm-3440-making-some-fields-monolingual', 2 => $config->lcMessages ) );
+            }
             
             $template->assign( 'currentVersion',  $currentVer);
             $template->assign( 'newVersion',      $latestVer );
             $template->assign( 'upgradeTitle',   ts('Upgrade CiviCRM from v %1 To v %2', 
                                                     array( 1=> $currentVer, 2=> $latestVer ) ) );
             $template->assign( 'upgraded', false );
+
+            // hack to make 4.0.x (D7,J1.6) codebase go through 3.4.x (d6, J1.5) upgrade files, 
+            // since schema wise they are same
+            if ( CRM_Upgrade_Form::getRevisionPart( $currentVer ) == '4.0' ) {
+                $currentVer = str_replace( '4.0.', '3.4.', $currentVer );
+            }
 
             if ( CRM_Utils_Array::value('upgrade', $_POST) ) {
                 $revisions = $upgrade->getRevisionSequence();
@@ -246,6 +265,7 @@ SELECT  count( id ) as statusCount
             }
         }
         
+        $template->assign( 'preUpgradeMessage', $preUpgradeMessage );
         $template->assign( 'message', $message );
         $content = $template->fetch( 'CRM/common/success.tpl' );
         echo CRM_Utils_System::theme( 'page', $content, true, $this->_print, false, true );
@@ -462,8 +482,11 @@ SELECT  count( id ) as statusCount
         $config =& CRM_Core_Config::singleton( );
         if ( $config->userFramework == 'Drupal' ) {
             $roles = user_roles(false, 'access CiviEvent');
-            if ( ! empty( $roles ) ) {
-                db_query( 'UPDATE {permission} SET perm = CONCAT( perm, \', edit all events\') WHERE rid IN (' . implode(',', array_keys($roles)) . ')' );
+            if ( !empty($roles) ) {
+                // CRM-7896
+                foreach( array_keys($roles) as $rid ) {
+                    user_role_grant_permissions($rid, array( 'edit all events' ));
+                }
             }
         }
 
@@ -500,5 +523,19 @@ SELECT  count( id ) as statusCount
         $upgrade = new CRM_Upgrade_Form( );
         $upgrade->processSQL( $rev );
     }
-}
 
+    function setPreUpgradeMessage ( &$preUpgradeMessage, $currentVer, $latestVer ) 
+    {
+        if ( version_compare($currentVer, '3.3.alpha1') <  0  &&
+             version_compare($latestVer,  '3.3.alpha1') >= 0  ) {
+            $query = "
+SELECT  id 
+  FROM  civicrm_mailing_job 
+ WHERE  status NOT IN ( 'Complete', 'Canceled' ) AND is_test = 0 LIMIT 1";
+            $mjId  = CRM_Core_DAO::singleValueQuery( $query );
+            if ( $mjId ) {
+                $preUpgradeMessage = ts("There are one or more Scheduled or In Progress mailings in your install. Scheduled mailings will not be sent and In Progress mailings will not finish if you continue with the upgrade. We strongly recommend that all Scheduled and In Progress mailings be completed or cancelled and then upgrade your CiviCRM install.");
+            }
+        }
+    }
+}

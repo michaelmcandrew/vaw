@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -988,7 +988,8 @@ AND    civicrm_mailing.id = civicrm_mailing_job.mailing_id";
             $headers['From'] = "<{$fromEmail}>";
         } 
 
-        if ( defined( 'CIVICRM_MAIL_SMARTY' ) ) {
+        if ( defined( 'CIVICRM_MAIL_SMARTY' ) &&
+             CIVICRM_MAIL_SMARTY ) {
             require_once 'CRM/Core/Smarty/resources/String.php';
             civicrm_smarty_register_string_resource( );
         }
@@ -1054,7 +1055,8 @@ AND    civicrm_mailing.id = civicrm_mailing_job.mailing_id";
         
         $message = new Mail_mime("\n");
         
-        if ( defined( 'CIVICRM_MAIL_SMARTY' ) ) {
+        if ( defined( 'CIVICRM_MAIL_SMARTY' ) &&
+             CIVICRM_MAIL_SMARTY ) {
             $smarty = CRM_Core_Smarty::singleton( );
             // also add the contact tokens to the template
             $smarty->assign_by_ref( 'contact', $contact );
@@ -1065,7 +1067,8 @@ AND    civicrm_mailing.id = civicrm_mailing_job.mailing_id";
                        $contact['preferred_mail_format'] == 'Both' ||
                        ( $contact['preferred_mail_format'] == 'HTML' && !array_key_exists('html',$pEmails) ) ) ) {
             $textBody = join( '', $text );
-            if ( defined( 'CIVICRM_MAIL_SMARTY' ) ) {
+            if ( defined( 'CIVICRM_MAIL_SMARTY' ) &&
+                 CIVICRM_MAIL_SMARTY ) {
                 $smarty->security = true;
                 $textBody = $smarty->fetch( "string:$textBody" );
                 $smarty->security = false;
@@ -1076,7 +1079,8 @@ AND    civicrm_mailing.id = civicrm_mailing_job.mailing_id";
         if ( $html && ( $test ||  ( $contact['preferred_mail_format'] == 'HTML' ||
                                     $contact['preferred_mail_format'] == 'Both') ) ) {
             $htmlBody = join( '', $html );
-            if ( defined( 'CIVICRM_MAIL_SMARTY' ) ) {
+            if ( defined( 'CIVICRM_MAIL_SMARTY' ) &&
+                 CIVICRM_MAIL_SMARTY ) {
                 $smarty->security = true;
                 $htmlBody = $smarty->fetch( "string:$htmlBody" );
                 $smarty->security = false;
@@ -1113,8 +1117,19 @@ AND    civicrm_mailing.id = civicrm_mailing_job.mailing_id";
                                          $attach['cleanName'] );
             }
         }
-
-        $headers['To'] = "{$mailParams['toName']} <{$mailParams['toEmail']}>";
+        
+        //pickup both params from mail params.
+        $toName  = trim( $mailParams['toName']  );
+        $toEmail = trim( $mailParams['toEmail'] );
+        if ( $toName == $toEmail || 
+             strpos( $toName, '@' ) !== false ) {
+            $toName = null;
+        } else {
+            $toName = CRM_Utils_Mail::formatRFC2822Name( $toName );
+        }
+        
+        $headers['To'] = "$toName <$toEmail>";
+        
         $headers['Precedence'] = 'bulk';
         // Will test in the mail processor if the X-VERP is set in the bounced email.
         // (As an option to replace real VERP for those that can't set it up)
@@ -1178,7 +1193,7 @@ AND    civicrm_mailing.id = civicrm_mailing_job.mailing_id";
         $token = $token_a['token'];
         $data = $token;
 
-        $escapeSmarty = defined( 'CIVICRM_MAIL_SMARTY' ) ? true : false;
+        $escapeSmarty = defined( 'CIVICRM_MAIL_SMARTY' ) && CIVICRM_MAIL_SMARTY ? true : false;
 
         if ($type == 'embedded_url') {
             $embed_data = array( );
@@ -2008,6 +2023,11 @@ LEFT JOIN civicrm_mailing_group g ON g.mailing_id   = m.id
                         $skipDeceased = true,
                         $extraParams = null ) 
     {
+        if ( empty( $contactIDs ) ) {
+            // putting a fatal here so we can trck if/when this happens
+            CRM_Core_Error::fatal( );
+        }
+
         $params = array( );
         foreach ( $contactIDs  as $key => $contactID ) {
             $params[] = array( CRM_Core_Form::CB_PREFIX . $contactID,

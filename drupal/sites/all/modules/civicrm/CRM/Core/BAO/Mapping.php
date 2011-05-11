@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -800,7 +800,9 @@ class CRM_Core_BAO_Mapping extends CRM_Core_DAO_Mapping
                 //Fix for Search Builder
                if ( $mappingType == 'Export' ) {
                     if ( ! isset( $mappingId ) ) {
-                        if ( array_key_exists ( $formValues['mapper'][$x][$i][1], $relationshipTypes ) ) {
+                        if ( isset($formValues['mapper'] ) && 
+                             isset($formValues['mapper'][$x][$i][1] ) &&
+                             array_key_exists ( $formValues['mapper'][$x][$i][1], $relationshipTypes ) ) {
                             $sel->setOptions( array( $sel1, $sel2, $sel5, $sel6, $sel7, $sel3, $sel4 ) );
                         } else {
                             $sel->setOptions( array( $sel1, $sel2, $sel3, $sel4, $sel5, $sel6, $sel7 ) );

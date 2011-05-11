@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -286,6 +286,10 @@ class CRM_Import_Form_Preview extends CRM_Core_Form {
         if ( ! CRM_Core_Permission::check( 'view all contacts' ) ) {
           CRM_ACL_BAO_Cache::updateEntry( $userID );
         }
+
+        // clear all caches
+        require_once 'CRM/Contact/BAO/Contact/Utils.php';
+        CRM_Contact_BAO_Contact_Utils::clearContactCaches( );
 
         // add all the necessary variables to the form
         $importJob->setFormVariables( $this );

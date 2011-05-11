@@ -150,13 +150,9 @@ class CRM_ProcessAuthorizeReport {
     var $_debug = false;
     
     function CRM_ProcessAuthorizeReport( ) {
-        _civicrm_initialize( );
+        _civicrm_api3_initialize( );
 
         $config = CRM_Core_Config::singleton( );
-        
-        //load bootstrap to call hooks
-        require_once 'CRM/Utils/System.php';
-        CRM_Utils_System::loadBootStrap(  );
         
         $config->userFramework          = 'Soap';
         $config->userFrameworkClass     = 'CRM_Utils_System_Soap';

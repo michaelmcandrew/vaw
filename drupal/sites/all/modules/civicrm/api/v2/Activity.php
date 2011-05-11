@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -31,8 +31,8 @@
  *
  * @package CiviCRM_APIv2
  * @subpackage API_Activity
- * @copyright CiviCRM LLC (c) 2004-2010
- * @version $Id: Activity.php 32492 2011-02-14 21:06:52Z shot $
+ * @copyright CiviCRM LLC (c) 2004-2011
+ * @version $Id: Activity.php 33756 2011-04-19 09:06:24Z kurund $
  *
  */
 
@@ -275,15 +275,19 @@ function _civicrm_activity_check_params ( &$params, $addMode = false )
     foreach ( $contactIds as $key => $value ) {
         if ( empty( $value ) ) {
             continue;
-        }
+	}
         $valueIds = array( $value );
         if ( is_array( $value ) ) {
             $valueIds = array( );
             foreach ( $value as $id ) {
-                if ( $id ) $valueIds[$id] = $id;
+                if ( is_numeric($id) ) $valueIds[$id] = $id;
             }
-        }
-        if ( empty( $valueIds ) ) {
+        } elseif( !is_numeric( $value ) ) {
+	    return civicrm_create_error( ts( 'Invalid %1 Contact Id', array( 1 => ucfirst( 
+$key ) ) ) );
+	}
+        
+	if ( empty( $valueIds ) ) {
             continue;
         }
         
@@ -362,12 +366,11 @@ SELECT  count(*)
             }
         }
     }
-    
+
     if ( isset( $params['priority_id'] ) && is_numeric( $params['priority_id'] ) ) { 
         require_once "CRM/Core/PseudoConstant.php";
         $activityPriority = CRM_Core_PseudoConstant::priority( );
-        
-        if ( !array_key_exists( $params['priority_id'], $activityStatus ) ) { 
+        if ( !array_key_exists( $params['priority_id'], $activityPriority ) ) { 
             return civicrm_create_error( ts('Invalid Priority') );
         }
     }

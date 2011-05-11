@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -121,6 +121,7 @@ class CRM_Mailing_Selector_Browse   extends CRM_Core_Selector_Base
         $mailing = CRM_Mailing_BAO_Mailing::getTableName();
         $job = CRM_Mailing_BAO_Job::getTableName();
         if ( ! isset( self::$_columnHeaders ) ) {
+            $completedOrder = null;
             
             // Set different default sort depending on type of mailings (CRM-7652)
             $unscheduledOrder = $scheduledOrder = $archivedOrder = CRM_Utils_Sort::DONTCARE;

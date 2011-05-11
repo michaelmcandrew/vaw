@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -54,8 +54,8 @@ class CRM_Report_Form_Case_TimeSpent extends CRM_Report_Form {
                                                     'no_display' => true, 
                                                     'required'   => true, 
                                                     ),
-                                             'display_name'    =>
-                                              array( 'title'     => ts('Display Name') ,
+                                             'sort_name'    =>
+                                              array( 'title'     => ts('Contact Name') ,
                                                      'required'  => true,
                                                      'no_repeat' => true ),
                                               ),
@@ -268,7 +268,11 @@ $this->_groupBy .= "civicrm_activity_activity_date_time
 ";
         }
     }
-    
+
+    function orderBy( ) {
+        $this->_orderBy = "ORDER BY {$this->_aliases['civicrm_contact']}.sort_name, {$this->_aliases['civicrm_contact']}.id";
+    }
+
     function postProcess( ) {
         parent::postProcess();
     }

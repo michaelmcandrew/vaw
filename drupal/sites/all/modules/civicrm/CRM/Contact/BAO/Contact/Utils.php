@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -306,6 +306,7 @@ UNION
             // set current employer
             self::setCurrentEmployer( array( $contactID => $organizationId ) );
             
+            $relationshipParams['relationship_ids'] = $relationshipIds;
             // handle related meberships. CRM-3792
             self::currentEmployerRelatedMembership( $contactID, $organizationId, $relationshipParams, $duplicate );
         }
@@ -343,7 +344,7 @@ UNION
             }
             $relationship->free( );
         }
-        
+
         //need to handle related meberships. CRM-3792
         CRM_Contact_BAO_Relationship::relatedMemberships( $contactID, $relationshipParams, $ids, $action );
     }
@@ -842,4 +843,19 @@ Group By  componentId";
         }
         return $contactNames;
     }
+
+    static function clearContactCaches( ) {
+        // clear acl cache if any.
+        require_once 'CRM/ACL/BAO/Cache.php';
+        CRM_ACL_BAO_Cache::resetCache( );
+
+        // also clear prev/next dedupe cache
+        require_once 'CRM/Core/BAO/PrevNextCache.php';
+        CRM_Core_BAO_PrevNextCache::deleteItem( );
+        
+        // reset the group contact cache for this group
+        require_once 'CRM/Contact/BAO/GroupContactCache.php';
+        CRM_Contact_BAO_GroupContactCache::remove( );
+    }
+
 }

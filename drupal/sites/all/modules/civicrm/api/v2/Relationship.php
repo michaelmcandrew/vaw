@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -31,8 +31,8 @@
  * @package CiviCRM_APIv2
  * @subpackage API_Relationship
  * 
- * @copyright CiviCRM LLC (c) 2004-2010
- * @version $Id: Relationship.php 30486 2010-11-02 16:12:09Z shot $
+ * @copyright CiviCRM LLC (c) 2004-2011
+ * @version $Id: Relationship.php 33007 2011-03-14 22:52:10Z kurund $
  *
  */
 

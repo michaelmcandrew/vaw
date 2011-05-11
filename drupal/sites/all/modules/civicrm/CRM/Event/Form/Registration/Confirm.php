@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -30,7 +30,7 @@
  *
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -308,10 +308,9 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration
             $this->assign( 'addParticipantProfile' , $formattedValues );
         }
         
-        if( $this->_params[0]['amount'] == 0 ) {
-            $this->assign( 'isAmountzero', 1 );
-        }
-
+        //cosider total amount.
+        $this->assign( 'isAmountzero', ( $this->_totalAmount <= 0 ) ? true : false );
+        
         if ( $this->_paymentProcessor['payment_processor_type'] == 'Google_Checkout' && 
              ! CRM_Utils_Array::value( 'is_pay_later', $this->_params[0] ) && ! ( $this->_params[0]['amount'] == 0 ) &&
              !$this->_allowWaitlist && !$this->_requireApproval ) {
@@ -618,7 +617,9 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration
             // handle register date CRM-4320
             if ( $this->_allowConfirmation ) {
                 $registerDate = $params['participant_register_date'];
-            } else if ( is_array( $params['participant_register_date'] ) && !empty( $params['participant_register_date'] ) ) {
+            } else if ( CRM_Utils_Array::value( 'participant_register_date', $params ) && 
+                        is_array( $params['participant_register_date'] ) && 
+                        !empty( $params['participant_register_date'] ) ) {
                 $registerDate = CRM_Utils_Date::format( $params['participant_register_date'] ); 
             } else {
                 $registerDate =  date( 'YmdHis' );

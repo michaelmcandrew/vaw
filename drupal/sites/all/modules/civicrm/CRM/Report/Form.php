@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -233,8 +233,9 @@ class CRM_Report_Form extends CRM_Core_Form {
 	     }
         }
 
-        // set qfkey so that pager picks it up and use it in the "Next > Last >>" links, 
-        $_GET['qfKey'] = $this->controller->_key;
+        // set qfkey so that pager picks it up and use it in the "Next > Last >>" links.
+        // FIXME: Note setting it in $_GET doesn't work, since pager generates link based on QUERY_STRING
+        $_SERVER['QUERY_STRING'] .= "&qfKey={$this->controller->_key}"; 
 
         if ( $this->_id ) {
             $this->assign( 'instanceId', $this->_id );
@@ -694,18 +695,15 @@ class CRM_Report_Form extends CRM_Core_Form {
             $this->addElement('submit', $this->_csvButtonName, $label );
         }
 
-        if ( $this->_report != 'Grant' ) {
-            if ( CRM_Core_Permission::check( 'administer Reports' ) && $this->_add2groupSupported ) {
-                $this->addElement( 'select', 'groups', ts( 'Group' ), 
-                                   array( '' => ts( '- select group -' )) + CRM_Core_PseudoConstant::staticGroup( ) );
-                $this->assign( 'group', true );
-            }
-            
-            //$this->addElement('select', 'select_add_to_group_id', ts('Group'), $groupList);
-            $label = ts( 'Add these Contacts to Group' );
-            $this->addElement('submit', $this->_groupButtonName, $label, array('onclick' => 'return checkGroup();') );
+        if ( CRM_Core_Permission::check( 'administer Reports' ) && $this->_add2groupSupported ) {
+            $this->addElement( 'select', 'groups', ts( 'Group' ), 
+                               array( '' => ts( '- select group -' )) + CRM_Core_PseudoConstant::staticGroup( ) );
+            $this->assign( 'group', true );
         }
-
+            
+        $label = ts( 'Add these Contacts to Group' );
+        $this->addElement('submit', $this->_groupButtonName, $label, array('onclick' => 'return checkGroup();') );
+            
         $this->addChartOptions( );
         $this->addButtons( array(
                                  array ( 'type'      => 'submit',
@@ -1342,8 +1340,9 @@ WHERE cg.extends IN ('" . implode( "','", $this->_customGroupExtends ) . "') AND
                         if ( CRM_Utils_Array::value('statistics', $field) ) {
                             foreach ( $field['statistics'] as $stat => $label ) {
                                 switch (strtolower($stat)) {
+                                case 'max':
                                 case 'sum':
-                                    $select[] = "SUM({$field['dbAlias']}) as {$tableName}_{$fieldName}_{$stat}";
+                                    $select[] = "$stat({$field['dbAlias']}) as {$tableName}_{$fieldName}_{$stat}";
                                     $this->_columnHeaders["{$tableName}_{$fieldName}_{$stat}"]['title'] = $label;
                                     $this->_columnHeaders["{$tableName}_{$fieldName}_{$stat}"]['type']  = 
                                         $field['type'];
@@ -1510,7 +1509,7 @@ WHERE cg.extends IN ('" . implode( "','", $this->_customGroupExtends ) . "') AND
         $printOnly = false;
         $this->assign( 'printOnly', false );
 
-        if ( $this->_printButtonName == $buttonName || $output == 'print' || $this->_sendmail ) {
+        if ( $this->_printButtonName == $buttonName || $output == 'print' || ($this->_sendmail && !$output) ) {
             $this->assign( 'printOnly', true );
             $printOnly = true;
             $this->assign( 'outputMode', 'print' );
@@ -1571,7 +1570,6 @@ WHERE cg.extends IN ('" . implode( "','", $this->_customGroupExtends ) . "') AND
             $this->limit( );
         }
         $sql = "{$this->_select} {$this->_from} {$this->_where} {$this->_groupBy} {$this->_having} {$this->_orderBy} {$this->_limit}";
-
         return $sql;
     }
 
@@ -1707,7 +1705,7 @@ WHERE cg.extends IN ('" . implode( "','", $this->_customGroupExtends ) . "') AND
                                 $pair[$op] = (count($val) == 1) ? ts('Is') : $pair[$op];
                                 $val       = implode( ', ', $val );
                                 $value     = "{$pair[$op]} " . $val;
-                            } else if ( !is_array( $val ) && !empty( $val ) && 
+                            } else if ( !is_array( $val ) && !empty( $val ) && isset($field['options']) &&
                                         is_array( $field['options'] ) && !empty( $field['options'] ) ) { 
                                 $value = "{$pair[$op]} " . CRM_Utils_Array::value( $val, $field['options'], $val );
                             } else if ( $val ) {
@@ -1731,13 +1729,37 @@ WHERE cg.extends IN ('" . implode( "','", $this->_customGroupExtends ) . "') AND
              $this->_sendmail              ) {
             $templateFile = parent::getTemplateFileName( );
             
+            $url = CRM_Utils_System::url("civicrm/report/instance/{$this->_id}", 
+                                         "reset=1", true);
+
             $content = $this->_formValues['report_header'] .
                 CRM_Core_Form::$_template->fetch( $templateFile ) .      
                 $this->_formValues['report_footer'] ;
 
             if ( $this->_sendmail ) {
+                require_once 'CRM/Report/Utils/Report.php';
+                $attachments = array();
+                if ( $this->_outputMode == 'csv' ) {
+                    $content = $this->_formValues['report_header'] .
+                        '<p>' . ts('Report URL') . ": {$url}</p>" .
+                        '<p>' . ts('The report is attached as a CSV file.') . '</p>' .
+                        $this->_formValues['report_footer'] ;
+
+                    require_once 'CRM/Utils/File.php';
+                    $config = CRM_Core_Config::singleton();
+                    $csvFilename = 'Report.csv';
+                    $csvFullFilename = $config->templateCompileDir . CRM_Utils_File::makeFileName( $csvFilename );
+                    $csvContent = CRM_Report_Utils_Report::makeCsv( $this, $rows );
+                    file_put_contents( $csvFullFilename, $csvContent);
+                    $attachments[] = array(
+                        'fullPath'  => $csvFullFilename,
+                        'mime_type' => 'text/csv',
+                        'cleanName' => $csvFilename,
+                    );
+                }
+
                 if ( CRM_Report_Utils_Report::mailReport( $content, $this->_id,
-                                                          $this->_outputMode  ) ) {
+                                                          $this->_outputMode, $attachments  ) ) {
                     CRM_Core_Session::setStatus( ts("Report mail has been sent.") );
                 } else {
                     CRM_Core_Session::setStatus( ts("Report mail could not be sent.") );
@@ -1858,6 +1880,7 @@ WHERE cg.extends IN ('" . implode( "','", $this->_customGroupExtends ) . "') AND
         $group = new CRM_Contact_DAO_Group( );
         $group->is_active = 1;
         $group->find();
+        $smartGroups = array( );
         while( $group->fetch( ) ) {
              if( in_array( $group->id, $this->_params['gid_value'] ) && $group->saved_search_id ) {
                  $smartGroups[] = $group->id;

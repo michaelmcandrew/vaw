@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -96,7 +96,7 @@ class CRM_Admin_Form extends CRM_Core_Form
         }
 
         // its ok if there is no element called is_active
-        $defaults['is_active'] = ( $this->_id ) ? $defaults['is_active'] : 1;
+        $defaults['is_active'] = ( $this->_id ) ? CRM_Utils_Array::value( 'is_active', $defaults ) : 1;
         if( CRM_Utils_Array::value( 'parent_id',$defaults ) ) {
             $this->assign( 'is_parent', true );
         }       

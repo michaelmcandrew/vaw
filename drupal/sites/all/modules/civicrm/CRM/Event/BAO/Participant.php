@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -31,7 +31,7 @@
  *
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -118,7 +118,7 @@ class CRM_Event_BAO_Participant extends CRM_Event_DAO_Participant
             $participantBAO->find(true);
             $participantBAO->register_date = CRM_Utils_Date::isoToMysql($participantBAO->register_date);
         }
-        
+
         $participantBAO->copyValues($params);
         
         //CRM-6910
@@ -535,7 +535,7 @@ INNER JOIN  civicrm_price_field field       ON ( value.price_field_id = field.id
         $lineItem = CRM_Core_DAO::executeQuery( $sql, array( 1 => array( $eventId, 'Positive' ) ) );
         while ( $lineItem->fetch( ) ) {
             $count = $lineItem->count;
-            if ( !$count ) $count = 0; 
+            if ( !$count ) $count = 1; 
             if ( $lineItem->html_type == 'Text' ) $count *= $lineItem->qty;
             $optionsCount[$lineItem->valueId] = $count + CRM_Utils_Array::value( $lineItem->valueId, $optionsCount, 0 );
         }

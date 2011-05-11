@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
  | Copyright Tech To The People http:tttp.eu (c) 2008                 |
  +--------------------------------------------------------------------+
@@ -94,8 +94,7 @@ class civicrm_CLI {
         // bootstrap CMS environment
         global $civicrm_root;
         $_SERVER['SCRIPT_FILENAME'] = "$civicrm_root/bin/cli.php";
-        require_once 'CRM/Utils/System.php';
-        CRM_Utils_System::loadBootStrap($user, $pass);
+       
     }
 
     function setEnv() {
@@ -103,7 +102,11 @@ class civicrm_CLI {
         // so the configuration works with php-cli
         $_SERVER['PHP_SELF' ] ="/index.php";
         $_SERVER['HTTP_HOST']= $this->site;
-        require_once ("./civicrm.config.php");
+
+        if (! function_exists( 'drush_get_context' ) ) {
+            require_once ("./civicrm.config.php");
+        }
+
         require_once ("CRM/Core/Error.php");
         $this->key= defined( 'CIVICRM_SITE_KEY' ) ? CIVICRM_SITE_KEY : null;
         $_REQUEST['key']= $this->key;

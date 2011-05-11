@@ -6,7 +6,7 @@
  * @package CiviCRM_APIv3
  * @subpackage API
  *
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * @version $Id: api.php 30486 2010-11-02 16:12:09Z shot $
  */
 
@@ -43,24 +43,28 @@ function civicrm_api_legacy($function, $class, $params) {
  *   array to be passed to function
  */
 function civicrm_api($entity, $action, $params, $extra = NULL) {
+  try {
     require_once ('api/v3/utils.php');
     require_once 'CRM/Utils/String.php';
+    _civicrm_api3_initialize(true );
     $entity = CRM_Utils_String::munge($entity);
     $action = CRM_Utils_String::munge($action);
     $version = civicrm_get_api_version($params);
     $errorFnName = ( $version == 2 ) ? 'civicrm_create_error' : 'civicrm_api3_create_error';
+    if ($version > 2) civicrm_api3_api_check_permission($entity, $action, $params);
     $function = civicrm_api_get_function_name($entity, $action,$version);
     civicrm_api_include($entity,null,$version);
-    if ( !function_exists ($function )) {
-        if ( strtolower($action) == "getfields" && $version ==3) {
-            $dao = civicrm_api3_get_DAO ($entity);
+    if ( !function_exists ($function ) ) {
+        if ( strtolower($action) == "getfields") { 
+            $version = 3;
+            $dao = _civicrm_api3_get_DAO ($entity);
             if (empty($dao)) {
                 return $errorFnName("API for $entity does not exist (join the API team and implement $function" );
             }
             $file = str_replace ('_','/',$dao).".php";
             require_once ($file); 
             $d = new $dao();
-            return $d->fields();
+            return civicrm_api3_create_success($d->fields());
         }
         if ( strtolower($action) == "update") {
             //$key_id = strtolower ($entity)."_id";
@@ -78,19 +82,30 @@ function civicrm_api($entity, $action, $params, $extra = NULL) {
                 return $errorFnName( "No $entity with id ".$params[$key_id] );
        
             $existing= array_pop($existing['values'] ); 
-            $p = array_merge ($params, $existing );
+            $p = array_merge ( $existing,$params );
             return civicrm_api ($entity, 'create',$p);
 
         }
 
-
-
         return $errorFnName( "API ($entity,$action) does not exist (join the API team and implement $function" );
     }
     $result = isset($extra) ? $function($params, $extra) : $function($params);
-    return $result;
-}
 
+    if ($result['is_error'] == 0 && isset($params['entities']) && is_array($params['entities']) && strtolower($action) == 'create'){
+      foreach ($params['entities'] as $subentity => $subParams) {      
+        $subParams[strtolower($entity) . "_id"] = $result['id'];
+        $subParams['version'] = $version;
+        $result['values'][$result['id']]['entities'][$subentity] = civicrm_api($subentity,$action,$subParams);
+      }
+    }
+    
+    return $result;
+  } catch (PEAR_Exception $e) {
+    return civicrm_api3_create_error( $e->getMessage() );
+  } catch (Exception $e) {
+    return civicrm_api3_create_error( $e->getMessage() );
+  }
+}
 
 function civicrm_api_get_function_name($entity, $action,$version = NULL) {
     static $_map;
@@ -148,13 +163,13 @@ function civicrm_get_api_version($desired_version = NULL) {
         $params = $desired_version;
         $desired_version = empty($params['version']) ? NULL : (int) $params['version'];
     }
-    if (isset($desired_version)) {
+    if (isset($desired_version) && is_integer ($desired_version)) {
         $_version = $desired_version;
         // echo "\n".'version: '. $_version ." (parameter)\n";
     }
     else {
         // we will set the default to version 3 as soon as we find that it works.
-        $_version = 2;
+        $_version = 3;
         // echo "\n".'version: '. $_version ." (default)\n";
     }
     return $_version;

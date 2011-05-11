@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -65,8 +65,8 @@ class CRM_Logging_Schema
         // do not log temp import and cache tables
         $this->tables = preg_grep('/^civicrm_import_job_/', $this->tables, PREG_GREP_INVERT);
         $this->tables = preg_grep('/_cache$/',              $this->tables, PREG_GREP_INVERT);
-
-        $dao = CRM_Core_DAO::executeQuery("SHOW TABLES FROM `{$this->db}` LIKE 'log_civicrm_%'");
+        $this->tables = preg_grep('/^civicrm_task_action_temp_/', $this->tables, PREG_GREP_INVERT);
+        $this->tables = preg_grep('/^civicrm_export_temp_/', $this->tables, PREG_GREP_INVERT);        $dao = CRM_Core_DAO::executeQuery("SHOW TABLES FROM `{$this->db}` LIKE 'log_civicrm_%'");
         while ($dao->fetch()) {
             $log = $dao->toValue("Tables_in_{$this->db}_(log_civicrm_%)");
             $this->logs[substr($log, 4)] = $log;

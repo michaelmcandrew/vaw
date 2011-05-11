@@ -1,9 +1,9 @@
 <?php
 /*
 +--------------------------------------------------------------------+
-| CiviCRM version 3.3                                                |
+| CiviCRM version 4.0                                                |
 +--------------------------------------------------------------------+
-| Copyright CiviCRM LLC (c) 2004-2010                                |
+| Copyright CiviCRM LLC (c) 2004-2011                                |
 +--------------------------------------------------------------------+
 | This file is a part of CiviCRM.                                    |
 |                                                                    |
@@ -27,7 +27,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -214,6 +214,12 @@ class CRM_Activity_DAO_Activity extends CRM_Core_DAO
      * @var int unsigned
      */
     public $campaign_id;
+    /**
+     * Assign a specific level of engagement to this activity. Used for tracking constituents in ladder of engagement.
+     *
+     * @var int unsigned
+     */
+    public $engagement_level;
     /**
      * class constructor
      *
@@ -449,6 +455,16 @@ class CRM_Activity_DAO_Activity extends CRM_Core_DAO
                     'dataPattern' => '',
                     'export' => true,
                     'FKClassName' => 'CRM_Campaign_DAO_Campaign',
+                ) ,
+                'activity_engagement_level' => array(
+                    'name' => 'engagement_level',
+                    'type' => CRM_Utils_Type::T_INT,
+                    'title' => ts('Engagement Index') ,
+                    'import' => true,
+                    'where' => 'civicrm_activity.engagement_level',
+                    'headerPattern' => '',
+                    'dataPattern' => '',
+                    'export' => true,
                 ) ,
             );
         }

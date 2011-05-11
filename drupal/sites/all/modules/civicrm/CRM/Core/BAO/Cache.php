@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -176,9 +176,9 @@ AND         created_date < date_sub( NOW( ), INTERVAL $cacheTimeIntervalDays day
 SELECT TABLE_NAME as tableName
 FROM   INFORMATION_SCHEMA.TABLES
 WHERE  TABLE_SCHEMA = %1 
-AND    ( TABLE_NAME LIKE 'civicrm_task_action_temp%' 
- OR      TABLE_NAME LIKE 'civicrm_task_action_temp%' )
-AND    created_date < date_sub( NOW( ), INTERVAL $cacheTimeIntervalDays day )
+AND    ( TABLE_NAME LIKE 'civicrm_task_action_temp_%' 
+ OR      TABLE_NAME LIKE 'civicrm_export_temp_%' )
+AND    CREATE_TIME < date_sub( NOW( ), INTERVAL $cacheTimeIntervalDays day )
 ";
 
             $params = array( 1 => array( $dao->database(), 'String' ) );

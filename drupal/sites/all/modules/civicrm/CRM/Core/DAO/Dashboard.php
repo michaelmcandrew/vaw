@@ -1,9 +1,9 @@
 <?php
 /*
 +--------------------------------------------------------------------+
-| CiviCRM version 3.3                                                |
+| CiviCRM version 4.0                                                |
 +--------------------------------------------------------------------+
-| Copyright CiviCRM LLC (c) 2004-2010                                |
+| Copyright CiviCRM LLC (c) 2004-2011                                |
 +--------------------------------------------------------------------+
 | This file is a part of CiviCRM.                                    |
 |                                                                    |
@@ -27,7 +27,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -133,6 +133,12 @@ class CRM_Core_DAO_Dashboard extends CRM_Core_DAO
      * @var boolean
      */
     public $is_minimized;
+    /**
+     * fullscreen url for dashlet
+     *
+     * @var string
+     */
+    public $fullscreen_url;
     /**
      * Is Fullscreen?
      *
@@ -250,6 +256,13 @@ class CRM_Core_DAO_Dashboard extends CRM_Core_DAO
                 'is_minimized' => array(
                     'name' => 'is_minimized',
                     'type' => CRM_Utils_Type::T_BOOLEAN,
+                ) ,
+                'fullscreen_url' => array(
+                    'name' => 'fullscreen_url',
+                    'type' => CRM_Utils_Type::T_STRING,
+                    'title' => ts('Fullscreen Url') ,
+                    'maxlength' => 255,
+                    'size' => CRM_Utils_Type::HUGE,
                 ) ,
                 'is_fullscreen' => array(
                     'name' => 'is_fullscreen',

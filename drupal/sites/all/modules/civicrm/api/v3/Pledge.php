@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.2                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -25,37 +25,13 @@
  +--------------------------------------------------------------------+
 */
 
-/*
-*DRAFT CODE WRITTEN BY EILEEN still dev version 
-*Starting point was Contribute API. I tried to use the format params from 
-*contribute API to handle incorrect data prior to hitting core & help
-*prevent CORE errors (the bane of API users since there is a proper API
-*error format). However, I found many fields needed to be manipulated after 
-*doing the field rationalisation in the contribute module. The way I have done it
-*is cumbersome from a coding point of view in order to allow a lot of commenting / clarity
-* I concluded that in the absence
-*of a clear standard to say when the fields unique name & when it's table name should
-*be used I should facilitate both as much as possible as either would be a reasonable 
-*expectation from a developer and I know from experience what huge amounts of developer
-*time go into 'trial and error' & 'guessing' what the paramaters might be for the api
-*Also, the version of a variable that is returned is a bit variable - ie. pledge_ vs not so
-*acceptable params should reflect that
-*Note my attempt at a couple of things that have been discussed:
-*1) interrogate function - feedback on possible variables (I presume that 'check_permissions' or similar might
-*be relevant here too)? What should default for check_permissions be?
-*2) $params['sequential'] - array not indexed by id
-*Would be nice to keep explanatory
-*notes in - I know 'dumb comments' normally get removed by core team when committing
-*but they do help dumb developers:-)
-*/
-
 /**
  * File for the CiviCRM APIv3 Pledge functions
  *
  * @package CiviCRM_APIv3
  * @subpackage API_Pledge
  *
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * @version $Id: Pledge.php
  *
  */
@@ -83,8 +59,13 @@ function civicrm_api3_pledge_create( $params ) {
       //acceptable in unique format or DB format but change to unique format here
       $params['amount'] = $params['pledge_amount'];
     }
-    $required =  array('contact_id', 'amount', array('pledge_contribution_type_id','contribution_type_id') , 'installments','start_date');
-    civicrm_api3_verify_mandatory ($params,null,$required);
+     $required =  array('contact_id', 'amount', array('pledge_contribution_type_id','contribution_type_id') , 'installments','start_date');
+    
+    if(CRM_Utils_Array::value('id',$params)){
+      //todo move this into civicrm_api3_verify mandatory in some way - or civicrm_api
+      $required =  array('id');
+    }
+   civicrm_api3_verify_mandatory ($params,null,$required);
      
     $values  = array( );
     require_once 'CRM/Pledge/BAO/Pledge.php';
@@ -160,7 +141,11 @@ function civicrm_api3_pledge_get( $params ) {
   _civicrm_api3_initialize(true );
   try{
     civicrm_api3_verify_mandatory ($params);
-
+    if(!empty($params['id'])  && empty($params['pledge_id'])){
+      //if you pass in 'id' it will be treated by the query as contact_id
+      $params['pledge_id'] = $params['id'];
+      unset ($params['id']);
+    }
     $inputParams      = array( );
     $returnProperties = array( );
     $otherVars = array( 'sort', 'offset', 'rowCount' );
@@ -193,7 +178,8 @@ function civicrm_api3_pledge_get( $params ) {
 
     $newParams =& CRM_Contact_BAO_Query::convertFormValues( $inputParams );
 
-    $query = new CRM_Contact_BAO_Query( $newParams, $returnProperties, null );
+    $query = new CRM_Contact_BAO_Query( $newParams, $returnProperties, null,
+                                        false, false, CRM_Contact_BAO_Query::MODE_PLEDGE );
     list( $select, $from, $where ) = $query->query( );
 
     $sql = "$select $from $where";
@@ -264,10 +250,15 @@ function _civicrm_api3_pledge_format_params( $params, &$values, $create=false ) 
   
   if ( array_key_exists( 'original_installment_amount', $params ) ) {
     $values['installment_amount'] = $params['original_installment_amount'];
+    //it seems it will only create correctly with BOTH installment amount AND pledge_installment_amount set
+    //pledge installment amount required for pledge payments
+    $values['pledge_original_installment_amount'] = $params['original_installment_amount'];
   }
+
   if ( array_key_exists( 'pledge_original_installment_amount', $params ) ) {
     $values['installment_amount'] = $params['pledge_original_installment_amount'];
   }
+ 
   if ( array_key_exists( 'status_id', $params ) ){
     $values['pledge_status_id'] = $params['status_id'];
   }
@@ -288,6 +279,9 @@ function _civicrm_api3_pledge_format_params( $params, &$values, $create=false ) 
   }
   if ( array_key_exists( 'status_id', $params ) ){
     $values['pledge_status_id'] = $params['status_id'];
+  }
+  if ( empty( $values['status_id'] ) ){
+    $values['status_id'] = $values['pledge_status_id'];
   }
   if (empty($values['id'])){
     //at this point both should be the same so unset both if not set - passing in empty

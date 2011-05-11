@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -453,8 +453,8 @@ class CRM_Utils_Date
 
         $value = null;
         if ( CRM_Utils_Array::value( $dateParam, $params ) ) {
-            //suppress hh:mm if it exists
-            $value = preg_replace( "/(\s(([01]\d)|[2][0-3]):([0-5]\d))$/", "", $params[$dateParam] );
+            // suppress hh:mm or hh:mm:ss if it exists CRM-7957
+            $value = preg_replace( "/(\s(([01]\d)|[2][0-3])(:([0-5]\d)){1,2})$/", "", $params[$dateParam] );
         }
         
         switch( $dateType ) {
@@ -832,10 +832,9 @@ class CRM_Utils_Date
                                     );
         
         if ( array_key_exists( $birthDateFormat, $supportableFormats ) ) {
-            $birthDateFormat = array( 'qfMapping' => $supportableFormats[$birthDateFormat],
-                                      'dateParts' => $formatMapping );
+            $birthDateFormat = array( 'qfMapping' => $supportableFormats[$birthDateFormat] );
         }
-                
+ 
         return $birthDateFormat;
     }
 
@@ -1316,9 +1315,7 @@ class CRM_Utils_Date
         if ( !empty( $inputCustomFormat ) ) {
             $inputFormat = $inputCustomFormat;
         }
-        if ( $inputFormat == 'dd/mm/yy' ) {
-              $date = str_replace( '/', '-', $date );
-        }
+ 
         if ( trim( $date ) ) {
             $mysqlDate = date( $format, strtotime( $date . ' '. $time ) );
         }
@@ -1362,7 +1359,7 @@ class CRM_Utils_Date
         require_once 'CRM/Core/SelectValues.php';
         // get actual format
         $actualPHPFormats = CRM_Core_SelectValues::datePluginToPHPFormats( );
-        $dateFormat       = $actualPHPFormats[$format];
+        $dateFormat       = CRM_Utils_Array::value( $format, $actualPHPFormats );
         
         $date = date( $dateFormat, strtotime( $mysqlDate) );
         

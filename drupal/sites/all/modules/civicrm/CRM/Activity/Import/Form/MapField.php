@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -29,7 +29,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2010
+ * @copyright CiviCRM LLC (c) 2004-2011
  * $Id$
  *
  */
@@ -495,13 +495,13 @@ class CRM_Activity_Import_Form_MapField extends CRM_Core_Form
             $mapper[$i]     = $this->_mapperFields[$mapperKeys[$i][0]];
             $mapperKeysMain[$i] = $mapperKeys[$i][0];
             
-            if (is_numeric($mapperKeys[$i][1])) {
+            if ( ( CRM_Utils_Array::value( 1, $mapperKeys[$i] ) ) && ( is_numeric( $mapperKeys[$i][1] ) ) ) {
                 $mapperLocType[$i] = $mapperKeys[$i][1];
             } else {
                 $mapperLocType[$i] = null;
             }
 
-            if ( !is_numeric($mapperKeys[$i][2])) {
+            if ( ( CRM_Utils_Array::value( 2, $mapperKeys[$i] ) ) && ( !is_numeric( $mapperKeys[$i][2] ) ) ) {
                 $mapperPhoneType[$i] = $mapperKeys[$i][2];
             } else {
                 $mapperPhoneType[$i] = null;
@@ -509,8 +509,10 @@ class CRM_Activity_Import_Form_MapField extends CRM_Core_Form
         }
 
         $this->set( 'mapper'    , $mapper     );
-        // store mapping Id to display it in the preview page 
-        $this->set('loadMappingId', $params['mappingId']);
+        // store mapping Id to display it in the preview page
+        if ( CRM_Utils_Array::value( 'mappingId', $params ) ) {
+            $this->set( 'loadMappingId', $params['mappingId'] );
+        }
         
         //Updating Mapping Records
         if ( CRM_Utils_Array::value('updateMapping', $params)) {

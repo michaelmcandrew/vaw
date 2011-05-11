@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -32,8 +32,8 @@
  *
  * @package CiviCRM_APIv2
  * @subpackage API_Contact
- * @copyright CiviCRM LLC (c) 2004-2010
- * $Id: Contact.php 32881 2011-03-08 06:42:14Z ashwini $
+ * @copyright CiviCRM LLC (c) 2004-2011
+ * $Id: Contact.php 33093 2011-03-16 10:42:29Z shot $
  *
  */
 
@@ -709,6 +709,7 @@ function _civicrm_contact_update( &$params, $contactID = null )
 
 /**
  * @todo Move this to ContactFormat.php 
+ * @deprecated
  */
 function civicrm_contact_format_create( &$params )
 {

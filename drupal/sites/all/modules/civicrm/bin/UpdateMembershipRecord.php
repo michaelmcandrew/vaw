@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                               |
+ | CiviCRM version 4.0                                               |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -81,7 +81,7 @@ class CRM_UpdateMembershipRecord {
         require_once 'CRM/Member/BAO/MembershipType.php';
         require_once 'CRM/Utils/Date.php';
         require_once 'CRM/Utils/System.php';
-        civicrm_api_include('membership');
+        civicrm_api_include('membership', false, 2);
         require_once 'CRM/Member/PseudoConstant.php';
         require_once 'CRM/Contact/BAO/Contact.php';
         require_once 'CRM/Activity/BAO/Activity.php';

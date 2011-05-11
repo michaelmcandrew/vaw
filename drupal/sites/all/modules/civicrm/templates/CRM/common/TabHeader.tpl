@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 3.3                                                |
+ | CiviCRM version 4.0                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2010                                |
+ | Copyright CiviCRM LLC (c) 2004-2011                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,6 +23,10 @@
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
 *}
+
+{* enclosed all tabs and its content in a block *}	
+<div class="crm-block crm-content-block">
+
 {if $tabHeader and count($tabHeader) gt 1}
 <div id="mainTabContainer">
 <ul>
@@ -78,8 +82,16 @@ function stopSpinner( ) {
                 }
                 return true;
             },
-	    load: stopSpinner
+            load: function(event, ui) {
+            	stopSpinner();
+            	if (Drupal && Drupal.attachBehaviors) {
+            	 Drupal.attachBehaviors(ui.panel);
+            	}
+            }
         });        
     });
 {/literal}
 </script>
+
+<div class="clear"></div>
+</div> {* crm-content-block ends here *}
