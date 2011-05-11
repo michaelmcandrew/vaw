@@ -112,8 +112,6 @@ DROP TABLE IF EXISTS civicrm_price_set_entity;
 DROP TABLE IF EXISTS civicrm_price_set;
 DROP TABLE IF EXISTS civicrm_report_instance;
 DROP TABLE IF EXISTS civicrm_pledge_block;
-DROP TABLE IF EXISTS civicrm_openid_associations;
-DROP TABLE IF EXISTS civicrm_openid_nonces;
 DROP TABLE IF EXISTS civicrm_tell_friend;
 DROP TABLE IF EXISTS civicrm_grant;
 DROP TABLE IF EXISTS civicrm_case_contact;

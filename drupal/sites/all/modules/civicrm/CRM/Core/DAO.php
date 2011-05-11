@@ -275,7 +275,7 @@ class CRM_Core_DAO extends DB_DataObject
 
     function save( ) 
     {
-        if ($this->id) {
+        if (!empty($this->id)) {
             $this->update();
         } else {
             $this->insert();
@@ -1305,14 +1305,18 @@ SELECT contact_id
         $object->delete();
     }
 
-    static function createTempTableName( $prefix = 'civicrm', $addRandomString = true ) {
+    static function createTempTableName( $prefix = 'civicrm', $addRandomString = true, $string = null ) {
         $tableName = $prefix . "_temp";
 
         if ( $addRandomString ) {
-            $tableName .="_" . md5( uniqid( '', true ) );
+            if ( $string ) {
+                $tableName .= "_" . $string;
+            } else {
+                $tableName .= "_" . md5( uniqid( '', true ) );
+            }
         }
         return $tableName;
-    }
+   }
 
     static function checkTriggerViewPermission( $view = true ) {
         // test for create view and trigger permissions and if allowed, add the option to go multilingual

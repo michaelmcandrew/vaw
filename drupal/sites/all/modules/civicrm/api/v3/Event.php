@@ -56,12 +56,12 @@ require_once 'api/v3/utils.php';
  * @access public
  * @todo v2 Event API didn't create custom fields - I can see this has been 'touched up' but should check event custom fields can now be created & then remove this comment
  */
-function civicrm_event_create( $params )
+function civicrm_api3_event_create( $params )
 {
-  _civicrm_initialize( true );
+  _civicrm_api3_initialize( true );
   try {
-    civicrm_api_check_permission(__FUNCTION__, $params, true);
-    civicrm_verify_mandatory ($params,'CRM_Event_DAO_Event',array ('start_date','event_type_id','title'));
+    civicrm_api3_api_check_permission(__FUNCTION__, $params, true);
+    civicrm_api3_verify_mandatory ($params,'CRM_Event_DAO_Event',array ('start_date','event_type_id','title'));
 
     $ids['eventTypeId'] = (int) $params['event_type_id'];
     $ids['startDate'  ] = $params['start_date'];
@@ -69,23 +69,23 @@ function civicrm_event_create( $params )
 
     //format custom fields so they can be added
     $value = array();
-    _civicrm_custom_format_params( $params, $values, 'Event' );
+    _civicrm_api3_custom_format_params( $params, $values, 'Event' );
     $params = array_merge($values,$params);
     require_once 'CRM/Event/BAO/Event.php';
     $eventBAO = CRM_Event_BAO_Event::create($params, $ids);
 
     if ( is_a( $eventBAO, 'CRM_Core_Error' ) ) {
-      return civicrm_create_error( "Event is not created" );
+      return civicrm_api3_create_error( "Event is not created" );
     } else {
       $event = array();
-      _civicrm_object_to_array($eventBAO, $event[$eventBAO->id]);
+      _civicrm_api3_object_to_array($eventBAO, $event[$eventBAO->id]);
     }
 
-    return civicrm_create_success($event,$params);
+    return civicrm_api3_create_success($event,$params);
   } catch (PEAR_Exception $e) {
-    return civicrm_create_error( $e->getMessage() );
+    return civicrm_api3_create_error( $e->getMessage() );
   } catch (Exception $e) {
-    return civicrm_create_error( $e->getMessage() );
+    return civicrm_api3_create_error( $e->getMessage() );
   }
 }
 
@@ -100,28 +100,30 @@ function civicrm_event_create( $params )
  * @access public
  */
 
-function civicrm_event_get( $params )
+function civicrm_api3_event_get( $params )
 {
-  _civicrm_initialize( true );
+  _civicrm_api3_initialize( true );
   try {
-    civicrm_verify_mandatory($params);
+    civicrm_api3_verify_mandatory($params);
 
     $inputParams            = array( );
     $returnProperties       = array( );
     $returnCustomProperties = array( );
-    $otherVars              = array( 'sort', 'offset', 'rowCount' );
+    $otherVars              = array( 'sort', 'offset', 'rowCount', 'isCurrent' );
 
     $sort     =  array_key_exists( 'return.sort', $params ) ? $params['return.sort'] : false;
     // don't check if empty, more meaningful error for API user instead of silent defaults
     $offset   = array_key_exists( 'return.offset', $params ) ? $params['return.offset'] : 0;
     $rowCount = array_key_exists( 'return.max_results', $params ) ? $params['return.max_results'] : 25;
+    $isCurrent = array_key_exists( 'isCurrent', $params ) ? $params['isCurrent'] : 0;
+    
 
     foreach ( $params as $n => $v ) {
       if ( substr( $n, 0, 7 ) == 'return.' ) {
         if ( substr( $n, 0, 14 ) == 'return.custom_') {
           //take custom return properties separate
           $returnCustomProperties[] = substr( $n, 7 );
-        } elseif( !in_array( substr( $n, 7 ) ,array( 'sort', 'offset', 'max_results' ) ) ) {
+        } elseif( !in_array( substr( $n, 7 ) ,array( 'sort', 'offset', 'max_results', 'isCurrent' ) ) ) {
           $returnProperties[] = substr( $n, 7 );
         }
       } elseif ( in_array( $n, $otherVars ) ) {
@@ -146,7 +148,10 @@ function civicrm_event_get( $params )
       $eventDAO->selectAdd( implode( ',' , $returnProperties ) );
     }
     $eventDAO->whereAdd( '( is_template IS NULL ) OR ( is_template = 0 )' );
-
+    
+    if ( $isCurrent ) {
+        $eventDAO->whereAdd( '(start_date >= CURDATE() || end_date >= CURDATE())' );
+    }
     $eventDAO->orderBy( $sort );
     $eventDAO->limit( (int)$offset, (int)$rowCount );
     $eventDAO->find( );
@@ -173,12 +178,12 @@ function civicrm_event_get( $params )
       }
     }//end of the loop
 
-    return civicrm_create_success($event,$params,$eventDAO);
+    return civicrm_api3_create_success($event,$params,$eventDAO);
 
   } catch (PEAR_Exception $e) {
-    return civicrm_create_error( $e->getMessage() );
+    return civicrm_api3_create_error( $e->getMessage() );
   } catch (Exception $e) {
-    return civicrm_create_error( $e->getMessage() );
+    return civicrm_api3_create_error( $e->getMessage() );
   }
 }
 
@@ -192,27 +197,27 @@ function civicrm_event_get( $params )
  * @return boolean        true if success, error otherwise
  * @access public
  */
-function civicrm_event_delete( $params )
+function civicrm_api3_event_delete( $params )
 {
-  _civicrm_initialize( true );
+  _civicrm_api3_initialize( true );
   try {
-    civicrm_verify_mandatory($params);
+    civicrm_api3_verify_mandatory($params);
 
     $eventID = null;
 
     $eventID = CRM_Utils_Array::value( 'event_id', $params );
 
     if ( ! isset( $eventID ) ) {
-      return civicrm_create_error(  'Invalid value for eventID'  );
+      return civicrm_api3_create_error(  'Invalid value for eventID'  );
     }
 
     require_once 'CRM/Event/BAO/Event.php';
 
-    return CRM_Event_BAO_Event::del( $eventID ) ?  civicrm_create_success( ) : civicrm_create_error(  'Error while deleting event' );
+    return CRM_Event_BAO_Event::del( $eventID ) ?  civicrm_api3_create_success( ) : civicrm_api3_create_error(  'Error while deleting event' );
   } catch (PEAR_Exception $e) {
-    return civicrm_create_error( $e->getMessage() );
+    return civicrm_api3_create_error( $e->getMessage() );
   } catch (Exception $e) {
-    return civicrm_create_error( $e->getMessage() );
+    return civicrm_api3_create_error( $e->getMessage() );
   }
 }
 

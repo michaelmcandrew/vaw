@@ -56,7 +56,7 @@
         		    </a>
         		{/if}
             {else}
-        		<div class="messages status">
+        		<div class="status">
         		{ts}There are currently no active Campaigns.{/ts}
         		{if $campaignInfo.addCampaignURL}
         		    {ts 1=$campaignInfo.addCampaignURL}If you want to associate this record with a campaign, you can <a href="%1">create a campaign here</a>.{/ts}
@@ -83,7 +83,7 @@ function includePastCampaigns()
 	     	 //first reset all select options.
 		     cj( "#campaign_id" ).val( '' );		 		 		 
              cj( "#campaign_id" ).html( '' );
-		     cj('input[name=included_past_campaigns]').val( 1 );
+		     cj('input[name="included_past_campaigns"]').val( 1 );
 		 				 
 		     var campaigns = data.campaigns;      			
     	     	 

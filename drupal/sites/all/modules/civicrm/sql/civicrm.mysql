@@ -137,8 +137,6 @@ DROP TABLE IF EXISTS civicrm_price_set_entity;
 DROP TABLE IF EXISTS civicrm_price_set;
 DROP TABLE IF EXISTS civicrm_report_instance;
 DROP TABLE IF EXISTS civicrm_pledge_block;
-DROP TABLE IF EXISTS civicrm_openid_associations;
-DROP TABLE IF EXISTS civicrm_openid_nonces;
 DROP TABLE IF EXISTS civicrm_tell_friend;
 DROP TABLE IF EXISTS civicrm_grant;
 DROP TABLE IF EXISTS civicrm_case_contact;
@@ -1746,60 +1744,6 @@ CREATE TABLE civicrm_tell_friend (
     PRIMARY KEY ( id )
  
  
- 
-)  ENGINE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci  ;
-
--- /*******************************************************
--- *
--- * civicrm_openid_nonces
--- *
--- * The OpenID nonce store for standalone login.
--- *
--- *******************************************************/
-CREATE TABLE civicrm_openid_nonces (
-
-
-     id int unsigned NOT NULL AUTO_INCREMENT  ,
-     server_url blob    ,
-     timestamp int    ,
-     salt char(40)     
-,
-    PRIMARY KEY ( id )
- 
-    ,     UNIQUE INDEX nonce_index(
-        server_url(255)
-      , timestamp
-      , salt
-  )
-  
- 
-)  ENGINE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci  ;
-
--- /*******************************************************
--- *
--- * civicrm_openid_associations
--- *
--- * The OpenID associations store for standalone login.
--- *
--- *******************************************************/
-CREATE TABLE civicrm_openid_associations (
-
-
-     id int unsigned NOT NULL AUTO_INCREMENT  ,
-     server_url blob    ,
-     handle varchar(255)    ,
-     secret blob    ,
-     issued int    ,
-     lifetime int    ,
-     assoc_type varchar(64)     
-,
-    PRIMARY KEY ( id )
- 
-    ,     UNIQUE INDEX server_url_handle_index(
-        server_url(166)
-      , handle(166)
-  )
-  
  
 )  ENGINE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci  ;
 

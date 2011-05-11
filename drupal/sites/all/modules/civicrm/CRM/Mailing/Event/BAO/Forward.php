@@ -99,7 +99,7 @@ class CRM_Mailing_Event_BAO_Forward extends CRM_Mailing_Event_DAO_Forward {
             return $successfulForward;
         }
 
-        civicrm_api_include('contact');
+        civicrm_api_include('contact', false, 3);
         
         $contact_params = array('email' => $forward_email);
         $count = civicrm_contact_search_count($contact_params);
@@ -116,7 +116,7 @@ class CRM_Mailing_Event_BAO_Forward extends CRM_Mailing_Event_DAO_Forward {
             $formatted['onDuplicate'] = CRM_Import_Parser::DUPLICATE_SKIP;
             $formatted['fixAddress'] = true;
             $contact =& civicrm_contact_format_create($formatted);
-            if (civicrm_error($contact, 'CRM_Core_Error')) {
+            if ( civicrm_error( $contact ) ) {
                 return $successfulForward;
             }
             $contact_id = $contact['id'];

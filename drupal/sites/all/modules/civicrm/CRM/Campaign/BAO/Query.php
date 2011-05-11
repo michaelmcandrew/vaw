@@ -442,7 +442,6 @@ INNER JOIN  civicrm_custom_group grp on fld.custom_group_id = grp.id
             $operator = 'IN';
             $voterIds = array_keys( $voterActValues );
             if ( $searchVoterFor == 'reserve' ) {
-                $voterIds = array( );
                 $operator = 'NOT IN';
                 //filter out recontact survey contacts.
                 $recontactInterval = CRM_Core_DAO::getFieldValue( 'CRM_Campaign_DAO_Survey', 
@@ -451,6 +450,7 @@ INNER JOIN  civicrm_custom_group grp on fld.custom_group_id = grp.id
                 if ( $surveyId && 
                      is_array( $recontactInterval ) && 
                      !empty( $recontactInterval ) ) {
+                    $voterIds = array( );
                     foreach ( $voterActValues as $values ) {
                         $numOfDays = CRM_Utils_Array::value( $values['result'], $recontactInterval );
                         if ( $numOfDays && 
@@ -473,10 +473,19 @@ INNER JOIN  civicrm_custom_group grp on fld.custom_group_id = grp.id
             //use appropriate join depend on operator.
             if ( !empty( $voterIds ) ) {
                 $voterIdCount  = count( $voterIds );
-                $tempTableName = 'temporary_survey_contact_ids_'.time();
+                
+                //create temporary table to store voter ids.
+                $tempTableName = CRM_Core_DAO::createTempTableName( 'civicrm_survey_respondent' );
                 CRM_Core_DAO::executeQuery( "DROP TABLE IF EXISTS {$tempTableName}" );
-                $query = "CREATE TEMPORARY TABLE {$tempTableName}(survey_contact_id INT(10) UNSIGNED)";
+                
+                $query = "
+     CREATE TEMPORARY TABLE {$tempTableName} (
+            id int unsigned NOT NULL AUTO_INCREMENT,
+            survey_contact_id int unsigned NOT NULL,  
+PRIMARY KEY ( id ),
+ CONSTRAINT FK_civicrm_survey_respondent FOREIGN KEY (survey_contact_id) REFERENCES civicrm_contact(id) ON DELETE CASCADE )";
                 CRM_Core_DAO::executeQuery( $query );
+                
                 $batch = 100;
                 $insertedCount = 0;
                 do {
