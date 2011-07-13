@@ -214,6 +214,14 @@ h6 a {
 	background: #f6f7fa;
 	border-bottom: 1px solid #e6e5e3;
 	margin: 0 -35px 1.5em 0;
+	padding: 20px 20px 1.5em 20px;
+	position: relative;
+	clear: both;
+	}
+#center .view-news .views-row-odd, #center .view-news .views-row-even {
+	background: #f6f7fa;
+	border-bottom: 1px solid #e6e5e3;
+	margin: 0 -35px 1.5em 0;
 	padding: 20px 20px 1.5em 150px;
 	position: relative;
 	clear: both;
