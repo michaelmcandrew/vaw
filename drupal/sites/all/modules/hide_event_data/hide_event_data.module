@@ -1,0 +1,12 @@
+<?php
+// funder fieldID = 122
+
+function hide_event_data_civicrm_pageRun( &$page ) {
+	 //Check to confirm that the page is CRM_Event_Page_EventInfo, and if it is not, break out immediately.
+	if ( $page->getVar( '_name' ) != 'CRM_Event_Page_EventInfo' ) {
+	    return;
+	}
+	$smarty  =& CRM_Core_Smarty::singleton( );
+	$details =& $smarty->get_template_vars( 'viewCustomData' );
+	$details[27] = NULL;
+}

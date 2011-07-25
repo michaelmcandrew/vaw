@@ -1,0 +1,6 @@
+name = Hide event data
+description = Implement CiviCRM and Drupal hooks for hiding custom event field - Funder from website display
+dependencies[] = civicrm
+package = CiviCRM
+core = 6.x
+version = 1.0
