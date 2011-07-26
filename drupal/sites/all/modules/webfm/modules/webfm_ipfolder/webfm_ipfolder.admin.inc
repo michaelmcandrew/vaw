@@ -1,11 +1,11 @@
 <?php
-// $Id: webfm_ipfolder.admin.inc,v 1.2 2009/08/20 01:10:35 robmilne Exp $
+// $Id$
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * @author     Niels Hackius <niels.hackius@tu-harburg.de>
  * @copyright 2009, Technische Universität Hamburg-Harburg: Institut für Logistik und Unternehmensführung
  * @license    http://www.opensource.org/licenses/gpl-3.0.html  GNU General Public License version 3 (GPLv3)
- * @version   $Id: webfm_ipfolder.admin.inc,v 1.2 2009/08/20 01:10:35 robmilne Exp $
+ * @version   $Id$
  * @since      12:01:33 15.04.2009
  *
  */

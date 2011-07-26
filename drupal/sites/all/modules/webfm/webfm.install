@@ -1,19 +1,24 @@
 <?php
-// $Id: webfm.install,v 1.16 2010/03/10 21:19:24 robmilne Exp $
+// $Id$
+
+/**
+ * @file
+ * Install, update and uninstall functions for the webfm module.
+ */
 
 /**
  * Implementation of hook_install().
  */
-function webfm_install(){
+function webfm_install() {
   drupal_install_schema('webfm');
 }
 
 /**
  * Implementation of hook_uninstall().
  */
-function webfm_uninstall(){
+function webfm_uninstall() {
   drupal_uninstall_schema('webfm');
-    variable_del('webfm_root_dir');
+  variable_del('webfm_root_dir');
   variable_del('webfm_ftp_enable');
   variable_del('webfm_ftp_root_dir');
   variable_del('webfm_icon_dir');
@@ -30,23 +35,24 @@ function webfm_uninstall(){
   variable_del('webfm_ie_dd_tree_offset');
   $roles = user_roles(1, 'access webfm');
   foreach ($roles as $rid => $role) {
-   variable_del('root_dir_'.$rid);
-   variable_del('webfm_extensions_'.$rid);
-   variable_del('webfm_uploadsize_'.$rid);
-   variable_del('webfm_usersize_'.$rid);
+    variable_del('root_dir_'. $rid);
+    variable_del('webfm_extensions_'. $rid);
+    variable_del('webfm_uploadsize_'. $rid);
+    variable_del('webfm_usersize_'. $rid);
   }
 
   if (module_exists('og')) {
     $groups = og_all_groups_options();
     foreach ($groups as $gid => $group) {
-      variable_del('root_dir_group_'.$gid);
+      variable_del('root_dir_group_'. $gid);
     }
   }
 
   $types = node_get_types();
   foreach ($types as $type) {
-    if ($type->type)
-      variable_del('webfm_attach_'.$type->type);
+    if ($type->type) {
+      variable_del('webfm_attach_'. $type->type);    
+    }    
   }
   variable_del('webfm_file_perm_role');
   variable_del('webfm_file_perm_mod');
@@ -59,7 +65,7 @@ function webfm_uninstall(){
 /**
  * Implementation of hook_schema().
  */
-function webfm_schema(){
+function webfm_schema() {
   $schema['webfm_file'] = array(
     'fields' => array(
       'fid' => array('type' => 'serial', 'size' => 'normal', 'unsigned' => TRUE, 'not null' => TRUE),
@@ -68,7 +74,7 @@ function webfm_schema(){
       'fsize' => array('type' => 'int', 'size' => 'normal', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'fmime' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
       'ftitle' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
-      'fdesc' => array('type' => 'text', 'not null' => TRUE),
+      'fdesc' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE),
       'fcreatedate' => array('type' => 'int', 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
       'flang' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
       'fpublisher' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
@@ -76,7 +82,7 @@ function webfm_schema(){
       'fversion' => array('type' => 'int', 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
       'perm' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0),
       'dl_cnt' => array('type' => 'int', 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
-    ),
+  ),
     'primary key' => array('fid'),
   );
 
@@ -86,7 +92,7 @@ function webfm_schema(){
       'fid' => array('type' => 'int', 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
       'weight' => array('type' => 'int', 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
       'cid' => array('type' => 'int', 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
-    ),
+  ),
     'primary key' => array('nid', 'fid', 'cid' ),
   );
   return $schema;

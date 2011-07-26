@@ -1,11 +1,11 @@
 <?php
-// $Id: webfm_ipfolder.install,v 1.2 2009/08/20 01:10:35 robmilne Exp $
+// $Id$
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * @author			Niels Hackius <niels.hackius@tu-harburg.de>
  * @copyright	2009, Technische Universität Hamburg-Harburg: Institut für Logistik und Unternehmensführung
  * @license			http://www.opensource.org/licenses/gpl-3.0.html  GNU General Public License version 3 (GPLv3)
- * @version		$Id: webfm_ipfolder.install,v 1.2 2009/08/20 01:10:35 robmilne Exp $
+ * @version		$Id$
  * @since			23:09:49 - 15.04.2009
  */
 
@@ -38,12 +38,40 @@ function webfm_ipfolder_schema()
 	$schema['webfm_ipfolder'] = array(
 		'fields' => array(
 			'id'		=> array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
-		    'folder'	=> array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
-			'ip1'		=> array('type' => 'int','unsigned' => TRUE,'not null' => TRUE),
-			'ip2'		=> array('type' => 'int','unsigned' => TRUE,'not null' => TRUE),
+		  'folder'	=> array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+			'ip1'		=> array('type' => 'int',size => 'big', 'unsigned' => FALSE, 'not null' => TRUE),
+			'ip2'		=> array('type' => 'int',size => 'big', 'unsigned' => FALSE, 'not null' => TRUE),
 			),
 		'primary key' => array('id'),
 	);
 
 	return $schema;
 }
+
+/**
+ * Fixing wrong datatype in former mysql declaration
+ * Chaning from usigned INT to signed BIGINT for compatibility with pgsql.
+ * As reported in http://drupal.org/node/755882
+ **/
+function webfm_ipfolder_update_6200()
+{
+	global $db_type;
+  $ret = array();
+
+	switch($db_type) {
+    case 'pgsql':
+      db_change_column($ret, 'webfm_ipfolder', 'ip1', 'ip1', 'BIGINT( 10 )', array('not null' => TRUE, 'default' => "''"));
+      db_change_column($ret, 'webfm_ipfolder', 'ip2', 'ip2', 'BIGINT( 10 )', array('not null' => TRUE, 'default' => "''"));       
+      break;
+
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {webfm_ipfolder} CHANGE ip1 ip1 BIGINT( 10 ) NOT NULL , CHANGE ip2 ip2 BIGINT( 10 ) NOT NULL");
+      break;
+ }
+ 
+	return $ret;
+ }
+ 
+ 
+

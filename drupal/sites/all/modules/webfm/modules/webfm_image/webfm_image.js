@@ -1,4 +1,4 @@
-// $Id: webfm_image.js,v 1.1 2009/02/08 06:24:05 robmilne Exp $
+// $Id$
 /**
  * @file webfm_image.js
  *

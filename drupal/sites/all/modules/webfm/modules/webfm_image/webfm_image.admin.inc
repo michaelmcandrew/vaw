@@ -1,5 +1,5 @@
 <?php
-// $Id: webfm_image.admin.inc,v 1.1 2009/02/08 06:24:05 robmilne Exp $
+// $Id$
 
 /**
  * Admin settings callback.

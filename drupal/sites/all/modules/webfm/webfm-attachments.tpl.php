@@ -1,2 +1,9 @@
-<?
-//todo create a template file out of the theme function
+<?php
+// $Id$
+
+/**
+ * @todo
+ * 
+ * @file
+ *  This file should hold a template out of the theme function
+ */

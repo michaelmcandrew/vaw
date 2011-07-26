@@ -1,5 +1,5 @@
 <?php
-// $Id: webfm_popup.module,v 1.5 2009/08/05 03:33:21 robmilne Exp $
+// $Id$
 
 /**
  * @file
@@ -12,7 +12,13 @@
 function webfm_popup_help($path, $arg) {
   if ($path == 'admin/help#webfm_popup') {
     $txt = "This module creates a popup for the webfm module. <br />
-    <h3>FCKEditor Usage</h3>
+    <h3>WYSIWYG-Module Usage</h3>
+    <p>Using the <a href=\"http://drupal.org/project/wysiwyg\">wysiwyg-module</a> webfm can be installed with an editor like FCKeditor, CKeditor or TinyMCE.<br />
+    Once an editor has been assigned to an inout filter format the image-button as well as the webfm_popup-plugin should be enabled in the <i>Buttons and plugins</i> section of that editor.</p>
+    <h3>CKEditor-Module Usage</h3>
+    <p>Webfm is supported by the <a href=\"http://drupal.org/project/ckeditor\">ckeditor-module</a>. Just edit the settings of your current CKEditor profile to use the Webfile Manager.<br /> You need to go to admin/settings/ckeditor and choose to edit your profile.
+    </p>
+    <h3>FCKEditor-Module Usage</h3>
     <ol>
       <li>Go to admin/settings/fckeditor</li>
       <li>Edit the profile you would like to use it.</li>
@@ -23,9 +29,9 @@ function webfm_popup_help($path, $arg) {
           LinkBrowser= true;
           ImageBrowser= true;
           FlashBrowser= true;
-          LinkBrowserURL= getBasePath() + '?q=webfm_popup&webfmid=txtUrl';
-          ImageBrowserURL= getBasePath() + '?q=webfm_popup&webfmid=txtUrl';
-          FlashBrowserURL= getBasePath() + '?q=webfm_popup&webfmid=txtUrl';
+          LinkBrowserURL= Drupal.settings.basePath + '?q=webfm_popup&caller=fckeditor&webfmid=txtUrl';
+          ImageBrowserURL= Drupal.settings.basePath + '?q=webfm_popup&caller=fckeditor&webfmid=txtUrl';
+          FlashBrowserURL= Drupal.settings.basePath + '?q=webfm_popup&caller=fckeditor&webfmid=txtUrl';
         </pre>
       </p>
       <p>
@@ -40,9 +46,66 @@ function webfm_popup_help($path, $arg) {
 }
 
 /**
+ * Implementation of hook_menu()
+ */
+function webfm_popup_menu() {
+  $items = array();
+  
+  $items['webfm_popup'] = array(
+    'title' => 'Web File Manager',
+    'page callback' => 'webfm_popup',
+    'access arguments' =>  array('access webfm'),
+    'type' => MENU_CALLBACK,
+  );
+  
+  
+  //for path aliasing inside rich text editors
+  $items['webfm_popup/get_path_alias'] = array(
+    'page callback' => 'webfm_popup_get_path_alias',
+    'access arguments' => array('access webfm'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme
+ */
+function webfm_popup_theme() {
+  return array(
+    'webfm_popup' => array(
+      'arguments' => array('content' => ''),
+      'template' => 'webfm-popup',
+    ),
+  );
+}
+
+/**
+ * Show the popup window.
+ */
+function webfm_popup() {
+  $content = webfm_main();
+  print theme('webfm_popup', $content);
+  exit();
+}
+
+/**
+ * Function that gets the url alias for passed in path
+ * {@see webfm_popup_menu}
+ * Is called by webfm_popupGetMenusAjax and thus webfm_popup.sendtocaller in webfm_popup.js
+ * 
+ */
+function webfm_popup_get_path_alias() {
+  $in = func_get_args();
+  $url = url(implode('/', $in),array('absolute'=>true));
+  drupal_json( $url );
+}
+
+/**
  * Implementation of hook_webfm_extend_js()
  */
-function webfm_popup_webfm_extend_js(){
+function webfm_popup_webfm_extend_js() {
   if (arg(0) == 'webfm_popup') {
     $modulepath = drupal_get_path('module', 'webfm_popup');
     drupal_add_js($modulepath.'/webfm_popup.js');
@@ -58,31 +121,59 @@ function webfm_popup_webfm_extend_js(){
 * Implementation of hook_wysiwyg_plugin().
 */
 function webfm_popup_wysiwyg_plugin($editor) {
-  static $integrated;
+  //add our popup-script
+  drupal_add_js(drupal_get_path('module', 'webfm_popup') .'/webfm_popup.js');
+
+  //add some sttings
+  $settings = array(
+    'webfm_popup' => array(
+      'url' => url('webfm'),
+      'appname' => t('editor'),
+      'wysiwyg_module' => true,
+     ),
+  );
+  drupal_add_js($settings, 'setting');
+ 
   switch ($editor) {
     case 'tinymce':
-      if (!isset($integrated)) {
-        $integrated = TRUE;
-        $settings = array(
-          'webfm_popup' => array(
-            'url' => url('webfm'),
-            'appname' => t('editor'),
-            'wysiwyg_module' => true,
-          ),
-        );
-        drupal_add_js($settings, 'setting');
-        drupal_add_js(drupal_get_path('module', 'webfm_popup') .'/webfm_popup.js');
-      }
       return array(
         'webfm_popup' => array(
           'extensions' => array('webfm_popup' => t('webfm_popup')),
           'url' => 'http://drupal.org/project/webfm',
           'options' => array(
-            'file_browser_callback' => 'webfmImageBrowser',
+            'file_browser_callback' => 'webfm_popupTinyMCEConnector',
             'inline_styles' => TRUE,
           ),
           'load' => FALSE,
         ),
       );
+    break;
+    case 'ckeditor':
+      return array(
+        'webfm_popup' => array(
+          'extensions' => array('webfm_popup' => t('webfm_popup')),
+          'url' => 'http://drupal.org/project/webfm',
+          'options' => array(
+            'filebrowserBrowseUrl' => url('webfm_popup', array('query' => array('caller'=>$editor))),
+          ),
+        ),
+        'load' => FALSE,
+      );
+    break;
+    case 'fckeditor':
+      return array(
+        'webfm_popup' => array(
+          'extensions' => array('webfm_popup' => t('webfm_popup')),
+          'url' => 'http://drupal.org/project/webfm',
+          'options' => array(
+            'ImageBrowser' => true,
+            'FlashBrowser' => true,
+            'ImageBrowserURL' => url('webfm_popup', array('query' => array('caller'=>$editor,'webfmid'=>'txtUrl'))),
+            'FlashBrowserURL' => url('webfm_popup', array('query' => array('caller'=>$editor,'webfmid'=>'txtUrl'))),
+          ),
+        ),
+        'load' => FALSE,
+      );
+    break;
   }
 }

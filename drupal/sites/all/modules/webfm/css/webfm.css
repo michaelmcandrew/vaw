@@ -1,4 +1,4 @@
-/* $Id: webfm.css,v 1.13 2009/08/19 15:31:51 robmilne Exp $ */
+/* $Id$ */
 
 img { border: 0; }
 
@@ -30,6 +30,7 @@ img { border: 0; }
 #webfm-attach table { width:94%; font-weight: normal; font-size: 8pt; margin: 0 auto; cursor: default; background-color: #f0f0f0; border: 2px solid #d0d0d0; }
 #webfm-attach td { border-bottom: 1px solid #d8d8d8; }
 #webfm-attach img { margin-left: 5px; }
+#webfm-no-attachments { width: 99%; text-align: center; }
 
 #wfmatt-wrapper .upload-msg-err { padding-top:5px; color:red; }
 #wfmatt-wrapper .upload-msg { padding-top:5px; color:green; }
