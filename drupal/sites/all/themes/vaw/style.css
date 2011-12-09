@@ -41,7 +41,8 @@ body#tinymce { text-align: left; }
 	height: 110px;
 	position: relative;
 	}
-#header-search { display: none; }
+#header-search { color: white; position: absolute; right: 70px; bottom: 10px; text-align: right; }
+#header-search label { text-transform: uppercase; font-weight: normal; }
 body #content {
 	min-height: 200px;
 	}
@@ -124,7 +125,7 @@ h6 a {
 #header .logo { position: absolute; top: -40px; left: 70px; background: url(logo.png) 0 0 no-repeat; height: 152px; width: 106px; }
 #header h1 { margin: 0; padding: 35px 0 6px 0; color: white; font-weight: normal; font-size: 2.2em; line-height: 1em; }
 #header h2 { margin: 0; color: white; font-weight: normal; font-size: 1.25em; line-height: 1em; }
-#header h3.tel { color: white; position: absolute; right: 70px; top: 20px; text-align: right; }
+#header h3.tel { color: white; position: absolute; right: 70px; top: 0px; text-align: right; }
 #header h3.tel em { font-style: normal; font-size: 2em; line-height: 1.1em;}
 #header a, #header a:link, #header a:visited { color: #d6e8f2; }
 #header a:hover, #header a:active,
@@ -134,7 +135,7 @@ h6 a {
 
 #homepage #center p, #homepage #sidebar-right p { font-size: 1em; }
 
-#banner h1 { font-size: 2.8em; color: #256b90; font-weight: bold; margin-top: 0;  }
+#banner h1 { font-size: 2.8em; color: #256b90; font-weight: bold; margin: 0 0 .2em 0;  }
 #homepage #banner h1 { font-size: 2em; color: #256b90; }
 #homepage #banner h3 { font-size: 1em; line-height: 1.7em; color: #333; }
 
@@ -162,12 +163,12 @@ h6 a {
 
 /* Image banners */
 #banner { background: white;  border-bottom: 10px solid white;  }
-#banner .block { padding: 30px 400px 0 70px; height: 91px; }
+#banner .block { padding: 20px 375px 0 70px; height: 101px; }
 #homepage #banner .block { background: url(images/banners/banner-front.jpg) 0 0 no-repeat; height: 191px; } /* front page */
 #banner #block-block-15 { background: url(images/banners/banner-1.jpg) 0 0 no-repeat; } /* Group support */
 #banner #block-block-16 { background: url(images/banners/banner-2.jpg) 0 0 no-repeat; } /* Directory & Database */
 #banner #block-block-17 { background: url(images/banners/banner-3.jpg) 0 0 no-repeat; } /* Training */
-#banner #block-block-18 { background: url(images/banners/banner-4.jpg) 0 0 no-repeat; } /* Funding */
+#banner #block-block-18, #banner #block-block-2 { background: url(images/banners/banner-4.jpg) 0 0 no-repeat; } /* Funding */
 #banner #block-block-19 { background: url(images/banners/banner-5.jpg) 0 0 no-repeat; } /* News */
 
 /* center column styled lists */
@@ -191,6 +192,15 @@ h6 a {
 	float: left; margin: 0 1em 0 0;
 	}*/
 #center ul.styled li a, #tinymce ul.styled li a { font-size: 1.1em; }
+
+/* feature lists - DEC 2011 PED */
+#center ul.features { background: #F6F7FA; list-style: none; padding: 10px; clear: both; margin: 1em -35px 1em 0; }
+#center ul.features li { background: #F6F7FA; float: left; margin: 0; width: 158px; padding: 0 5px 5px 5px;}
+#center ul.features li:first-child, ul.features li.first { width: 332px; margin: 0 10px 0 0; }
+#center ul.features li h4 { font-weight: bold; margin: 0 0 .2em 0; }
+#center ul.features li:first-child h4, ul.features li.first h4 { font-size: 1.2em; }
+#center ul.features li p { margin: .1em 0; }
+#center ul.features li span.inline, #center ul.features li span.inline-left { display: block; margin: 0 -5px .2em -5px; }
 
 #center #calltoaction, #center #call-to-action {
 	background: #f6f7fa;
