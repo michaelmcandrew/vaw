@@ -195,8 +195,8 @@ h6 a {
 #center ul.styled li a, #tinymce ul.styled li a { font-size: 1.1em; }
 
 /* feature lists - DEC 2011 PED */
-#center ul.features { background: #F6F7FA; list-style: none; padding: 10px; clear: both; margin: 1em -35px 1em 0; }
-#center ul.features li { background: #F6F7FA; float: left; margin: 0; width: 158px; padding: 0 5px 5px 5px;}
+#center ul.features { list-style: none; padding: 10px; clear: both; margin: 1em -35px 1em 0; }
+#center ul.features li { background: #F6F7FA; float: left; margin: 0 0 15px 0; width: 158px; padding: 0 5px 5px 5px;}
 #center ul.features li:first-child, ul.features li.first { width: 332px; margin: 0 10px 0 0; }
 #center ul.features li h4 { font-weight: bold; margin: 0 0 .2em 0; }
 #center ul.features li:first-child h4, ul.features li.first h4 { font-size: 1.2em; }
@@ -246,7 +246,7 @@ h6 a {
 div.view-Training .views-row-odd, div.view-Training .views-row-even { padding-left: 20px; }
 
 /* inline images */
-span.inline-left { border: 1px solid #ddd; padding: 5px; margin: 0 10px 10px 0; background: white; }
+span.inline-left { border: 1px solid #ddd;  margin: 0 10px 10px 0; background: white; }
 	
 /* nested blocks */
 #sidebar-right .block {
@@ -273,3 +273,7 @@ ul.links li.first { padding-left: 0; }
     height: 0; 
 } 
 
+#block-block-32 p {
+	background-color:#F6F7FA ;
+	padding: 5px 10px;
+}
