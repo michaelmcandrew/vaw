@@ -1285,5 +1285,23 @@ class CRM_Utils_System {
         
         return $url;
     }
-    
-  }
+
+    /**
+     * Append the contents of an 'extra' smarty template file if it is present in
+     * the custom template directory. This does not work if there are
+     * multiple custom template directories
+     *
+     * @param string $fileName - the name of the tpl file that we are processing
+     * @param string $content (by reference) - the current content string
+     *
+     * @return void - the content string is modified if needed
+     * @static
+     */
+    static function appendTPLFile( $fileName, &$content ) {
+        $template = CRM_Core_Smarty::singleton( );
+        $additionalTPLFile = str_replace( '.tpl', '.extra.tpl', $fileName );
+        if ( $template->template_exists( $additionalTPLFile ) ) {
+            $content .= $template->fetch( $additionalTPLFile );
+        }
+    }
+}

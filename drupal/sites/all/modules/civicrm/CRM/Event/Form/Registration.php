@@ -400,9 +400,9 @@ class CRM_Event_Form_Registration extends CRM_Core_Form
                                    'module'       => 'CiviEvent',       // CRM-4377: CiviEvent for the main participant, CiviEvent_Additional for additional participants
                                    'entity_id'    => $this->_eventId );
             list( $this->_values['custom_pre_id'],
-                  $this->_values['custom_post_id'] ) =
-                CRM_Core_BAO_UFJoin::getUFGroupIds( $ufJoinParams ); 
-    
+                  $this->_values['custom_post_id'] ) = 
+                CRM_Core_BAO_UFJoin::getUFGroupIds( $ufJoinParams );
+            
             // set profiles for additional participants
             if ( $this->_values['event']['is_multiple_registrations'] ) {
                 require_once 'CRM/Core/BAO/UFJoin.php'; 
@@ -437,7 +437,9 @@ class CRM_Event_Form_Registration extends CRM_Core_Form
             
             // get the billing location type
             $locationTypes =& CRM_Core_PseudoConstant::locationType( );
-            $this->_bltID = array_search( ts('Billing'),  $locationTypes );
+            // CRM-8108 remove ts around Billing for location type
+            //$this->_bltID = array_search( ts('Billing'),  $locationTypes );
+            $this->_bltID = array_search( 'Billing',  $locationTypes );
             if ( ! $this->_bltID ) {
                 CRM_Core_Error::fatal( ts( 'Please set a location type of %1', array( 1 => 'Billing' ) ) );
             }
@@ -496,7 +498,7 @@ class CRM_Event_Form_Registration extends CRM_Core_Form
         $config->defaultCurrency = CRM_Utils_Array::value( 'currency', 
                                                            $this->_values['event'], 
                                                            $config->defaultCurrency );
-        
+
         //lets allow user to override campaign. 
         $campID = CRM_Utils_Request::retrieve( 'campID', 'Positive', $this );
         if ( $campID && CRM_Core_DAO::getFieldValue( 'CRM_Campaign_DAO_Campaign', $campID ) ) {
@@ -615,10 +617,16 @@ class CRM_Event_Form_Registration extends CRM_Core_Form
                                    );
             if ( $contactID ) {
                 if ( CRM_Core_BAO_UFGroup::filterUFGroups($id, $contactID)  ) {
-                    $fields = CRM_Core_BAO_UFGroup::getFields( $id, false, CRM_Core_Action::ADD ); 
+                    $fields = CRM_Core_BAO_UFGroup::getFields( $id, false, CRM_Core_Action::ADD,
+                                                               null , null, false, null,
+                                                               false, null, CRM_Core_Permission::CREATE,
+                                                               'field_name', true ); 
                 }
             } else {
-                $fields = CRM_Core_BAO_UFGroup::getFields( $id, false, CRM_Core_Action::ADD ); 
+                $fields = CRM_Core_BAO_UFGroup::getFields( $id, false, CRM_Core_Action::ADD,
+                                                           null , null, false, null,
+                                                           false, null, CRM_Core_Permission::CREATE,
+                                                           'field_name', true ); 
             }
 
             if ( is_array( $fields ) ) {
@@ -764,11 +772,14 @@ class CRM_Event_Form_Registration extends CRM_Core_Form
                                                     $participant->id,
                                                     'Participant' );
 
-        $createPayment = ( $this->_params['amount'] != 0 ) ? true : false;
+        $createPayment = ( CRM_Utils_Array::value( 'amount', $this->_params, 0 ) != 0 ) ? true : false;
+
         // force to create zero amount payment, CRM-5095
-        if ( !$createPayment && $contribution->id
-             && ($this->_params['amount'] == 0) 
-             && $this->_priceSetId && $this->_lineItem ) {
+        // we know the amout is zero since createPayment is false
+        if ( ! $createPayment &&
+             ( isset( $contribution ) && $contribution->id ) &&
+             $this->_priceSetId &&
+             $this->_lineItem ) {
             $createPayment = true;
         }
         
@@ -860,7 +871,7 @@ WHERE  v.option_group_id = g.id
                                    'register_date' => ( $registerDate ) ? $registerDate : date( 'YmdHis' ),
                                    'source'        => isset( $params['participant_source'] ) ?
                                                       $params['participant_source']:$params['description'],
-                                   'fee_level'     => $params['amount_level'],
+                                   'fee_level'     => CRM_Utils_Array::value( 'amount_level', $params ),
                                    'is_pay_later'  => CRM_Utils_Array::value( 'is_pay_later', $params, 0 ),
                                    'fee_amount'    => CRM_Utils_Array::value( 'fee_amount', $params ),
                                    'registered_by_id' => CRM_Utils_Array::value( 'registered_by_id', $params ),
@@ -1122,7 +1133,7 @@ WHERE  v.option_group_id = g.id
         
         // force to ignore the authenticated user
         if ( $tempID === '0' ) {
-            return;
+            return $tempID;
         }
         
         //check if this is a checksum authentication
@@ -1146,6 +1157,7 @@ WHERE  v.option_group_id = g.id
     function validatePriceSet( &$form, $params ) 
     {
         $errors = array( );
+        $hasOptMaxValue = false;
         if ( !is_array( $params ) || empty( $params )  ) {
             return $errors;
         }

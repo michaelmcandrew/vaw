@@ -1,4 +1,4 @@
-<span id='fileOnCaseStatusMsg' style="display:none;"></span>
+<span id="fileOnCaseStatusMsg-{$context}" style="display:none;"></span>
 <div class="crm-activity-selector-{$context}">
 <div class="crm-accordion-wrapper crm-search_filters-accordion crm-accordion-closed">
  <div class="crm-accordion-header">
@@ -26,7 +26,7 @@
             <th class='crm-contact-activity_subject'>{ts}Subject{/ts}</th>
             <th class='crm-contact-activity-source_contact'>{ts}Added By{/ts}</th>
             <th class='crm-contact-activity-target_contact nosort'>{ts}With{/ts}</th>
-            <th class='crm-contact-activity-assignee_contact nosort'>{ts}Assigneed{/ts}</th>
+            <th class='crm-contact-activity-assignee_contact nosort'>{ts}Assigned{/ts}</th>
             <th class='crm-contact-activity-activity_date'>{ts}Date{/ts}</th>
             <th class='crm-contact-activity-activity_status'>{ts}Status{/ts}</th>
             <th class='crm-contact-activity-links nosort'>&nbsp;</th>
@@ -57,9 +57,9 @@ function buildContactActivities{/literal}{$context}{literal}( filterSearch ) {
     var columns = '';
     var sourceUrl = {/literal}'{crmURL p="civicrm/ajax/contactactivity" h=0 q="snippet=4&context=$context&cid=$contactId"}'{literal};
 
-    var ZeroRecordText = {/literal}{ts}'No matches found'{/ts}{literal};
+    var ZeroRecordText = {/literal}'{ts escape="js"}No matches found{/ts}'{literal};
     if ( cj('.crm-activity-selector-'+ context +' select#activity_type_filter_id').val( ) ) {
-      ZeroRecordText += {/literal}{ts}' for Activity Type = "'{/ts}{literal} +  cj('.crm-activity-selector-'+ context +' select#activity_type_filter_id :selected').text( ) + '"';
+      ZeroRecordText += {/literal}'{ts escape="js"} for Activity Type = "{/ts}'{literal} +  cj('.crm-activity-selector-'+ context +' select#activity_type_filter_id :selected').text( ) + '"';
     } else {
       ZeroRecordText += '.';
     }

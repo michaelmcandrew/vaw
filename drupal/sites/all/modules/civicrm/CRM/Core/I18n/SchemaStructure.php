@@ -55,10 +55,6 @@ class CRM_Core_I18n_SchemaStructure
                     'description' => "text",
                     'options' => "text",
                 ) ,
-                'civicrm_membership_type' => array(
-                    'name' => "varchar(128)",
-                    'description' => "varchar(255)",
-                ) ,
                 'civicrm_membership_status' => array(
                     'label' => "varchar(128)",
                 ) ,
@@ -113,20 +109,10 @@ class CRM_Core_I18n_SchemaStructure
                     'honor_block_title' => "varchar(255)",
                     'honor_block_text' => "text",
                 ) ,
-                'civicrm_membership_block' => array(
-                    'new_title' => "varchar(255)",
-                    'new_text' => "text",
-                    'renewal_title' => "varchar(255)",
-                    'renewal_text' => "text",
-                ) ,
                 'civicrm_price_field' => array(
                     'label' => "varchar(255)",
                     'help_pre' => "text",
                     'help_post' => "text",
-                ) ,
-                'civicrm_price_field_value' => array(
-                    'label' => "varchar(255)",
-                    'description' => "text",
                 ) ,
                 'civicrm_uf_group' => array(
                     'title' => "varchar(64)",
@@ -137,6 +123,20 @@ class CRM_Core_I18n_SchemaStructure
                     'help_post' => "text",
                     'help_pre' => "text",
                     'label' => "varchar(255)",
+                ) ,
+                'civicrm_membership_type' => array(
+                    'name' => "varchar(128)",
+                    'description' => "varchar(255)",
+                ) ,
+                'civicrm_membership_block' => array(
+                    'new_title' => "varchar(255)",
+                    'new_text' => "text",
+                    'renewal_title' => "varchar(255)",
+                    'renewal_text' => "text",
+                ) ,
+                'civicrm_price_field_value' => array(
+                    'label' => "varchar(255)",
+                    'description' => "text",
                 ) ,
                 'civicrm_event' => array(
                     'title' => "varchar(255)",

@@ -613,9 +613,13 @@ class CRM_Contact_DAO_Contact extends CRM_Core_DAO
                 'hash' => array(
                     'name' => 'hash',
                     'type' => CRM_Utils_Type::T_STRING,
-                    'title' => ts('Hash') ,
+                    'title' => ts('Contact Hash') ,
                     'maxlength' => 32,
                     'size' => CRM_Utils_Type::MEDIUM,
+                    'export' => true,
+                    'where' => 'civicrm_contact.hash',
+                    'headerPattern' => '',
+                    'dataPattern' => '',
                 ) ,
                 'api_key' => array(
                     'name' => 'api_key',

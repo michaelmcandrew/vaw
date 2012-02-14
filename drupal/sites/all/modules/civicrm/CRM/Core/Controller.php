@@ -211,7 +211,7 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
         require_once 'CRM/Utils/Request.php';
 
         // also retrieve and store destination in session
-        $this->_destination = CRM_Utils_Request::retrieve( 'destination', 'String', $this,
+        $this->_destination = CRM_Utils_Request::retrieve( 'civicrmDestination', 'String', $this,
                                                            false, null, $_REQUEST );
     }
 
@@ -669,7 +669,7 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
         }
 
         require_once 'CRM/Core/QuickForm/Action/Upload.php';
-        $action =& new CRM_Core_QuickForm_Action_Upload ( $this->_stateMachine,
+        $action = new CRM_Core_QuickForm_Action_Upload ( $this->_stateMachine,
                                                           $uploadDir,
                                                           $uploadNames );
         $this->addAction('upload' , $action );
@@ -698,7 +698,7 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
         }
         
         $this->_destination = $url;
-        $this->set( 'destination', $this->_destination );
+        $this->set( 'civicrmDestination', $this->_destination );
     }
 
 

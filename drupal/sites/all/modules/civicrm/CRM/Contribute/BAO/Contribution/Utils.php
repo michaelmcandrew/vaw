@@ -59,7 +59,8 @@ class CRM_Contribute_BAO_Contribution_Utils
                                     &$premiumParams,
                                     $contactID,
                                     $contributionTypeId,
-                                    $component = 'contribution' )
+                                    $component = 'contribution', 
+                                    $fieldTypes = null )
     { 
         require_once 'CRM/Core/Payment/Form.php';
         CRM_Core_Payment_Form::mapParams( $form->_bltID, $form->_params, $paymentParams, true );
@@ -173,8 +174,8 @@ class CRM_Contribute_BAO_Contribution_Utils
 				
             }
         } elseif ( $form->_values['is_monetary'] && $form->_amount > 0.0 ) {
-           
-            if ( $paymentParams['is_recur']  && $form->_contributeMode == 'direct' ) {
+            if ( CRM_Utils_Array::value( 'is_recur', $paymentParams ) &&
+                 $form->_contributeMode == 'direct' ) {
 
                 // For recurring contribution, create Contribution Record first.
                 // Contribution ID, Recurring ID and Contact ID needed 
@@ -248,7 +249,7 @@ class CRM_Contribute_BAO_Contribution_Utils
                                          $form->_params ) ) {
                 $pending = true;
             }
-            if ( !($paymentParams['is_recur'] && $form->_contributeMode == 'direct') ) {
+            if ( !(!empty($paymentParams['is_recur']) && $form->_contributeMode == 'direct') ) {
                 $contribution =
                     CRM_Contribute_Form_Contribution_Confirm::processContribution( $form,
                                                                                    $form->_params, $result,
@@ -265,7 +266,7 @@ class CRM_Contribute_BAO_Contribution_Utils
         }
         //Do not send an email if Recurring contribution is done via Direct Mode
         //We will send email once the IPN is received.
-        if ( $paymentParams['is_recur'] && $form->_contributeMode == 'direct' ) {
+        if ( !empty($paymentParams['is_recur']) && $form->_contributeMode == 'direct' ) {
             return true;
         }
         
@@ -278,7 +279,8 @@ class CRM_Contribute_BAO_Contribution_Utils
         // finally send an email receipt
         require_once 'CRM/Contribute/BAO/ContributionPage.php';
         $form->_values['contribution_id'] = $contribution->id;
-        CRM_Contribute_BAO_ContributionPage::sendMail( $contactID, $form->_values, $contribution->is_test );
+        CRM_Contribute_BAO_ContributionPage::sendMail( $contactID, $form->_values, $contribution->is_test,
+                                                       false, $fieldTypes );
     }
 
     /**

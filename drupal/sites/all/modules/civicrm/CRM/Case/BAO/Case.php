@@ -119,11 +119,23 @@ class CRM_Case_BAO_Case extends CRM_Case_DAO_Case
         require_once 'CRM/Core/Transaction.php';
         $transaction = new CRM_Core_Transaction( ); 
         
+        if ( CRM_Utils_Array::value( 'id', $params ) ) {
+            CRM_Utils_Hook::pre( 'edit', 'Case', $params['id'], $params );
+        } else {
+            CRM_Utils_Hook::pre( 'create', 'Case', null, $params );
+        }
+        
         $case = self::add( $params );
 
         if ( is_a( $case, 'CRM_Core_Error') ) {
             $transaction->rollback( );
             return $case;
+        }
+
+        if ( CRM_Utils_Array::value( 'id', $params ) ) {
+            CRM_Utils_Hook::post( 'edit', 'Case', $case->id, $case );
+        } else {
+            CRM_Utils_Hook::post( 'create', 'Case', $case->id, $case );
         }
         $transaction->commit( );
                 
@@ -329,6 +341,8 @@ INNER JOIN  civicrm_option_value ov ON ( ca.case_type_id=ov.value AND ov.option_
      */ 
     static function deleteCase( $caseId , $moveToTrash = false ) 
     {
+        CRM_Utils_Hook::pre( 'delete', 'Case', $caseId, CRM_Core_DAO::$_nullArray );
+        
         //delete activities
         $activities = self::getCaseActivityDates( $caseId );
         if ( $activities ) {
@@ -357,6 +371,8 @@ INNER JOIN  civicrm_option_value ov ON ( ca.case_type_id=ov.value AND ov.option_
             // CRM-7364, disable relationships
             self::enableDisableCaseRelationships( $caseId, false );            
        	
+            CRM_Utils_Hook::post( 'delete', 'Case', $caseId, $case );
+
             // remove case from recent items.
             $caseRecent = array(
                                 'id'   => $caseId,
@@ -438,6 +454,27 @@ INNER JOIN  civicrm_option_value ov ON ( ca.case_type_id=ov.value AND ov.option_
          
          return $contactArray;
      }
+     
+    /**
+     * Look up a case using an activity ID
+     *
+     * @param $activity_id
+     * @return int, case ID
+     */
+    static function getCaseIdByActivityId($activityId) {
+      $originalId = CRM_Core_DAO::singleValueQuery(
+          'SELECT original_id FROM civicrm_activity WHERE id = %1', 
+          array('1' => array($activityId, 'Integer'))
+      );
+      $caseId =  CRM_Core_DAO::singleValueQuery(
+          'SELECT case_id FROM civicrm_case_activity WHERE activity_id in (%1,%2)',
+          array(
+            '1' => array($activityId, 'Integer'),
+            '2' => array($originalId ? $originalId : $activityId, 'Integer')
+          )
+      );
+      return $caseId;
+    }
     
     /**
      * Retrieve contact names by caseId
@@ -652,7 +689,7 @@ WHERE cc.contact_id = %1
      * @access public
      * 
      */
-    function getCases( $allCases = true, $userID = null, $type = 'upcoming' )
+    function getCases( $allCases = true, $userID = null, $type = 'upcoming', $context = 'dashboard' )
     {
         $condition = null;
         $casesList = array( );
@@ -731,7 +768,8 @@ AND civicrm_case.status_id != $closedId";
         
         // check is the user has view/edit signer permission
         $permissions = array( CRM_Core_Permission::VIEW );
-        if ( CRM_Core_Permission::check( 'edit cases' ) ) {
+        if ( CRM_Core_Permission::check( 'access all cases and activities' ) ||
+             (!$allCases && CRM_Core_Permission::check( 'access my cases and activities' )) ) {
             $permissions[] = CRM_Core_Permission::EDIT;
         }
         if ( CRM_Core_Permission::check( 'delete in CiviCase' ) ) {
@@ -750,12 +788,15 @@ AND civicrm_case.status_id != $closedId";
                         = CRM_Core_Action::formLink( $actions['primaryActions'], $mask,
                                                      array( 'id'  => $result->case_id,
                                                             'cid' => $result->contact_id,
+                                                            'cxt' => $context
                                                            ) );
                     $casesList[$result->case_id]['moreActions'] 
                         = CRM_Core_Action::formLink( $actions['moreActions'], 
-                                                     $mask, array( 'id'  => $result->case_id,
-                                                                   'cid' => $result->contact_id,
-                                                             ),
+                                                     $mask, 
+                                                     array( 'id'  => $result->case_id,
+                                                            'cid' => $result->contact_id,
+                                                            'cxt' => $context   
+                                                          ),
                                                      ts( 'more' ),
                                                      true 
                                                      );
@@ -1308,13 +1349,17 @@ GROUP BY cc.id';
             }
         }
         $session = CRM_Core_Session::singleton( );
+        // CRM-8926 If user is not logged in, use the activity creator as userID
+        if ( !( $userID = $session->get( 'userID' ) ) ) {
+            $userID = CRM_Core_DAO::getFieldValue('CRM_Activity_DAO_Activity', $activityId, 'source_contact_id');
+        }
         
         //also create activities simultaneously of this copy.
         require_once "CRM/Activity/BAO/Activity.php";
         $activityParams = array( );
         
         $activityParams['source_record_id']   = $activityId; 
-        $activityParams['source_contact_id']  = $session->get( 'userID' ); 
+        $activityParams['source_contact_id']  = $userID; 
         $activityParams['activity_type_id']   = CRM_Core_OptionGroup::getValue( 'activity_type', 'Email', 'name' );
         $activityParams['activity_date_time'] = date('YmdHis');
         $activityParams['status_id']          = CRM_Core_OptionGroup::getValue( 'activity_status', 'Completed', 'name' );
@@ -1327,10 +1372,10 @@ GROUP BY cc.id';
         // if it’s a case activity, add hashed id to the template (CRM-5916)
         if ($caseId) {
             $tplParams['idHash']  = substr(sha1(CIVICRM_SITE_KEY . $caseId), 0, 7);
-        }
-
+        } 
+        
         $result = array();
-        list ($name, $address) = CRM_Contact_BAO_Contact_Location::getEmailDetails( $session->get( 'userID' ) );
+        list ($name, $address) = CRM_Contact_BAO_Contact_Location::getEmailDetails( $userID );
         
         $receiptFrom = "$name <$address>";   
         
@@ -1885,6 +1930,7 @@ WHERE civicrm_case.id = %2";
     SELECT  c.id as contact_id, 
             c.sort_name,
             ca.id, 
+            ca.subject as case_subject,
             ov.label as case_type,
             ca.start_date as start_date
       FROM  civicrm_case ca INNER JOIN civicrm_case_contact cc ON ca.id=cc.case_id
@@ -1902,10 +1948,11 @@ INNER JOIN  civicrm_option_value ov ON (ca.case_type_id=ov.value AND ov.option_g
                  !array_key_exists( $dao->id, $filterCases ) ) {
                 continue;
             }
-            $unclosedCases[$dao->id] = array( 'sort_name'  => $dao->sort_name,
-                                              'case_type'  => $dao->case_type,
-                                              'contact_id' => $dao->contact_id,
-                                              'start_date' => $dao->start_date
+            $unclosedCases[$dao->id] = array( 'sort_name'    => $dao->sort_name,
+                                              'case_type'    => $dao->case_type,
+                                              'contact_id'   => $dao->contact_id,
+                                              'start_date'   => $dao->start_date,
+                                              'case_subject' => $dao->case_subject
                                               );
         }
         $dao->free( );
@@ -2449,19 +2496,18 @@ WHERE id IN ('. implode( ',', $copiedActivityIds ) . ')';
                                                               "reset=1&cid={$activityParams['source_contact_id']}&caseid={$activityParams['case_id']}&action=update&id={$activityParams['source_record_id']}", true );
             
             $tplParams['viewActURL'] = CRM_Utils_System::url( 'civicrm/case/activity/view', 
-                                                              "reset=1&aid={$activityParams['source_record_id']}&cid={$activityParams['source_contact_id']}&caseID={$activityParams['case_id']}", true );
+                                                              "reset=1&aid={$activityParams['source_record_id']}&cid={$tplParams['contact']['contact_id']}&caseID={$activityParams['case_id']}", true );
 
             $tplParams['manageCaseURL'] = CRM_Utils_System::url( 'civicrm/contact/view/case', 
-                                                              "reset=1&id={$activityParams['case_id']}&cid={$tplParams['client_id']}&action=view&context=home", true );
+                                                              "reset=1&id={$activityParams['case_id']}&cid={$tplParams['contact']['contact_id']}&action=view&context=home", true );
         } else {   
             $tplParams['editActURL'] = CRM_Utils_System::url( 'civicrm/contact/view/activity', 
-                                                              "atype=$activityTypeId&action=update&reset=1&id={$activityParams['source_record_id']}&cid={$activityParams['source_contact_id']}&context=activity", true );
+                                                              "atype=$activityTypeId&action=update&reset=1&id={$activityParams['source_record_id']}&cid={$tplParams['contact']['contact_id']}&context=activity", true );
             
             $tplParams['viewActURL'] = CRM_Utils_System::url( 'civicrm/contact/view/activity', 
-                                                              "atype=$activityTypeId&action=view&reset=1&id={$activityParams['source_record_id']}&cid={$activityParams['source_contact_id']}&context=activity", true );
+                                                              "atype=$activityTypeId&action=view&reset=1&id={$activityParams['source_record_id']}&cid={$tplParams['contact']['contact_id']}&context=activity", true );
         }
     }
-
     /**
      * Validate contact permission for 
      * given operation on activity record.

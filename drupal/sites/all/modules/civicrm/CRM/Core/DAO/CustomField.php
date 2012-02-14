@@ -201,15 +201,15 @@ class CRM_Core_DAO_CustomField extends CRM_Core_DAO
      */
     public $text_length;
     /**
-     * Date may be up to start_date_years years prior to tcurrent date
+     * Date may be up to start_date_years years prior to the current date.
      *
-     * @var int unsigned
+     * @var int
      */
     public $start_date_years;
     /**
-     * Date may be up to end_date_years years after to tcurrent date
+     * Date may be up to end_date_years years after the current date.
      *
-     * @var int unsigned
+     * @var int
      */
     public $end_date_years;
     /**

@@ -328,6 +328,7 @@ class CRM_Core_BAO_MessageTemplates extends CRM_Core_DAO_MessageTemplates
         $diverted->msg_subject = $orig->msg_subject;
         $diverted->msg_text    = $orig->msg_text;
         $diverted->msg_html    = $orig->msg_html;
+        $diverted->pdf_format_id = is_null( $orig->pdf_format_id ) ? 'null' : $orig->pdf_format_id;
         $diverted->save();
     }
 
@@ -364,13 +365,13 @@ class CRM_Core_BAO_MessageTemplates extends CRM_Core_DAO_MessageTemplates
 
         if ($params['messageTemplateID']) {
             // fetch the three elements from the db based on id
-            $query = 'SELECT msg_subject subject, msg_text text, msg_html html
+            $query = 'SELECT msg_subject subject, msg_text text, msg_html html, pdf_format_id format
                       FROM civicrm_msg_template mt
                       WHERE mt.id = %1 AND mt.is_default = 1';
             $sqlParams = array(1 => array($params['messageTemplateID'], 'String'));
         } else {
             // fetch the three elements from the db based on option_group and option_value names
-            $query = 'SELECT msg_subject subject, msg_text text, msg_html html
+            $query = 'SELECT msg_subject subject, msg_text text, msg_html html, pdf_format_id format
                       FROM civicrm_msg_template mt
                       JOIN civicrm_option_value ov ON workflow_id = ov.id
                       JOIN civicrm_option_group og ON ov.option_group_id = og.id
@@ -391,6 +392,7 @@ class CRM_Core_BAO_MessageTemplates extends CRM_Core_DAO_MessageTemplates
         $subject = $dao->subject;
         $text    = $dao->text;
         $html    = $dao->html;
+        $format  = $dao->format;
         $dao->free( );
 
         // add the test banner (if requested)
@@ -492,11 +494,13 @@ class CRM_Core_BAO_MessageTemplates extends CRM_Core_DAO_MessageTemplates
                 $params['html'] = null;
             }
 
+            $config = CRM_Core_Config::singleton();
             $pdf_filename = '';
-            if ( $params['PDFFilename'] && $params['html'] ) {
+            if ( $config->doNotAttachPDFReceipt && 
+                 $params['PDFFilename'] && 
+                 $params['html'] ) {
                 require_once 'CRM/Utils/PDF/Utils.php';
                 require_once 'CRM/Utils/File.php';
-                $config = CRM_Core_Config::singleton();
                 $pdf_filename = $config->templateCompileDir . CRM_Utils_File::makeFileName( $params['PDFFilename'] );
                 
                 //FIXME : CRM-7894
@@ -507,9 +511,8 @@ class CRM_Core_BAO_MessageTemplates extends CRM_Core_DAO_MessageTemplates
                 
                 file_put_contents( $pdf_filename, CRM_Utils_PDF_Utils::html2pdf( $html,
                                                                                  $params['PDFFilename'],
-                                                                                 null,
-                                                                                 null,
-                                                                                 true
+                                                                                 true,
+                                                                                 $format
                                                                                )
                                  );
                                  

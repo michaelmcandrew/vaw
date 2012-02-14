@@ -12,7 +12,7 @@
  | under the terms of the GNU Affero General Public License           |
  | Version 3, 19 November 2007 and the CiviCRM Licensing Exception.   |
  |                                                                    |
- | CiviCRM is distributed in the hope that it will be useful, but     |
+ | CiviCRM is distributed in the hope that it will be usefusul, but     |
  | WITHOUT ANY WARRANTY; without even the implied warranty of         |
  | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.               |
  | See the GNU Affero General Public License for more details.        |
@@ -224,10 +224,17 @@ class CRM_Contribute_Form_Contribution extends CRM_Core_Form
         if ( $this->_mode ) {
             $validProcessors = array( );
             $processors = CRM_Core_PseudoConstant::paymentProcessor( false, false, "billing_mode IN ( 1, 3 )" );
+
             foreach ( $processors as $ppID => $label ) {
                 require_once 'CRM/Core/BAO/PaymentProcessor.php';
                 require_once 'CRM/Core/Payment.php';
                 $paymentProcessor = CRM_Core_BAO_PaymentProcessor::getPayment( $ppID, $this->_mode );
+                // at this stage only Authorize.net has been tested to support future start dates so if it's enabled let the template know 
+                // to show receive date
+                $processorsSupportingFutureStartDate = array('AuthNet');  
+                if(in_array($paymentProcessor['payment_processor_type'], $processorsSupportingFutureStartDate) ) {
+                  $this->assign( 'processorSupportsFutureStartDate', true );
+                }
                 if ( $paymentProcessor['payment_processor_type'] == 'PayPal' && !$paymentProcessor['user_name'] ) {
                     continue;
                 } else if ( $paymentProcessor['payment_processor_type'] == 'Dummy' && $this->_mode == 'live' ) {
@@ -272,7 +279,10 @@ class CRM_Contribute_Form_Contribution extends CRM_Core_Form
         // also check for billing information
         // get the billing location type
         $locationTypes = CRM_Core_PseudoConstant::locationType( );
-        $this->_bltID = array_search( ts('Billing'),  $locationTypes );
+
+        // CRM-8108 remove ts around Billing location type
+        //$this->_bltID = array_search( ts('Billing'),  $locationTypes );
+        $this->_bltID = array_search( 'Billing',  $locationTypes );
         if ( ! $this->_bltID ) {
             CRM_Core_Error::fatal( ts( 'Please set a location type of %1', array( 1 => 'Billing' ) ) );
         }
@@ -1117,7 +1127,7 @@ WHERE  contribution_id = {$this->_id}
         //Credit Card Contribution.
         if ( $this->_mode ) {
             $unsetParams = array( 'trxn_id', 'payment_instrument_id', 'contribution_status_id',
-                                  'receive_date', 'cancel_date', 'cancel_reason' );
+                                  'cancel_date', 'cancel_reason' );
             foreach ( $unsetParams as $key ) {
                 if ( isset( $submittedValues[$key] ) ) {
                     unset( $submittedValues[$key] );
@@ -1203,7 +1213,10 @@ WHERE  contribution_id = {$this->_id}
                                                                        $this->_params,
                                                                        $config->defaultCurrency );
             $this->_params['payment_action'] = 'Sale';
-                       
+            if ( CRM_Utils_Array::value( 'receive_date', $this->_params ) ) {
+                $this->_params['receive_date'] = CRM_Utils_Date::processDate( $this->_params['receive_date'], $this->_params['receive_date_time'] );
+            }
+                                   
             if ( CRM_Utils_Array::value('soft_credit_to', $params) ) {
                 $this->_params['soft_credit_to'] = $params['soft_credit_to'];
                 $this->_params['pcp_made_through_id'] = $params['pcp_made_through_id'];
@@ -1245,7 +1258,9 @@ WHERE  contribution_id = {$this->_id}
             if ( CRM_Utils_Array::value( 'is_email_receipt', $this->_params ) ) {
                 $paymentParams['email'] = $this->userEmail;
             }
-
+            if ( CRM_Utils_Array::value( 'receive_date', $this->_params ) ) {
+                $paymentParams['receive_date'] = $this->_params['receive_date'];
+           }
             // force a reget of the payment processor in case the form changed it, CRM-7179
             $payment =& CRM_Core_Payment::singleton( $this->_mode, $this->_paymentProcessor, $this, true );
             
@@ -1306,8 +1321,7 @@ WHERE  contribution_id = {$this->_id}
             
             $this->set( 'params', $this->_params );
             $this->assign( 'trxn_id', $result['trxn_id'] );
-            $this->assign( 'receive_date', CRM_Utils_Date::processDate( $this->_params['receive_date'],
-                                                                        $this->_params['receive_date_time']) );
+            $this->assign( 'receive_date', $this->_params['receive_date'] );
             
             // result has all the stuff we need
             // lets archive it to a financial transaction

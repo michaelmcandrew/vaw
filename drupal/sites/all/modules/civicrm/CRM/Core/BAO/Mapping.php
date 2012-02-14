@@ -136,7 +136,7 @@ class CRM_Core_BAO_Mapping extends CRM_Core_DAO_Mapping
     static function getMappings( $mappingTypeId )
     {
         $mapping = array( );
-        $mappingDAO =&  new CRM_Core_DAO_Mapping();
+        $mappingDAO = new CRM_Core_DAO_Mapping();
         $mappingDAO->mapping_type_id = $mappingTypeId;
         $mappingDAO->find();
         
@@ -727,7 +727,7 @@ class CRM_Core_BAO_Mapping extends CRM_Core_DAO_Mapping
                                 $noneArray[] = array( $x, $i, 2 );                               
                             } else {
                                 $phoneType = isset($mappingPhoneType[$x][$i]) ? $mappingPhoneType[$x][$i] : null;
-                                
+                                $imProvider = isset($mappingImProvider[$x][$i]) ? $mappingImProvider[$x][$i] : null; 
                                 if ( !$locationId && in_array($mappingName[$x][$i], $specialFields) ) {
                                     $locationId = " ";
                                 }

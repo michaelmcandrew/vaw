@@ -1,9 +1,7 @@
 <?php
-require_once 'api/v3/utils.php';
-
+require_once 'CRM/Core/BAO/OptionValue.php';
 function civicrm_api3_option_value_get( $params ) {
-    _civicrm_api3_initialize(true);
-    try{
+
      civicrm_api3_verify_mandatory($params);
      if (empty($params['option_group_id']) && !empty($params['option_group_name'])){
        $opt = array('version' =>3, 'name' => $params['option_group_name']);
@@ -14,17 +12,8 @@ function civicrm_api3_option_value_get( $params ) {
        $params['option_group_id'] = $optionGroup['id'];
       }    
       
-      require_once 'CRM/Core/BAO/OptionValue.php';
-      $bao = new CRM_Core_BAO_OptionValue( );
-
-      _civicrm_api3_dao_set_filter ( $bao, $params );
-
-      return civicrm_api3_create_success(_civicrm_api3_dao_to_array ($bao,$params));
-    } catch (PEAR_Exception $e) {
-      return civicrm_api3_create_error( $e->getMessage() );
-    } catch (Exception $e) {
-      return civicrm_api3_create_error( $e->getMessage() );
-    }
+      return _civicrm_api3_basic_get(_civicrm_api3_get_BAO(__FUNCTION__), $params);
+      
 }
 
 /**
@@ -38,8 +27,7 @@ function civicrm_api3_option_value_get( $params ) {
  */
 function civicrm_api3_option_value_create( $params ) 
 {
-  _civicrm_api3_initialize( true );
-  try {
+
     civicrm_api3_verify_mandatory ($params);//need to check it's an array before the next part so it meets standards. better solution later
     $weight=0;
     if ( !array_key_exists ('is_active', $params)) {
@@ -64,15 +52,16 @@ function civicrm_api3_option_value_create( $params )
     }
     civicrm_api3_verify_mandatory ($params,'CRM_Core_BAO_OptionValue');
     
-    require_once 'CRM/Core/BAO/OptionValue.php';
-    $option_valueBAO = CRM_Core_BAO_OptionValue::add($params);
+
+    if (CRM_Utils_Array::value('id', $params)){
+      $ids             = array( 'optionValue' => $params['id'] );
+    }
+    $optionValueBAO = CRM_Core_BAO_OptionValue::add( $params, $ids );
 
     $values = array( );
-    _civicrm_api3_object_to_array($option_valueBAO, $values[$option_valueBAO->id]);
+    _civicrm_api3_object_to_array($optionValueBAO, $values[$optionValueBAO->id]);
     return civicrm_api3_create_success($values,$params);
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+
 }
 
 
@@ -87,17 +76,13 @@ function civicrm_api3_option_value_create( $params )
  */
 function civicrm_api3_option_value_delete( $params ) 
 {
-  _civicrm_api3_initialize( true );
-  try {
+
     civicrm_api3_verify_mandatory ($params,null,array ('id'));
     $id = (int) $params["id"];
 
     require_once 'CRM/Core/BAO/OptionValue.php';
     return CRM_Core_BAO_OptionValue::del( $id ) ? civicrm_api3_create_success( ) : civicrm_api3_create_error(  'Could not delete OptionValue '. $id  );
-  } catch (Exception $e) {
-    if (CRM_Core_Error::$modeException) throw $e;
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+
 }
 
 ?>

@@ -100,13 +100,13 @@ class CRM_Utils_Hook {
      *
      * @access public
      */
-    static function links( $op, $objectName, &$objectId, &$links ) {
+    static function links( $op, $objectName, &$objectId, &$links, &$mask=null ) {
         $config = CRM_Core_Config::singleton( );  
         require_once( str_replace( '_', DIRECTORY_SEPARATOR, $config->userHookClass ) . '.php' );
         return   
             eval( 'return ' .
                   $config->userHookClass .
-                  '::invoke( 4, $op, $objectName, $objectId, $links, $op, \'civicrm_links\' );' );  
+                  '::invoke( 5, $op, $objectName, $objectId, $links, $mask, \'civicrm_links\' );' );  
     }
 
     /** 
@@ -415,6 +415,26 @@ class CRM_Utils_Hook {
                   '::invoke( 2, $objectName, $object, $null, $null, $null, \'civicrm_copy\' );' );
     }
 
+    /**
+     * This hook is called when a contact unsubscribes from a mailing.  It allows modules
+     * to override what the contacts are removed from.
+     *
+     * @param int $mailing_id - the id of the mailing to unsub from
+     * @param int $contact_id - the id of the contact who is unsubscribing
+     * @param array / int $groups - array of groups the contact will be removed from
+     **/
+
+    static function unsubscribeGroups($op, $mailingId, $contactId, &$groups, &$baseGroups) {
+        $config = CRM_Core_Config::singleton( );
+        require_once( str_replace( '_', DIRECTORY_SEPARATOR, $config->userHookClass ) . '.php' );
+        $null =& CRM_Core_DAO::$_nullObject;
+
+        return
+            eval( 'return ' .
+                  $config->userHookClass .
+                  '::invoke(5,$op, $mailingId, $contactId, $groups, $baseGroups, \'civicrm_unsubscribeGroups\');');
+    }
+
     static function invoke( $numParams,
                             &$arg1, &$arg2, &$arg3, &$arg4, &$arg5,
                             $fnSuffix, $fnPrefix ) {
@@ -571,7 +591,7 @@ class CRM_Utils_Hook {
                   '::invoke( 3, $paymentObj, $rawParams, $cookedParams, $null, $null, \'civicrm_alterPaymentProcessorParams\' );' );
     }
 
-    static function alterMailParams( &$params ) {
+    static function alterMailParams( &$params, $context = null ) {
         $config = CRM_Core_Config::singleton( );
         require_once( str_replace( '_', DIRECTORY_SEPARATOR, $config->userHookClass ) . '.php' );
         $null =& CRM_Core_DAO::$_nullObject;
@@ -579,7 +599,7 @@ class CRM_Utils_Hook {
         return   
             eval( 'return ' .
                   $config->userHookClass .
-                  '::invoke( 1, $params, $null, $null, $null, $null, \'civicrm_alterMailParams\' );' );
+                  '::invoke( 2, $params, $context, $null, $null, $null, \'civicrm_alterMailParams\' );' );
     }
 
    /** 
@@ -801,4 +821,30 @@ class CRM_Utils_Hook {
         $null =& CRM_Core_DAO::$_nullObject;
         return eval("return {$config->userHookClass}::invoke(4, \$entity, \$action, \$params, \$permissions, \$null, 'civicrm_alterAPIPermissions');");
     }
+
+    /**
+     * This hook is called from CRM_Core_Selector_Controller through which all searches in civicrm go.
+     * This enables us hook implementors to modify both the headers and the rows
+     *
+     * The BIGGEST drawback with this hook is that you may need to modify the result template to include your
+     * fields. The result files are CRM/{Contact,Contribute,Member,Event...}/Form/Selector.tpl
+     *
+     * However, if you use the same number of columns, you can overwrite the existing columns with the values that
+     * you want displayed. This is a hackish, but avoids template modification.
+     *
+     * @param string $objectName the component name that we are doing the search
+     *                           activity, campaign, case, contact, contribution, event, grant, membership, and pledge
+     * @param array  &$headers   the list of column headers, an associative array with keys: ( name, sort, order )
+     * @param array  &$rows      the list of values, an associate array with fields that are displayed for that component
+     * @param array  &$seletor   the selector object. Allows you access to the context of the search
+     *
+     * @return void  modify the header and values object to pass the data u need
+     */
+    static function searchColumns( $objectName, &$headers, &$rows, &$selector ) {
+        $config = CRM_Core_Config::singleton();
+        require_once(str_replace('_', DIRECTORY_SEPARATOR, $config->userHookClass) . '.php');
+        $null =& CRM_Core_DAO::$_nullObject;
+        return eval("return {$config->userHookClass}::invoke(4, \$objectName, \$headers, \$rows, \$selector, \$null, 'civicrm_searchColumns');");
+    }
+
 }

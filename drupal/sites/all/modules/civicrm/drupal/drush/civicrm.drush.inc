@@ -373,6 +373,9 @@ function civicrm_drush_help($section) {
  *
  */
 function civicrm_upgrade_db() {
+    if ( !defined('CIVICRM_UPGRADE_ACTIVE') ) { 
+        define('CIVICRM_UPGRADE_ACTIVE', 1); 
+    }
     _civicrm_init();
 
     $_POST['upgrade'] = 1;
@@ -401,7 +404,7 @@ function civicrm_upgrade_db() {
     }
 
     require_once( 'CRM/Upgrade/Page/Upgrade.php' );
-    $upgrade =& new CRM_Upgrade_Page_Upgrade( );
+    $upgrade = new CRM_Upgrade_Page_Upgrade( );
     ob_start(); // to suppress html output /w source code.
     $upgrade->run( );
     $result = $template->get_template_vars('message'); // capture the required message.
@@ -473,7 +476,10 @@ function civicrm_upgrade() {
         drush_die(dt('Tarfile not specified.'));
     }
     //FIXME: throw error if tarfile is not in a valid format.
-
+   
+    if ( !defined('CIVICRM_UPGRADE_ACTIVE') ) { 
+        define('CIVICRM_UPGRADE_ACTIVE', 1); 
+    }
     _civicrm_init();
 
     global $civicrm_root;
@@ -679,7 +685,7 @@ function civicrm_rest() {
     }
 
     require_once 'CRM/Utils/REST.php';
-    $rest =& new CRM_Utils_REST();
+    $rest = new CRM_Utils_REST();
 
     require_once 'CRM/Core/Config.php';
     $config =& CRM_Core_Config::singleton();
@@ -742,12 +748,24 @@ function _civicrm_dsn_init( $reset = false ) {
 
     _civicrm_init();
 
-    if ( !$globalDbUrl && CIVICRM_DSN ) {
-        if ( array_key_exists('db_url', $GLOBALS) ) {
-            $globalDbUrl = $GLOBALS['db_url']; // keep a copy so that we can put it back.
+    // check if we're using the old-style $GLOBALS['db_url']
+    // or the new style ( > drupal 7 )
+    if (drush_drupal_major_version() >= 7) {
+      $database = drush_get_option('database', 'default');
+      $target = drush_get_option('target', 'default');
+      if ( !$globalDbUrl && CIVICRM_DSN ) {
+        if ( isset($GLOBALS['databases'][$database][$target]) ) {
+            $globalDbUrl = $GLOBALS['database'][$database][$target]; // keep a copy so that we can put it back.
         }
-        // now modify $GLOBALS['db_url'] so that drush works on CIVICRM_DSN instead of drupal's
-        $GLOBALS['db_url'] = CIVICRM_DSN;
+        // now modify $GLOBALS so that drush works on CIVICRM_DSN instead of drupal's
+        $GLOBALS['databases'][$database][$target] = drush_convert_db_from_db_url(CIVICRM_DSN);
+      }
+    } else {
+      if ( !$globalDbUrl && CIVICRM_DSN ) {
+            $globalDbUrl = $GLOBALS['db_url']; // keep a copy so that we can put it back.
+      }
+      // now modify $GLOBALS so that drush works on CIVICRM_DSN instead of drupal's
+      $GLOBALS['db_url'] = CIVICRM_DSN;
     }
     $dbUrl = $globalDbUrl;
     $globalDbUrl = $reset ? null : $globalDbUrl;
@@ -758,7 +776,13 @@ function _civicrm_dsn_init( $reset = false ) {
 function _civicrm_dsn_close( ) {
     $globalDbUrl = _civicrm_dsn_init( true );
     if ( $globalDbUrl ) {
-        $GLOBALS['db_url'] = $globalDbUrl;
+        if (drush_drupal_major_version() >= 7) {
+            $database = drush_get_option('database', 'default');
+            $target = drush_get_option('target', 'default');
+            $GLOBALS['databases'][$database][$target] = $globalDbUrl;
+        } else {
+            $GLOBALS['db_url'] = $globalDbUrl;
+        }
     }
 }
 

@@ -35,6 +35,7 @@
  */
 
 require_once 'utils.inc';
+require_once 'civicrm_rules_entities.rules.inc';
 
 /**
  * Implementation of hook_rules_event_info().
@@ -82,7 +83,7 @@ function civicrm_rules_event_info( ) {
                                              'module'    => 'CiviCRM Mailing',
                                              'arguments' => rules_events_hook_civicrm_arguments( t( 'Mailing content uploaded' ),
                                                                                                  'mailing' ),
-                                              ),
+                                             ),
                  'mailing_scheduled' => array(
                                               'label'     => t( 'Mailing has been scheduled' ),
                                               'module'    => 'CiviCRM Mailing',
@@ -90,17 +91,17 @@ function civicrm_rules_event_info( ) {
                                                                                                   'mailing' ),
                                               ),
                  'mailing_approved' => array(
-                                              'label'     => t( 'Mailing has been approved/rejected' ),
-                                              'module'    => 'CiviCRM Mailing',
-                                              'arguments' => rules_events_hook_civicrm_arguments( t( 'Approved mailing' ),
-                                                                                                  'mailing' ),
-                                              ),
+                                             'label'     => t( 'Mailing has been approved/rejected' ),
+                                             'module'    => 'CiviCRM Mailing',
+                                             'arguments' => rules_events_hook_civicrm_arguments( t( 'Approved mailing' ),
+                                                                                                 'mailing' ),
+                                             ),
                  'mailing_inform'     => array(
                                                'label'     => t( 'Inform scheduler about the mailing' ),
                                                'module'    => 'CiviCRM Mailing',
                                                'arguments' => rules_events_hook_civicrm_arguments( t( 'Inform Mailing' ),
                                                                                                    'mailing' ),
-                                             ),
+                                               ),
                  'mailing_queued' => array(
                                            'label'     => t( 'Mailing has been queued' ),
                                            'module'    => 'CiviCRM Mailing',
@@ -113,7 +114,66 @@ function civicrm_rules_event_info( ) {
                                              'arguments' => rules_events_hook_civicrm_arguments( t( 'Completed mailing' ),
                                                                                                  'mailing' ),
                                              )
-                 );
+                 )+ civicrm_rules_entities_event_info();
+               
+}
+
+
+function civicrm_rules_condition_info() {
+   return  array(
+                 'rules_condition_civicrm_mailing_approved' => 
+                 array(
+                       'label' => t('Approval Status: Approved'),
+                       'arguments' => array(
+                                            'approvalstatus' => array(
+                                                                      'type' => 'mailing',
+                                                                      'label' => t('Approved'), ), ),
+                       'module' => 'CiviCRM Mailing',
+                       ),
+                 'rules_condition_civicrm_mailing_rejected' => 
+                 array(
+                       'label' => t('Approval Status: Rejected'),
+                       'arguments' => array(
+                                            'approvalstatus' => array(
+                                                                      'type' => 'mailing',
+                                                                      'label' => t('Rejected'), ), ),
+                       'module' => 'CiviCRM Mailing',
+                       ),
+                 ) + civicrm_rules_entities_condition_info();
+}
+
+function rules_condition_civicrm_mailing_approved(&$mailing, $settings) {
+    return $mailing->approval_status_id == 1;
+}
+
+function rules_condition_civicrm_mailing_rejected(&$mailing, $settings) {
+    return $mailing->approval_status_id != 1;
+}
+
+/*
+ * Implementation of hook_token_list().
+ */
+function civicrm_rules_token_list($type = 'all') {
+    $tokens['civicrm_event']['creator_drupal_id'] = t('The user ID of the creator');
+    $tokens['civicrm_event']['creator_drupal_id'] = t('The user ID of the creator');
+    return $tokens;
+}
+
+/**
+ * Implementation of hook_token_values().
+ */
+function civicrm_rules_token_values($type, $object = NULL) {
+    switch ($type) {
+    case 'civicrm_event':
+     
+        if (!empty($object)) {
+            $values['creator drupal id'] = 1;
+        }
+        break;
+    }
+    if (!empty($values) && is_array($values)){
+      return $values;
+    }
 }
 
 /**
@@ -136,7 +196,7 @@ function civicrm_rules_action_info() {
               'rules_action_civicrm_add_to_group' => 
               array(
                     'label' => t('Add Contact to CiviCRM Group'),
-		    'description' => t('Add Contact to CiviCRM Group.'),
+                    'description' => t('Add Contact to CiviCRM Group.'),
                     'arguments' => array(
                                          'contact' => array('type' => 'contact',
                                                             'label' => t('Contact who should be added to the group')),
@@ -180,6 +240,8 @@ function civicrm_rules_action_info() {
               );
 }
 
+
+
 function rules_action_civicrm_mailing_send_email( $mailing, $settings ) {
     if( $mailing->id ) {
         require_once 'CRM/Utils/Token.php';
@@ -187,10 +249,33 @@ function rules_action_civicrm_mailing_send_email( $mailing, $settings ) {
                                     'mailing.scheduleUrl', 
                                     'mailing.html', 
                                     'mailing.creatorEmail', 
-                                    'mailing.creator' );
+                                    'mailing.creator' );                
         $settings['toEmail'] = CRM_Utils_Token::replaceMailingTokens( $settings['to'],      $mailing, null, $tokens );
         $settings['html']    = CRM_Utils_Token::replaceMailingTokens( $settings['message'], $mailing, null, $tokens );
         $settings['subject'] = CRM_Utils_Token::replaceMailingTokens( $settings['subject'], $mailing, null, $tokens );
+		
+        // also allow some user permission tokens for the toEmail
+        $tokens['user'] = array( 'user.permission-schedule mailings',
+                                 'user.permission-create_mailings',
+                                 'user.permission-approve_mailings' );
+        $settings['toEmail'] = CRM_Utils_Token::replaceUserTokens( $settings['to'], $tokens );
+
+        // if email has got comma's in it, split it up
+        // and stuff the rest into the cc parameter
+        if ( strpos( $settings['toEmail'], ',' ) !== false ) {
+            $emails = explode( ',', $settings['toEmail'] );
+
+            $firstEmail = array_shift( $emails );
+            $settings['toEmail'] = trim( $firstEmail );
+            $settings['cc'] = implode( ',', $emails );
+        }
+            
+		// get the default from email address if not set
+		if ( empty($settings['from']) ) {
+    		require_once 'CRM/Core/OptionGroup.php';
+    		$defaultAddress = CRM_Core_OptionGroup::values( 'from_email_address', null, null, null, ' AND is_default = 1' );
+    		$settings['from'] = $defaultAddress[1];
+		}
 
         CRM_Utils_Mail::send( $settings );
         return array('mailing' => $mailing );
@@ -199,16 +284,20 @@ function rules_action_civicrm_mailing_send_email( $mailing, $settings ) {
 
 function rules_action_civicrm_mailing_send_email_form( $settings = array(), &$form ) {
     civicrm_initialize();
-    //get the default from email address.
-    require_once 'CRM/Core/OptionGroup.php';
-    $defaultAddress = CRM_Core_OptionGroup::values( 'from_email_address', null, null, null, ' AND is_default = 1' );
-    $settings['from'] = $defaultAddress[1];
 
-    if ( !CRM_Utils_Array::value('subject', $settings ) )
-    $settings['subject'] = 'New Email: {mailing.subject}';
+    // get the default from email address if not set
+	if ( empty($settings['from']) ) {
+    	require_once 'CRM/Core/OptionGroup.php';
+    	$defaultAddress = CRM_Core_OptionGroup::values( 'from_email_address', null, null, null, ' AND is_default = 1' );
+    	$settings['from'] = $defaultAddress[1];
+	}
+
+    if ( ! CRM_Utils_Array::value('subject', $settings ) ) {
+        $settings['subject'] = 'New Email: {mailing.subject}';
+    }
     
     if ( !CRM_Utils_Array::value('message', $settings ) ) {
-    $settings['message'] = '
+        $settings['message'] = '
 A new mailing has been scheduled: {mailing.name}
 
 {mailing.viewUrl}
@@ -357,7 +446,9 @@ function civicrm_rules_data_type_info() {
                                     'savable' => FALSE,
                                     'identifiable' => TRUE,
                                     ),
-                 );
+                 )+ civicrm_rules_entities_data_type_info();
+                 
+
 }
 
 /**
@@ -382,5 +473,25 @@ class rules_data_type_mailing extends rules_data_type {
     function get_identifier() {
         $mailing = $this->get();
         return $mailing->id;
+    }
+}
+
+class rules_data_type_civicrm_event extends rules_data_type {
+    function load($id) {
+
+    }
+    
+    function get_identifier() {
+
+    }
+}
+
+class rules_data_type_civicrm_participant extends rules_data_type {
+    function load($id) {
+
+    }
+    
+    function get_identifier() {
+
     }
 }

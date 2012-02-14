@@ -32,7 +32,7 @@
  * @subpackage API_Relationship
  * 
  * @copyright CiviCRM LLC (c) 2004-2011
- * @version $Id: Relationship.php 32998 2011-03-14 22:00:35Z kurund $
+ * @version $Id: Relationship.php 34327 2011-05-17 14:37:50Z ashwini $
  *
  */
 
@@ -311,7 +311,7 @@ function _civicrm_relationship_format_params( &$params, &$values ) {
     $fields =& CRM_Contact_DAO_Relationship::fields( );
     _civicrm_store_values( $fields, $params, $values );
 
-    $relationTypes = CRM_Core_PseudoConstant::relationshipType( 'name' );
+    $relationTypes = CRM_Core_PseudoConstant::relationshipType( 'name', true );
     
     foreach ($params as $key => $value) {
         // ignore empty values or empty arrays etc

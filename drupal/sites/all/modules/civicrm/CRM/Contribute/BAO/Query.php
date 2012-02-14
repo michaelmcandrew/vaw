@@ -79,7 +79,6 @@ class CRM_Contribute_BAO_Query
             $query->_select['contribution_id'] = "civicrm_contribution.id as contribution_id";
             $query->_element['contribution_id'] = 1;
             $query->_tables['civicrm_contribution'] = 1;
-            $query->_whereTables['civicrm_contribution'] = 1;
         }
 
         // get contribution_type
@@ -88,12 +87,10 @@ class CRM_Contribute_BAO_Query
             $query->_element['contribution_type'] = 1;
             $query->_tables['civicrm_contribution'] = 1;
             $query->_tables['civicrm_contribution_type'] = 1;
-            $query->_whereTables['civicrm_contribution'] = 1;
-            $query->_whereTables['civicrm_contribution_type'] = 1;
         }
         
         if ( CRM_Utils_Array::value( 'contribution_note', $query->_returnProperties ) ) {
-            $query->_select['contribution_note']  = "civicrm_note_contribution.note as contribution_note";
+            $query->_select['contribution_note']  = "civicrm_note.note as contribution_note";
             $query->_element['contribution_note'] = 1;
             $query->_tables['contribution_note']  = 1;
         }
@@ -104,8 +101,6 @@ class CRM_Contribute_BAO_Query
             $query->_element['contribution_status_id'] = 1;
             $query->_tables['civicrm_contribution'] = 1;
             $query->_tables['contribution_status'] = 1;
-            $query->_whereTables['civicrm_contribution'] = 1;
-            $query->_whereTables['contribution_status'] = 1;
         }
 
         // get contribution_status label
@@ -114,8 +109,6 @@ class CRM_Contribute_BAO_Query
             $query->_element['contribution_status'] = 1;
             $query->_tables['civicrm_contribution'] = 1;
             $query->_tables['contribution_status'] = 1;
-            $query->_whereTables['civicrm_contribution'] = 1;
-            $query->_whereTables['contribution_status'] = 1;
         }
         
         // get payment instruments
@@ -124,22 +117,18 @@ class CRM_Contribute_BAO_Query
             $query->_element['contribution_payment_instrument'] = 1;
             $query->_tables['civicrm_contribution'] = 1;
             $query->_tables['contribution_payment_instrument'] = 1;
-            $query->_whereTables['civicrm_contribution'] = 1;
-            $query->_whereTables['contribution_payment_instrument'] = 1;
         }
 
         if ( CRM_Utils_Array::value( 'check_number', $query->_returnProperties ) ) {
             $query->_select['contribution_check_number']  = "civicrm_contribution.check_number as contribution_check_number";
             $query->_element['contribution_check_number'] = 1;
             $query->_tables['civicrm_contribution'] = 1;
-            $query->_whereTables['civicrm_contribution'] = 1;
         }
         
         if ( CRM_Utils_Array::value( 'contribution_campaign_id', $query->_returnProperties ) ) {
             $query->_select['contribution_campaign_id']  = 'civicrm_contribution.campaign_id as contribution_campaign_id';
             $query->_element['contribution_campaign_id'] = 1;
             $query->_tables['civicrm_contribution'] = 1;
-            $query->_whereTables['civicrm_contribution'] = 1;
         }
     }
 
@@ -280,6 +269,7 @@ class CRM_Contribute_BAO_Query
             $query->_tables['civicrm_contribution'] = $query->_whereTables['civicrm_contribution'] = 1;
             return;
 
+        case 'contribution_status':
         case 'contribution_status_id':
             if ( is_array( $value ) ) {
                 foreach ($value as $k => $v) {
@@ -303,7 +293,8 @@ class CRM_Contribute_BAO_Query
             $statusValues = CRM_Core_OptionGroup::values("contribution_status");
             
             $names = array( );
-            if ( is_array( $val ) ) {
+            if ( isset( $val ) &&
+                 is_array( $val ) ) {
                 foreach ( $val as $id => $dontCare ) {
                     $names[] = $statusValues[ $id ];
                 }
@@ -517,8 +508,8 @@ class CRM_Contribute_BAO_Query
             break;
             
         case 'contribution_note':
-            $from .= " $side JOIN civicrm_note civicrm_note_contribution ON ( civicrm_note_contribution.entity_table = 'civicrm_contribution' AND
-                                                        civicrm_contribution.id = civicrm_note_contribution.entity_id )";
+            $from .= " $side JOIN civicrm_note ON ( civicrm_note.entity_table = 'civicrm_contribution' AND
+                                                    civicrm_contribution.id = civicrm_note.entity_id )";
             break;
 
         case 'contribution_membership':

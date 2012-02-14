@@ -94,7 +94,7 @@ class CRM_Core_Config_Defaults
         // enable profile add to group double Opt-In if Civimail enabled
         if ( in_array( 'CiviMail', $this->enableComponents ) ) {
             // set defined value for Profile add to group double Opt-In from civicrm settings file else true 
-            $this->profileAddToGroupDoubleOptIn = defined( 'CIVICRM_PROFILE_ADD_TO_GROUP_DOUBLE_OPTIN' ) ? (bool) CIVICRM_PROFILE_ADD_TO_GROUP_DOUBLE_OPTIN : true;
+            $this->profileAddToGroupDoubleOptIn = defined( 'CIVICRM_PROFILE_ADD_TO_GROUP_DOUBLE_OPTIN' ) ? (bool) CIVICRM_PROFILE_ADD_TO_GROUP_DOUBLE_OPTIN : false;
         }
 
        //email notifications to activity Assignees
@@ -153,7 +153,9 @@ class CRM_Core_Config_Defaults
         if ( $config->templateCompileDir ) {
             $path = CRM_Utils_File::baseFilePath( $config->templateCompileDir );
         }
-
+        if(!isset($defaults['enableSSL'])){
+          $defaults['enableSSL'] = 0;
+        }
         //set defaults if not set in db
         if ( ! isset( $defaults['userFrameworkResourceURL'] ) ) {
             $testIMG = "i/tracker.gif";

@@ -197,7 +197,7 @@ class CRM_Core_BAO_Setting
             $urlVar = 'task';
         }
 
-        if ( CRM_Utils_Array::value( $urlVar, $_GET ) == 'civicrm/upgrade' ) {
+        if ( CRM_Utils_Array::value( $urlVar, $_GET ) == 'civicrm/upgrade' || defined('CIVICRM_UPGRADE_ACTIVE') ) {
             $domain->selectAdd( 'config_backend' );
         } else if ( CRM_Utils_Array::value( $urlVar, $_GET ) == 'admin/modules/list/confirm' ) {
             $domain->selectAdd( 'config_backend', 'locales' );
@@ -265,6 +265,10 @@ class CRM_Core_BAO_Setting
                 
                 if ( in_array($lcMessagesRequest, array_keys( $languageLimit ) ) ) {
                     $lcMessages = $lcMessagesRequest;
+                    
+                    //CRM-8559, cache navigation do not respect locale if it is changed, so reseting cache.
+                    require_once 'CRM/Core/BAO/Cache.php';
+                    CRM_Core_BAO_Cache::deleteGroup( 'navigation' );
                 } else {
                     $lcMessagesRequest = null;
                 }

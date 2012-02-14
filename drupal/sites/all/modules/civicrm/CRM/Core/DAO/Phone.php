@@ -123,6 +123,12 @@ class CRM_Core_DAO_Phone extends CRM_Core_DAO
      */
     public $phone;
     /**
+     * Optional extension for a phone number.
+     *
+     * @var string
+     */
+    public $phone_ext;
+    /**
      * Which type of phone does this number belongs.
      *
      * @var int unsigned
@@ -202,6 +208,17 @@ class CRM_Core_DAO_Phone extends CRM_Core_DAO
                     'headerPattern' => '/phone/i',
                     'dataPattern' => '/^[\d\(\)\-\.\s]+$/',
                     'export' => true,
+                ) ,
+                'phone_ext' => array(
+                    'name' => 'phone_ext',
+                    'type' => CRM_Utils_Type::T_STRING,
+                    'title' => ts('Phone Extension') ,
+                    'maxlength' => 16,
+                    'size' => CRM_Utils_Type::TWELVE,
+                    'export' => true,
+                    'where' => 'civicrm_phone.phone_ext',
+                    'headerPattern' => '/extension/i',
+                    'dataPattern' => '',
                 ) ,
                 'phone_type_id' => array(
                     'name' => 'phone_type_id',

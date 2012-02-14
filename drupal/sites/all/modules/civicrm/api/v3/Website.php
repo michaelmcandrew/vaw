@@ -50,10 +50,8 @@ require_once 'api/v3/utils.php';
  * @return array of newly created website property values.
  * @access public
  */
-function civicrm_api3_website_create( &$params ) 
+function civicrm_api3_website_create( $params ) 
 {
-  _civicrm_api3_initialize( true );
-  try {
     civicrm_api3_verify_one_mandatory ($params, null, array ('contact_id', 'id'));
     
     require_once 'CRM/Core/BAO/Website.php';
@@ -64,14 +62,10 @@ function civicrm_api3_website_create( &$params )
 		 return civicrm_api3_create_error( "Website is not created or updated ");
 	 } else {
 		 $values = array( );
-		 _civicrm_api3_object_to_array($websiteBAO, $values);
-		 return civicrm_api3_create_success($values, $params);
+		 _civicrm_api3_object_to_array($websiteBAO, $values[$websiteBAO->id]);
+		 return civicrm_api3_create_success($values, $params,'website','get');
 	 }
-  } catch (PEAR_Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+
 }
 /**
  * Deletes an existing Website
@@ -83,10 +77,9 @@ function civicrm_api3_website_create( &$params )
  * @return boolean | error  true if successfull, error otherwise
  * @access public
  */
-function civicrm_api3_website_delete( &$params ) 
+function civicrm_api3_website_delete( $params ) 
 {
-  _civicrm_api3_initialize( true );
-  try {
+
     civicrm_api3_verify_mandatory ($params,null,array ('id'));
     $websiteID = CRM_Utils_Array::value( 'id', $params );
 
@@ -96,16 +89,12 @@ function civicrm_api3_website_delete( &$params )
     if ( $websiteDAO->find( ) ) {
 		while ( $websiteDAO->fetch() ) {
 			$websiteDAO->delete();
-			return civicrm_api3_create_success();
+			return civicrm_api3_create_success(1,$params,'website','delete');
 		}
 	} else {
 		return civicrm_api3_create_error( 'Could not delete website with id '.$websiteID);
 	}
-    
-  } catch (Exception $e) {
-    if (CRM_Core_Error::$modeException) throw $e;
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+
 }
 
 /**
@@ -121,12 +110,10 @@ function civicrm_api3_website_delete( &$params )
  * @access public
  */
 
-function civicrm_api3_website_get( &$params ) 
+function civicrm_api3_website_get( $params ) 
 {   
-  _civicrm_api3_initialize(true );
-  try {
-    civicrm_api3_verify_one_mandatory($params, null, 
-		array('id', 'contact_id', 'website_type_id'));
+
+    civicrm_api3_verify_mandatory($params );
 	
     require_once 'CRM/Core/BAO/Website.php';
     $websiteBAO = new CRM_Core_BAO_Website();
@@ -146,13 +133,8 @@ function civicrm_api3_website_get( &$params )
         }
         return civicrm_api3_create_success($websites,$params,$websiteBAO);
     } else {
-        return civicrm_api3_create_success(array(),$params,$websiteBAO);
+        return civicrm_api3_create_success(array(),$params,'website','get',$websiteBAO);
     }
-				
-  } catch (PEAR_Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+
 }
 

@@ -41,7 +41,7 @@
  * Include utility functions
  */
 require_once 'api/v3/utils.php';
-
+require_once 'CRM/Member/DAO/MembershipPayment.php';
 /**
  * Add or update a link between contribution and membership
  *
@@ -51,15 +51,14 @@ require_once 'api/v3/utils.php';
  * @static void
  * @access public
  */
-function &civicrm_api3_membership_payment_create( $params ) {
-  _civicrm_api3_initialize(true);
-  try{
+function civicrm_api3_membership_payment_create( $params ) {
+
     civicrm_api3_verify_mandatory($params,'CRM_Member_DAO_MembershipPayment',array('contribution_id','membership_id'));
 
     require_once 'CRM/Core/Transaction.php';
     $transaction = new CRM_Core_Transaction( );
 
-    require_once 'CRM/Member/DAO/MembershipPayment.php';
+
     $mpDAO = new CRM_Member_DAO_MembershipPayment();
     $mpDAO->copyValues($params);
     $result = $mpDAO->save();
@@ -74,11 +73,7 @@ function &civicrm_api3_membership_payment_create( $params ) {
     _civicrm_api3_object_to_array($mpDAO, $mpArray[$mpDAO->id]);
 
     return civicrm_api3_create_success($mpArray,$params);
-  } catch (PEAR_Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+
 }
 
 /**
@@ -93,29 +88,7 @@ function &civicrm_api3_membership_payment_create( $params ) {
  * @access public
  */
 function &civicrm_api3_membership_payment_get( $params ) {
-  _civicrm_api3_initialize(true);
-  try{
+
     civicrm_api3_verify_mandatory($params);
-
-
-    require_once 'CRM/Member/DAO/MembershipPayment.php';
-    $mpDAO = new CRM_Member_DAO_MembershipPayment();
-    $mpDAO->copyValues($params);
-    $mpDAO->id = CRM_Utils_Array::value( 'membership_contribution_id', $params );
-    $mpDAO->find();
-
-    $values = array( );
-    while ( $mpDAO->fetch() ) {
-      _civicrm_api3_object_to_array($mpDAO, $mpArray);
-      $mpArray['membership_contribution_id'] = $mpDAO->id;
-      unset($mpArray['id']);
-      $values[$mpDAO->id] = $mpArray;
-    }
-
-    return civicrm_api3_create_success($values,$params);
-  } catch (PEAR_Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+    return _civicrm_api3_basic_get('CRM_Member_DAO_MembershipPayment', $params);
 }

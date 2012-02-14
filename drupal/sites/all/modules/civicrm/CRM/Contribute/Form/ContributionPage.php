@@ -248,9 +248,11 @@ class CRM_Contribute_Form_ContributionPage extends CRM_Core_Form
                 $defaults['goal_amount'] = CRM_Utils_Money::format($defaults['goal_amount'], null, '%a');
             }
             
-            // get price set id.
+            // get price set of type contributions
             require_once 'CRM/Price/BAO/Set.php';
-            $this->_priceSetID = CRM_Price_BAO_Set::getFor( 'civicrm_contribution_page', $this->_id );
+            //this is the value for stored in db if price set extends contribution
+            $usedFor = 2;
+            $this->_priceSetID = CRM_Price_BAO_Set::getFor( 'civicrm_contribution_page', $this->_id, $usedFor );
             if ( $this->_priceSetID ) $defaults['price_set_id'] = $this->_priceSetID;
             
             if ( CRM_Utils_Array::value( 'end_date', $defaults ) ) {
@@ -324,11 +326,8 @@ class CRM_Contribute_Form_ContributionPage extends CRM_Core_Form
                         
             CRM_Core_Session::setStatus( ts("'%1' information has been saved.", 
                                             array( 1 => ( $subPage == 'friend' ) ? 'Friend' : $className ) ) );
-            
-            // we need to call the hook manually here since we redirect and never 
-            // go back to CRM/Core/Form.php
-            // A better way might have been to setUserContext so the framework does the rediret
-            CRM_Utils_Hook::postProcess( get_class( $this ), $this );
+
+            $this->postProcessHook( );
             
             if ( $this->controller->getButtonName('submit') == "_qf_{$className}_next" ) {
                 CRM_Utils_System::redirect( CRM_Utils_System::url( "civicrm/admin/contribute/{$subPage}",

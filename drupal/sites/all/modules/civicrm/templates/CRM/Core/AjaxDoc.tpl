@@ -5,18 +5,19 @@
 #result {background:lightgrey;}
 #selector a {margin-right:10px;}
 .required {font-weight:bold;}
+.helpmsg {background:yellow;}
 {/literal}
 </style>
 <script>
 resourceBase = '{$config->resourceBase}';
-if (jQuery) {ldelim}  
+if (!jQuery) {ldelim}  
    var head= document.getElementsByTagName('head')[0];
    var script= document.createElement('script');
    script.type= 'text/javascript';
    script.src= resourceBase + 'js/packages/jquery/jquery.js';
    head.appendChild(script);
 {rdelim} 
-restURL = '{crmURL p="civicrm/ajax/rest" h=0}';
+restURL = '{crmURL p="civicrm/ajax/rest"}';
 if (restURL.indexOf('?') == -1 )
   restURL = restURL + '?';
 else 
@@ -24,7 +25,7 @@ else
 {literal}
 
 function toggleField (name,label,type) {
-  h = '<div><label>'+label+'</label><input name='+name+ ' id="'+name+ ' /></div>';
+  h = '<div><label>'+label+'</label><input name='+name+ ' id="'+name+ '" /></div>';
   if ( $('#extra #'+ name).length > 0) {
     $('#extra #'+ name).parent().remove();
   }
@@ -40,15 +41,18 @@ function buildForm (entity, action) {
     return;
   }
 
-  $().crmAPI (entity,'getFields',{version : 3}
+  cj().crmAPI (entity,'getFields',{version : 3}
              ,{ success:function (data){
                   h='<i>Available fields (click on it to add it to the query):</i>';
-                  $.each(data, function(key, value) { 
+                  $.each(data.values, function(key, value) { 
                     name =value.name;
                     if (name == 'id') 
                       name = entity+'_id';
                     if (value.title == undefined) {
-                      value.title = value.name;
+                      if (value.name == undefined) 
+                        value.title = value.label;
+                      else
+                        value.title = value.name;
                     }
                     if (value.required == true) {
                       required = " required";
@@ -103,13 +107,14 @@ function generateQuery () {
 
 function runQuery(query) {
     var vars = [], hash,smarty = '',php = " array (",json = "{", link ="";
+    window.location.hash = query;
     $('#result').html('<i>Loading...</i>');
     $.get(query,function(data) {
       $('#result').text(data);
     },'text');
     link="<a href='"+query+"' title='open in a new tab' target='_blank'>ajax query</a>&nbsp;";
-    var RESTquery = resourceBase +"/extern/rest.php?"+ query.substring(restURL.length,query.length) + "&user={youruser}&pwd={password}&key={yourkey}";
-    $("#link").html(link+"<a href='"+RESTquery+"' title='open in a new tab' target='_blank'>REST query</a>");
+    var RESTquery = resourceBase +"/extern/rest.php?"+ query.substring(restURL.length,query.length) + "&api_key={yoursitekey}&key={yourkey}";
+    $("#link").html(link+"|<a href='"+RESTquery+"' title='open in a new tab' target='_blank'>REST query</a>.");
 
     var hashes = query.slice(query.indexOf('?') + 1).split('&');
     for(var i = 0; i < hashes.length; i++) {
@@ -146,7 +151,13 @@ function runQuery(query) {
 }
 
 cj(function ($) {
-  window.location.hash="explorer"; //to be sure to display the result under the generated code in the viewport
+  query=window.location.hash;
+  t="#/civicrm/ajax/rest";
+  if (query.substring(0, t.length) === t) {
+    $('#query').val (query.substring(1)).focus();
+  } else {
+    window.location.hash="explorer"; //to be sure to display the result under the generated code in the viewport
+  }
   $('#entity').change (function() { $("#selector").empty();generateQuery();  });
   $('#action').change (function() { $("#selector").empty();generateQuery();  });
   $('#version').change (function() { generateQuery();  });
@@ -182,6 +193,9 @@ cj(function ($) {
   <option value="create">create</option>
   <option value="delete">delete</option>
   <option value="getfields">getfields</option>
+  <option value="getcount">getcount</option>
+  <option value="getsingle">getsingle</option>
+  <option value="getvalue">getvalue</option>
   <option value="update">update</option>
 </select>
 <label>debug</label>
@@ -191,7 +205,8 @@ cj(function ($) {
 <br>
 <div id="selector"></div>
 <div id="extra"></div>
-<input size="90" id="query" value="{crmURL p="civicrm/ajax/rest" q="json=1&debug=on&entity=Contact&action=get&sequential=1&return=display_name,email,phone"}"/>
+<input size="90" maxsize=300 id="query" value="{crmURL p="civicrm/ajax/rest" q="json=1&debug=on&entity=Contact&action=get&sequential=1&return=display_name,email,phone"}"/>
+<input type="submit" value="GO" title="press to run the API query"/>
 <table id="generated" border=1 style="display:none;">
 <caption>Generated codes for this api call</caption>
 <tr><td>URL<td><div id="link"></div></td></tr>

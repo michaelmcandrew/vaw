@@ -150,6 +150,16 @@ class CRM_Core_BAO_Address extends CRM_Core_DAO_Address
             CRM_Core_BAO_Address::fixAddress( $params );
         }
 
+        require_once 'CRM/Utils/Hook.php';
+        if ( CRM_Utils_Array::value( 'id', $params ) ) {
+            CRM_Utils_Hook::pre( 'edit', 'Address', $params['id'], $params );
+            $isEdit = true;
+        } else {
+            CRM_Utils_Hook::pre( 'create', 'Address', null, $params ); 
+            $isEdit = false;
+        }
+
+        $config =& CRM_Core_Config::singleton();
         $address->copyValues($params);
 
         $address->save( );
@@ -179,6 +189,14 @@ class CRM_Core_BAO_Address extends CRM_Core_DAO_Address
             // we only create create relationship if address is shared by Individual
             if ( $address->master_id != 'null' ) {
                 self::processSharedAddressRelationship( $address->master_id, $params );
+            }
+
+
+            // lets call the post hook only after we've done all the follow on processing
+            if ( $isEdit ) {
+                CRM_Utils_Hook::post( 'edit'  , 'Address', $params['id'], $params );
+            } else {
+                CRM_Utils_Hook::post( 'create', 'Address', null, $params ); 
             }
         }
 
@@ -333,6 +351,24 @@ class CRM_Core_BAO_Address extends CRM_Core_DAO_Address
         if ($asp === 'USPS') {
             require_once 'CRM/Utils/Address/USPS.php';
             CRM_Utils_Address_USPS::checkAddress( $params );
+
+            // do street parsing again if enabled, since street address might have changed
+            require_once 'CRM/Core/BAO/Preferences.php';
+            $parseStreetAddress = CRM_Utils_Array::value( 'street_address_parsing', 
+                                                          CRM_Core_BAO_Preferences::valueOptions( 'address_options' ), 
+                                                          false );
+
+            if ( $parseStreetAddress && !empty( $params['street_address']) ) {
+                foreach ( array( 'street_number', 'street_name', 'street_unit', 'street_number_suffix' ) as $fld ) {
+                    unset( $params[$fld] );
+                }
+                // main parse string.
+                $parseString  = CRM_Utils_Array::value( 'street_address', $params );
+                $parsedFields = CRM_Core_BAO_Address::parseStreetAddress( $parseString );
+                
+                // merge parse address in to main address block.
+                $params = array_merge( $params, $parsedFields );
+            }
         }
         
         // add latitude and longitude and format address if needed
@@ -722,31 +758,31 @@ ORDER BY civicrm_address.is_primary DESC, civicrm_address.location_type_id DESC,
         
         // get street number and suffix.
         $matches = array( );
-        if ( preg_match( '/^[A-Za-z0-9]+([\W]+)/', $streetAddress, $matches ) ) {
-            $steetNumAndSuffix = $matches[0];
-            
-            // get street number.
-            $matches = array( );
-            if ( preg_match( '/^(\d+)/', $steetNumAndSuffix, $matches ) ) {
-                $parseFields['street_number'] = $matches[0];
-                $suffix = preg_replace( '/^(\d+)/', '', $steetNumAndSuffix );
-                $suffix = trim( $suffix );
+		//alter street number/suffix handling so that we accept -digit
+        if ( preg_match( '/^[A-Za-z0-9]+([\S]+)/', $streetAddress, $matches ) ) {
+            // check that $matches[0] is numeric, else assume no street number
+            if ( preg_match( '/^(\d+)/', $matches[0] ) ) {
+                $streetNumAndSuffix = $matches[0];
+
+                // get street number.
                 $matches = array( );
-                if ( preg_match( '/^[A-Za-z0-9]+/', $suffix, $matches ) ) {
-                    $parseFields['street_number_suffix'] = $matches[0];
+                if ( preg_match( '/^(\d+)/', $streetNumAndSuffix, $matches ) ) {
+                    $parseFields['street_number'] = $matches[0];
+                    $suffix = preg_replace( '/^(\d+)/', '', $streetNumAndSuffix );
+                    $parseFields['street_number_suffix'] = trim( $suffix );
                 }
-            }
             
-            // unset from main street address.
-            $streetAddress = preg_replace( '/^[A-Za-z0-9]+([\W]+)/', '', $streetAddress );
-            $streetAddress = trim( $streetAddress );
+                // unset from main street address.
+                $streetAddress = preg_replace( '/^[A-Za-z0-9]+([\S]+)/', '', $streetAddress );
+                $streetAddress = trim( $streetAddress );
+            }
         } else if ( preg_match( '/^(\d+)/', $streetAddress, $matches ) ) {
             $parseFields['street_number'] = $matches[0];
             // unset from main street address.
             $streetAddress = preg_replace( '/^(\d+)/', '', $streetAddress );
             $streetAddress = trim( $streetAddress );
         }
-        
+
         // suffix might be like 1/2
         $matches = array( );
         if ( preg_match( '/^\d\/\d/', $streetAddress, $matches ) ) {
@@ -783,6 +819,12 @@ ORDER BY civicrm_address.is_primary DESC, civicrm_address.location_type_id DESC,
         // consider remaining string as street name.
         $parseFields['street_name'] = $streetAddress;
         
+        //run parsed fields through stripSpaces to clean
+        require_once 'CRM/Utils/String.php';
+        foreach ( $parseFields as $parseField=>$value ) {
+    		$parseFields[$parseField] = CRM_Utils_String::stripSpaces($value);
+		}
+		
         return $parseFields;
     }
     

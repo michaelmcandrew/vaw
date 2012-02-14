@@ -81,7 +81,7 @@ class CRM_Activity_BAO_Query
         }
         
         if ( CRM_Utils_Array::value( 'activity_status_id', $query->_returnProperties ) ) {
-            $query->_select['activity_status_id']  = "activity_status.id as activity_status_id";
+            $query->_select['activity_status_id']  = "activity_status.value as activity_status_id";
             $query->_element['activity_status_id'] = 1;
             $query->_tables['civicrm_activity'] = 1;
             $query->_tables['activity_status'] = 1;
@@ -179,7 +179,7 @@ class CRM_Activity_BAO_Query
      * @access public 
      */ 
     static function whereClauseSingle( &$values, &$query ) 
-    {
+    {        
         list( $name, $op, $value, $grouping, $wildcard ) = $values;
         
         $strtolower = function_exists('mb_strtolower') ? 'mb_strtolower' : 'strtolower';
@@ -230,7 +230,21 @@ class CRM_Activity_BAO_Query
                 ' - ' . 
                 CRM_Core_DAO::getFieldValue( 'CRM_Campaign_DAO_Survey', $value, 'title' );
             break;
+
+        case 'activity_engagement_level':
+            require_once 'CRM/Core/OptionGroup.php';
+            if ( ! $value ) {
+                break;
+            }
             
+            $value = CRM_Utils_Type::escape( $value, 'Integer' );
+            $query->_where[$grouping][] = " engagement_level = $value";
+            $query->_qill[$grouping][] = 
+                ts( 'Engagement Index' ) . 
+                ' - ' . 
+                CRM_Core_OptionGroup::getLabel( 'engagement_index', $value );
+            break;
+
         case 'activity_role':
             CRM_Contact_BAO_Query::$_activityRole = $values[2];
              
@@ -311,6 +325,23 @@ class CRM_Activity_BAO_Query
                                      'civicrm_activity', 'activity_date', 'activity_date_time', ts('Activity Date') );
 
             break;
+        case 'activity_id':
+            if ( empty($value) ) {
+                break;
+            }
+            
+            if ( is_array($value) ) {
+                foreach( $value as $k => $v ) {
+                    $value[$k] = CRM_Utils_Type::escape( $v, 'Integer' );
+                    
+                }
+            } else {
+                $value = array( CRM_Utils_Type::escape( $value, 'Integer' ) );
+            }
+            $query->_where[$grouping][] = "civicrm_activity.id IN (". implode( ",", $value) .")";
+            $query->_qill[$grouping ][] = ts( 'Activity Id(s)  %1', array(1 => implode($value) ) );             
+            break;
+
         case 'activity_taglist':
             $taglist = $value;
             $value = array( );
@@ -324,6 +355,7 @@ class CRM_Activity_BAO_Query
                     }
                 }
             } 
+            
         case 'activity_tags':
             require_once'CRM/Core/BAO/Tag.php';
             $value = array_keys( $value );
@@ -341,7 +373,6 @@ class CRM_Activity_BAO_Query
             $query->_tables['civicrm_activity_tag'] = $query->_whereTables['civicrm_activity_tag'] = 1;
             
             break;
-            
         case 'activity_campaign_id':
             require_once 'CRM/Campaign/BAO/Query.php';
             $campParams = array( 'op'          => $op,
@@ -364,15 +395,15 @@ class CRM_Activity_BAO_Query
             //from civicrm_activity_target or civicrm_activity_assignment.
             //as component specific activities does not have entry in
             //activity target table so lets consider civicrm_activity_assignment. 
-            
             if ( CRM_Contact_BAO_Query::$_considerCompActivities ) {
                 $from .= " $side JOIN civicrm_activity_target 
                                       ON ( civicrm_activity_target.target_contact_id = contact_a.id ) ";
-                $from .= " $side JOIN civicrm_activity_assignment 
-                                      ON ( civicrm_activity_assignment.assignee_contact_id = contact_a.id )";
+                
+                $from .= " $side JOIN civicrm_activity_assignment activity_assignment 
+                                      ON ( activity_assignment.assignee_contact_id = contact_a.id )";
+                
                 $from .= " $side JOIN civicrm_activity 
-                                      ON ( ( ( civicrm_activity.id = civicrm_activity_assignment.activity_id ) 
-                                               OR ( civicrm_activity.id = civicrm_activity_target.activity_id ) )  
+                                      ON ( civicrm_activity.id = civicrm_activity_target.activity_id 
                                       AND civicrm_activity.is_deleted = 0 AND civicrm_activity.is_current_revision = 1 )";
             } else if ( CRM_Contact_BAO_Query::$_withContactActivitiesOnly ) {
                 //force the civicrm_activity_target table.
@@ -381,12 +412,27 @@ class CRM_Activity_BAO_Query
                                                             AND civicrm_activity.is_deleted = 0 
                                                             AND civicrm_activity.is_current_revision = 1 )";
             } else {
-                //don't force civicrm_activity_target table.
-                $from .= " $side JOIN civicrm_activity_target ON civicrm_activity_target.target_contact_id = contact_a.id ";
-                $from .= " $side JOIN civicrm_activity ON (  ( civicrm_activity.id = civicrm_activity_target.activity_id 
-                                                               OR civicrm_activity.source_contact_id = contact_a.id ) 
-                                                           AND civicrm_activity.is_deleted = 0 
-                                                           AND civicrm_activity.is_current_revision = 1 )";
+                $activityRole = CRM_Contact_BAO_Query::$_activityRole;
+                switch ( $activityRole ) {
+                case 1:
+                    $from .= " $side JOIN civicrm_activity ON ( civicrm_activity.source_contact_id = contact_a.id 
+                        AND civicrm_activity.is_deleted = 0 
+                        AND civicrm_activity.is_current_revision = 1 )";
+                    break;
+                    
+                case 2:
+                    $from .= " $side JOIN civicrm_activity_assignment activity_assignment ON ( activity_assignment.assignee_contact_id = contact_a.id )";
+                    $from .= " $side JOIN civicrm_activity ON ( civicrm_activity.id = activity_assignment.activity_id 
+                        AND civicrm_activity.is_deleted = 0 
+                        AND civicrm_activity.is_current_revision = 1 )";
+                    break;
+
+                default: 
+                    $from .= " $side JOIN civicrm_activity_target ON civicrm_activity_target.target_contact_id = contact_a.id ";
+                    $from .= " $side JOIN civicrm_activity ON ( civicrm_activity.id = civicrm_activity_target.activity_id
+                            AND civicrm_activity.is_deleted = 0 
+                            AND civicrm_activity.is_current_revision = 1 )";
+                }
             }
             break;
             
@@ -455,7 +501,6 @@ class CRM_Activity_BAO_Query
         
         $activityRoles  = array( 1 => ts( 'Created by' ), 2 => ts( 'Assigned to' ) );
         $form->addRadio( 'activity_role', null, $activityRoles, null, '<br />');
-        $form->setDefaults( array( 'activity_role' => 1 ) );
         
         $form->addElement( 'text', 'activity_contact_name', ts( 'Contact Name' ), CRM_Core_DAO::getAttribute( 'CRM_Contact_DAO_Contact', 'sort_name' ) );
         
@@ -502,7 +547,20 @@ class CRM_Activity_BAO_Query
         }
         
         require_once 'CRM/Campaign/BAO/Campaign.php';
-        CRM_Campaign_BAO_Campaign::addCampaignInComponentSearch( $form, 'activity_campaign_id' );    
+        CRM_Campaign_BAO_Campaign::addCampaignInComponentSearch( $form, 'activity_campaign_id' );
+        
+        //add engagement level CRM-7775
+        $buildEngagementLevel = false;
+        if ( CRM_Campaign_BAO_Campaign::isCampaignEnable( ) &&
+             CRM_Campaign_BAO_Campaign::accessCampaign( ) ) {
+            $buildEngagementLevel = true;
+            require_once 'CRM/Campaign/PseudoConstant.php';
+            $form->add( 'select', 'activity_engagement_level', 
+                        ts( 'Engagement Index' ), 
+                        array( '' => ts( '- select -' ) ) + CRM_Campaign_PseudoConstant::engagementLevel( ) );
+        }
+        $form->assign( 'buildEngagementLevel', $buildEngagementLevel );
+            
     }
 
     static function addShowHide( &$showHide ) 

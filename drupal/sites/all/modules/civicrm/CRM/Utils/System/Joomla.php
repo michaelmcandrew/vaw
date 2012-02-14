@@ -189,7 +189,7 @@ class CRM_Utils_System_Joomla {
         if ( $config->userFrameworkFrontend ) {
             $script = 'index.php';
             if ( JRequest::getVar("Itemid") ) {
-                $Itemid = "{$separator}&Itemid=" . JRequest::getVar("Itemid");
+                $Itemid = "{$separator}Itemid=" . JRequest::getVar("Itemid");
             }
         } else {
             $script = 'index2.php';
@@ -206,7 +206,7 @@ class CRM_Utils_System_Joomla {
         $base = $absolute ? $config->userFrameworkBaseURL : $config->useFrameworkRelativeBase;
 
         if ( !empty ( $query ) ) {
-            $url = "{$base}{$script}?option=com_civicrm{$separator}task={$path}{$separator}{$query}{$Itemid}{$fragment}";
+            $url = "{$base}{$script}?option=com_civicrm{$separator}task={$path}{$Itemid}{$separator}{$query}{$fragment}";
         } else {
             $url ="{$base}{$script}?option=com_civicrm{$separator}task={$path}{$Itemid}{$fragment}";
         }
@@ -217,7 +217,11 @@ class CRM_Utils_System_Joomla {
             // handle both joomla v1.5 and v1.6, CRM-7939
             $url = str_replace( '/administrator/index2.php', '/index.php', $url );
             $url = str_replace( '/administrator/index.php' , '/index.php', $url );
+
+            // CRM-8215
+            $url = str_replace( '/administrator/', '/index.php', $url );
         }
+
         return $url;
     }
 

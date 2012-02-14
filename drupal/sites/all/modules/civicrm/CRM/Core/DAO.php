@@ -56,7 +56,14 @@ class CRM_Core_DAO extends DB_DataObject
 
         DB_DAO_NOTNULL  = 128,
 
-        VALUE_SEPARATOR = "";
+        VALUE_SEPARATOR = "",
+
+        BULK_INSERT_COUNT     = 200,
+
+        // special value for mail bulk inserts to avoid
+        // potential duplication, assuming a smaller number reduces number of queries
+        // by some factor, so some tradeoff. CRM-8678
+        BULK_MAIL_INSERT_COUNT = 10;
 
     /**
      * the factory class for this application
@@ -542,8 +549,8 @@ LIKE %1
         while ( $dao->fetch( ) ) {
             if ( isset( $values[$dao->$fieldName] ) ||
                  // ignore import and other temp tables
-                 strpos( $dao->$fieldName, 'civicrm_import_job_' ) !== false ||
-                 strpos( $dao->$fieldName, '_temp_' ) !== false ) {
+                 strpos( $dao->Name, 'civicrm_import_job_' ) !== false ||
+                 strpos( $dao->Name, '_temp' ) !== false ) {
                 continue;
             }
             $values[$dao->$fieldName] = 1;
@@ -554,7 +561,6 @@ LIKE %1
             }
         }
         $dao->free( );
-        
         return $values;
     }
 
@@ -873,7 +879,7 @@ FROM   civicrm_domain
         $dao->query( $queryStr, $i18nRewrite );
 
         if ( $freeDAO ||
-             preg_match( '/^(insert|update|delete|create|drop)/i', $queryStr ) ) {
+             preg_match( '/^(insert|update|delete|create|drop|replace)/i', $queryStr ) ) {
             // we typically do this for insert/update/delete stataments OR if explicitly asked to
             // free the dao
             $dao->free( );
@@ -1365,6 +1371,19 @@ SELECT contact_id
         CRM_Core_Error::setCallback();
 
         return true;
+    }
+
+    static function debugPrint( $message = null, $printDAO = true ) {
+        CRM_Utils_System::xMemory( "{$message}: " );
+
+        if ( $printDAO ) {
+            global $_DB_DATAOBJECT;
+            $q = array( );
+            foreach ( array_keys( $_DB_DATAOBJECT['RESULTS'] ) as $id ) {
+                $q[] = $_DB_DATAOBJECT['RESULTS'][$id]->query;
+            }
+            CRM_Core_Error::debug( '_DB_DATAOBJECT', $q );
+        }
     }
 
 }

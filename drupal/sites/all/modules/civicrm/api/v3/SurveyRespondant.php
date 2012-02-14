@@ -47,32 +47,28 @@ require_once 'CRM/Campaign/BAO/Petition.php';
  * @return array (reference )        contribution_id of created or updated record
  * @static void
  * @access public
+ * @deprecated - api currently not supported
  */
 function &civicrm_api3_survey_respondant_get( $params ) {
-  _civicrm_api3_initialize(true );
-  try{
-    civicrm_api3_verify_mandatory($params,'CRM_Campaign_BAO_Petition',array('survey_id'));
+
+    civicrm_api3_verify_one_mandatory($params,'CRM_Campaign_BAO_Petition',array('survey_id','id'));
 
     if (array_key_exists ( 'status_id', $params ) ) {
       $status_id=$params['status_id'];
     } else {
       $status_id=null;
     }
-
+    $surveyID = empty($params['survey_id'])?$params['id']:$params['survey_id'];
     $petition = new CRM_Campaign_BAO_Petition();
-    $signatures = $petition->getPetitionSignature($params['survey_id'],$status_id);
-    return ($signatures);
+    $signatures = $petition->getPetitionSignature($surveyID,$status_id);
+    return (civicrm_api3_create_success($signatures,$params));
 
-  } catch (PEAR_Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+
 }
-
+/*
+ * @deprecated - api currently not supported
+ */
 function &civicrm_api3_survey_respondant_count( $params ) {
-  _civicrm_api3_initialize(true );
-  try{
 
     $petition = new CRM_Campaign_BAO_Petition();
     if (array_key_exists ('groupby',$params) &&
@@ -83,9 +79,5 @@ function &civicrm_api3_survey_respondant_count( $params ) {
     }
     return ($signaturesCount);
 
-  } catch (PEAR_Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+
 }

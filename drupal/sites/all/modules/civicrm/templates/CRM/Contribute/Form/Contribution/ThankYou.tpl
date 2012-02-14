@@ -92,11 +92,14 @@
 
     {if $amount GT 0 OR $minimum_fee GT 0 OR ( $priceSetID and $lineItem ) }
     <div class="crm-group amount_display-group">
+       {if !$useForMember}
         <div class="header-dark">
             {if !$membershipBlock AND $amount OR ( $priceSetID and $lineItem )}{ts}Contribution Information{/ts}{else}{ts}Membership Fee{/ts}{/if}
         </div>
+        {/if}
         <div class="display-block">
-        	{if $lineItem and $priceSetID}
+            {if !$useForMember}
+            {if $lineItem and $priceSetID}
     	    {if !$amount}{assign var="amount" value=0}{/if}
     	    {assign var="totalAmount" value=$amount}
                 {include file="CRM/Price/Page/LineItem.tpl" context="Contribution"}
@@ -114,6 +117,7 @@
             {else}
                 {ts}Amount{/ts}: <strong>{$amount|crmMoney} {if $amount_level } - {$amount_level} {/if}</strong><br />
             {/if}
+	    {/if}
             {if $receive_date}
             {ts}Date{/ts}: <strong>{$receive_date|crmDate}</strong><br />
             {/if}
@@ -176,19 +180,9 @@
     {include file="CRM/Contribute/Form/Contribution/Honor.tpl"}
 
     {if $customPre}
-        {foreach from=$customPre item=field key=cname}
-            {if $field.groupTitle}
-                {assign var=groupTitlePre  value=$field.groupTitle} 
-            {/if}
-        {/foreach}
-    	<div class="crm-group custom_pre-group">
-            <div class="header-dark">
-                {$groupTitlePre}
-            </div>  
             <fieldset class="label-left">
                 {include file="CRM/UF/Form/Block.tpl" fields=$customPre}
             </fieldset>
-        </div>
     {/if}
     
     {if $pcpBlock}
@@ -217,21 +211,17 @@
     </div>
     {/if}
     
-    {if $onBehalfName}
-    <div class="crm-group onBehalf_display-group">
-        <div class="header-dark">
-            {ts}On Behalf Of{/ts}
-        </div>
-        <div class="display-block">
-            <strong>{$onBehalfName}</strong><br />
-            {$onBehalfAddress|nl2br}
-        </div>
-        <div class="display-block">
-            {$onBehalfEmail}
-        </div>
-    </div>
+    {if $onbehalfProfile}
+      <div class="crm-group onBehalf_display-group">
+         {include file="CRM/UF/Form/Block.tpl" fields=$onbehalfProfile}
+         <div class="crm-section organization_email-section">
+            <div class="label">{ts}Organization Email{/ts}</div>
+            <div class="content">{$onBehalfEmail}</div>
+            <div class="clear"></div>
+         </div>
+      </div>
     {/if}
-
+    
     {if $contributeMode ne 'notify' and ! $is_pay_later and $is_monetary and ( $amount GT 0 OR $minimum_fee GT 0 )}    
     <div class="crm-group billing_name_address-group">
         <div class="header-dark">
@@ -282,19 +272,9 @@
     {include file="CRM/Contribute/Form/Contribution/PremiumBlock.tpl" context="thankContribution"}
 
     {if $customPost}
-        {foreach from=$customPost item=field key=cname}
-            {if $field.groupTitle}
-                {assign var=groupTitlePost  value=$field.groupTitle} 
-            {/if}
-        {/foreach}
-    	<div class="crm-group custom_post-group">
-            <div class="header-dark">
-                {$groupTitlePost}
-            </div>  
             <fieldset class="label-left">
                 {include file="CRM/UF/Form/Block.tpl" fields=$customPost}
             </fieldset>
-        </div>
     {/if}
 
     <div id="thankyou_footer" class="contribution_thankyou_footer-section">

@@ -81,14 +81,17 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
         // get the amounts and the label
         require_once 'CRM/Core/OptionGroup.php';  
         $values['amount'] = array( );
-        CRM_Core_OptionGroup::getAssoc( "civicrm_contribution_page.amount.{$id}", $values['amount'], true );
+        CRM_Core_OptionGroup::getAssoc( "civicrm_contribution_page.amount.{$id}", 
+                                        $values['amount'], true );
 
         // get the profile ids
         require_once 'CRM/Core/BAO/UFJoin.php'; 
-        $ufJoinParams = array( 'entity_table' => 'civicrm_contribution_page',   
+        $ufJoinParams = array( 'module'       => 'CiviContribute',
+                               'entity_table' => 'civicrm_contribution_page',   
                                'entity_id'    => $id );   
         list( $values['custom_pre_id'],
-              $values['custom_post_id'] ) = CRM_Core_BAO_UFJoin::getUFGroupIds( $ufJoinParams ); 
+              $customPostIds ) = CRM_Core_BAO_UFJoin::getUFGroupIds( $ufJoinParams );
+        $values['custom_post_id'] = $customPostIds[0];
 
         // add an accounting code also
         if ( $values['contribution_type_id'] ) {
@@ -111,8 +114,8 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
      * @access public
      * @static
      */
-    static function sendMail( $contactID, &$values, $isTest = false, $returnMessageText = false ) 
-    { 
+    static function sendMail( $contactID, &$values, $isTest = false, $returnMessageText = false, $fieldTypes = null ) 
+    {
         require_once "CRM/Core/BAO/UFField.php";
         $gIds = array( );
         $params = array( );
@@ -138,6 +141,14 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
             $gIds['custom_post_id'] = $values['custom_post_id'];
         }
         
+        if ( CRM_Utils_Array::value( 'is_for_organization', $values ) ) {
+            if ( CRM_Utils_Array::value( 'membership_id', $values ) ) {
+                $params['onbehalf_profile'] = array( array( 'membership_id', '=', $values['membership_id'], 0, 0 ) );
+            } else if ( CRM_Utils_Array::value( 'contribution_id', $values ) ) {
+                $params['onbehalf_profile'] = array( array( 'contribution_id', '=', $values['contribution_id'], 0, 0 ) ); 
+            }
+        }
+        
         //check whether it is a test drive
         if ( $isTest && !empty( $params['custom_pre_id'] ) ) {
             $params['custom_pre_id'][] = array( 'contribution_test', '=', 1, 0, 0 );
@@ -150,10 +161,12 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
             //send notification email if field values are set (CRM-1941)
             require_once 'CRM/Core/BAO/UFGroup.php';
             foreach ( $gIds as $key => $gId ) {
-                $email = CRM_Core_DAO::getFieldValue( 'CRM_Core_DAO_UFGroup', $gId, 'notify' );
-                if ( $email ) {
-                    $val = CRM_Core_BAO_UFGroup::checkFieldsEmptyValues( $gId, $contactID, $params[$key] );
-                    CRM_Core_BAO_UFGroup::commonSendMail($contactID, $val); 
+                if ( $gId ) {
+                    $email = CRM_Core_DAO::getFieldValue( 'CRM_Core_DAO_UFGroup', $gId, 'notify' );
+                    if ( $email ) {
+                        $val = CRM_Core_BAO_UFGroup::checkFieldsEmptyValues( $gId, $contactID, $params[$key] );
+                        CRM_Core_BAO_UFGroup::commonSendMail($contactID, $val); 
+                    }
                 }
             }
         }
@@ -266,6 +279,15 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
 
                 $tplParams['onBehalfName']  = $displayName;
                 $tplParams['onBehalfEmail'] = $email;
+
+                require_once 'CRM/Core/BAO/UFJoin.php'; 
+                $ufJoinParams    = array( 'module'       => 'onBehalf',
+                                          'entity_table' => 'civicrm_contribution_page',   
+                                          'entity_id'    => $values['id'] );   
+                $OnBehalfProfile = CRM_Core_BAO_UFJoin::getUFGroupIds( $ufJoinParams );
+                $profileId       = $OnBehalfProfile[0]; 
+                self::buildCustomDisplay( $profileId, 'onBehalfProfile' , $userID, $template,
+                                          $params['onbehalf_profile'], $fieldTypes );
             }
             
             // use either the contribution or membership receipt, based on whether it’s a membership-related contrib or not
@@ -400,21 +422,26 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
      * @access public
      * @static  
      */ 
-    function buildCustomDisplay( $gid, $name, $cid, &$template, &$params ) 
+    function buildCustomDisplay( $gid, $name, $cid, &$template, &$params, $fieldTypes = null ) 
     {
         if ( $gid ) {
             require_once 'CRM/Core/BAO/UFGroup.php';
             if ( CRM_Core_BAO_UFGroup::filterUFGroups($gid, $cid) ){
                 $values = array( );
                 $groupTitle = null;
-                $fields = CRM_Core_BAO_UFGroup::getFields( $gid, false, CRM_Core_Action::VIEW );
-
+                $fields = CRM_Core_BAO_UFGroup::getFields( $gid, false, CRM_Core_Action::VIEW, null, null, false,
+                                                           null, false, null, CRM_Core_Permission::CREATE, null );
                 foreach ( $fields as $k => $v  ) {
                     if ( ! $groupTitle ) { 
                         $groupTitle = $v["groupTitle"];
                     }
                     // suppress all file fields from display
                     if ( CRM_Utils_Array::value( 'data_type', $v, '' ) == 'File' || CRM_Utils_Array::value( 'name', $v, '' ) == 'image_URL' ) {
+                        unset( $fields[$k] );
+                    }
+
+                    if ( !empty( $fieldTypes ) &&
+                         ( !in_array( $v['field_type'], $fieldTypes ) ) ) {
                         unset( $fields[$k] );
                     }
                 }

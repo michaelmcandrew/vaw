@@ -87,11 +87,16 @@ class CRM_Contact_BAO_Contact_Utils
         }
         
         if ( $addProfileOverlay ) {
-            $summaryOverlayProfileId = CRM_Core_DAO::getFieldValue( 'CRM_Core_DAO_UFGroup', 'summary_overlay', 'id', 'name' );
+            static $summaryOverlayProfileId = null;
+            if ( ! $summaryOverlayProfileId ) {
+                $summaryOverlayProfileId = CRM_Core_DAO::getFieldValue( 'CRM_Core_DAO_UFGroup', 'summary_overlay', 'id', 'name' );
+            }
         
-            $profileURL = CRM_Utils_System::url('civicrm/profile/view', "reset=1&gid={$summaryOverlayProfileId}&id={$contactId}&snippet=4");
+            $profileURL = CRM_Utils_System::url('civicrm/profile/view',
+                                                "reset=1&gid={$summaryOverlayProfileId}&id={$contactId}&snippet=4");
         
-            $imageInfo[$contactType]['summary-link'] = '<a href="'.$profileURL.'" class="crm-summary-link">'.$imageInfo[$contactType]['image'].'</a>';
+            $imageInfo[$contactType]['summary-link'] = 
+                '<a href="'.$profileURL.'" class="crm-summary-link">'.$imageInfo[$contactType]['image'].'</a>';
         } else {
             $imageInfo[$contactType]['summary-link'] = $imageInfo[$contactType]['image'];
         }
@@ -132,15 +137,25 @@ WHERE  id IN ( $idString )
      * @param int    $contactID
      * @param int    $ts         timestamp that checksum was generated
      * @param int    $live       life of this checksum in hours/ 'inf' for infinite
-     *
+     * @param string $hash       contact hash, if sent, prevents a query in inner loop
      * @return array ( $cs, $ts, $live )
      * @static
      * @access public
      */
-    static function generateChecksum( $contactID, $ts = null, $live = null ) 
+    static function generateChecksum( $contactID, $ts = null, $live = null, $hash = null ) 
     {
-        $hash = CRM_Core_DAO::getFieldValue( 'CRM_Contact_DAO_Contact',
-                                             $contactID, 'hash' );
+        // return an empty string if we dont get a contactID
+        // this typically happens when we do a message preview
+        // or an anon mailing view - CRM-8298
+        if ( ! $contactID ) {
+            return 'invalidChecksum';
+        }
+
+        if ( ! $hash ) {
+            $hash = CRM_Core_DAO::getFieldValue( 'CRM_Contact_DAO_Contact',
+                                                 $contactID, 'hash' );
+        }
+
         if ( ! $hash ) {
             $hash = md5( uniqid( rand( ), true ) );
             CRM_Core_DAO::setFieldValue( 'CRM_Contact_DAO_Contact',
@@ -175,7 +190,9 @@ WHERE  id IN ( $idString )
      */
     static function validChecksum( $contactID, $inputCheck ) 
     {
-        $input =  explode( '_', $inputCheck );
+        require_once 'CRM/Utils/System.php';
+
+        $input =  CRM_Utils_System::explode( '_', $inputCheck, 3 );
         
         $inputCS = CRM_Utils_Array::value( 0,$input);
         $inputTS = CRM_Utils_Array::value( 1,$input);
@@ -460,6 +477,9 @@ WHERE id={$contactId}; ";
         $form->assign( 'contactEditMode' , $contactEditMode );
 
         $attributes = CRM_Core_DAO::getAttribute('CRM_Contact_DAO_Contact');
+        if ( $form->_contactId ) {
+            $form->assign( 'orgId', $form->_contactId );
+        }
 
         switch ( $contactType ) {
         case 'Organization':
@@ -471,11 +491,10 @@ WHERE id={$contactId}; ";
                 $employers = CRM_Contact_BAO_Relationship::getPermissionedEmployer( $contactID );
             }
 
+            $locDataURL = CRM_Utils_System::url( 'civicrm/ajax/permlocation', 'cid=', false, null, false );
+            $form->assign( 'locDataURL', $locDataURL );
+
             if ( !$contactEditMode && $contactID && ( count($employers) >= 1 ) ) {
-                
-                $locDataURL = CRM_Utils_System::url( 'civicrm/ajax/permlocation', 'cid=', 
-                                                     false, null, false );
-                $form->assign( 'locDataURL', $locDataURL );
                 
                 $dataURL = CRM_Utils_System::url( 'civicrm/ajax/employer', 
                                                   'cid=' . $contactID, 
@@ -709,27 +728,45 @@ LEFT JOIN  civicrm_email ce ON ( ce.contact_id=c.id AND ce.is_primary = 1 )
             $value = ( in_array( $property, array( 'city', 'street_address' ) ) ) ? 'address' : $property;
             switch ( $property ) {
             case 'sort_name' :
-                $select[] = "$property as $property";
                 if ( $componentName == 'Activity' )  { 
+                    $select[] = "contact_source.$property as $property";
                     $from[$value] = "INNER JOIN civicrm_contact contact ON ( contact.id = $compTable.source_contact_id )";  
                 } else {
+                    $select[] = "$property as $property";
                     $from[$value] = "INNER JOIN civicrm_contact contact ON ( contact.id = $compTable.contact_id )"; 
                 }
                 break;
                 
+            case 'target_sort_name' :
+                $select[] = "contact_target.sort_name as $property";
+                $from[$value] = "INNER JOIN civicrm_contact contact_source ON ( contact_source.id = $compTable.source_contact_id )
+                                 LEFT JOIN civicrm_activity_target ON (civicrm_activity_target.activity_id = $compTable.id)
+                                 LEFT JOIN civicrm_contact as contact_target ON ( contact_target.id = civicrm_activity_target.target_contact_id )";  
+                break;
+
             case 'email' :
             case 'phone' :
             case 'city' :
             case 'street_address' :
                 $select[] = "$property as $property";
-                $from[$value] = "LEFT JOIN civicrm_{$value} {$value} ON ( contact.id = {$value}.contact_id AND {$value}.is_primary = 1 ) ";
+                // Grab target contact properties if this is for activity
+                if ( $componentName == 'Activity' )  { 
+                    $from[$value] = "LEFT JOIN civicrm_{$value} {$value} ON ( contact_target.id = {$value}.contact_id AND {$value}.is_primary = 1 ) ";
+                } else {
+                    $from[$value] = "LEFT JOIN civicrm_{$value} {$value} ON ( contact.id = {$value}.contact_id AND {$value}.is_primary = 1 ) ";
+                }
                 break;
                 
             case 'country':
             case 'state_province':
                 $select[] = "{$property}.name as $property";
                 if ( !in_array( 'address', $from ) ) {
-                    $from['address'] = 'LEFT JOIN civicrm_address address ON ( contact.id = address.contact_id AND address.is_primary = 1) ';
+                    // Grab target contact properties if this is for activity
+                    if ( $componentName == 'Activity' )  { 
+                        $from['address'] = 'LEFT JOIN civicrm_address address ON ( contact_target.id = address.contact_id AND address.is_primary = 1) ';
+                    } else {
+                        $from['address'] = 'LEFT JOIN civicrm_address address ON ( contact.id = address.contact_id AND address.is_primary = 1) ';
+                    }
                 }
                 $from[$value] = " LEFT JOIN civicrm_{$value} {$value} ON ( address.{$value}_id = {$value}.id  ) ";
                 break;

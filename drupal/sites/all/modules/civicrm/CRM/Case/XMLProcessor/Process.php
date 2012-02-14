@@ -176,12 +176,12 @@ class CRM_Case_XMLProcessor_Process extends CRM_Case_XMLProcessor {
     function createRelationships( $relationshipTypeName,
                                   &$params ) {
         $relationshipTypes =& $this->allRelationshipTypes( );
-
         // get the relationship id
         $relationshipTypeID = array_search( $relationshipTypeName,
                                             $relationshipTypes );
         if ( $relationshipTypeID === false ) {
-            CRM_Core_Error::fatal( );
+            CRM_Core_Error::fatal(ts('Relationship type %1, found in case configuration file, is not present in the database %2',
+                                  array(1 => $relationshipTypeName, 2 => $docLink)));
             return false;
         }
         
@@ -284,7 +284,7 @@ AND        a.is_deleted = 0
         $count       = CRM_Core_DAO::singleValueQuery( $query, $sqlParams );
         
         // check for max instance
-        $caseType    = CRM_Case_BAO_Case::getCaseType( $params['caseID'] );
+        $caseType    = CRM_Case_BAO_Case::getCaseType( $params['caseID'], 'name' );
         $maxInstance = self::getMaxInstance( $caseType, $params['activityTypeName'] );
 
         return $maxInstance ? ($count < $maxInstance ? false : true) : false;  

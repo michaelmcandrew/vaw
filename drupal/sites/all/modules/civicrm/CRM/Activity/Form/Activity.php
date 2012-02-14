@@ -259,7 +259,8 @@ class CRM_Activity_Form_Activity extends CRM_Contact_Form_Task
             require_once 'CRM/Contact/Form/Search.php';
             if ( CRM_Contact_Form_Search::isSearchContext( $this->_context ) ) {
                 $this->_context = 'search';
-            } else if ( $this->_currentlyViewedContactId  ) {
+            } else if ( !in_array( $this->_context, array( 'dashlet', 'dashletFullscreen' ) ) 
+                        && $this->_currentlyViewedContactId ) {
                 $this->_context = 'activity';
             }
             $this->_compContext = CRM_Utils_Request::retrieve( 'compContext', 'String', $this );
@@ -388,7 +389,7 @@ class CRM_Activity_Form_Activity extends CRM_Contact_Form_Task
         //validate the qfKey
         require_once 'CRM/Utils/Rule.php';
         if ( !CRM_Utils_Rule::qfKey( $qfKey ) ) $qfKey = null;
-
+        
         if ( $this->_context == 'fulltext' ) {
             $keyName   = '&qfKey';
             $urlParams = 'force=1';
@@ -400,7 +401,7 @@ class CRM_Activity_Form_Activity extends CRM_Contact_Form_Task
             }
             if ( $qfKey ) $urlParams .= "$keyName=$qfKey";
             $this->assign( 'searchKey',  $qfKey );
-        } else if ( in_array( $this->_context, array( 'standalone', 'home' ) ) ) {
+        } else if ( in_array( $this->_context, array( 'standalone', 'home', 'dashlet', 'dashletFullscreen' ) ) ) {
             $urlParams = 'reset=1';
             $urlString = 'civicrm/dashboard';
         } else if ( $this->_context == 'search' ) {
@@ -495,12 +496,24 @@ class CRM_Activity_Form_Activity extends CRM_Contact_Form_Task
             
             if ( !CRM_Utils_Array::crmIsEmptyArray( $defaults['target_contact'] ) ) {
                 $target_contact_value = explode(';', trim($defaults['target_contact_value'] ) );
-                $this->assign( 'target_contact', array_combine( array_unique( $defaults['target_contact'] ), $target_contact_value ) );
+                $target_contact = array_combine( array_unique( $defaults['target_contact'] ), $target_contact_value );
+
+                if ( $this->_action & CRM_Core_Action::VIEW ) {
+                    $this->assign( 'target_contact', $target_contact );
+                } else {    
+                    $this->assign( 'target_contact', $this->formatContactValues( $target_contact ) );
+                } 
             }
             
             if ( !CRM_Utils_Array::crmIsEmptyArray( $defaults['assignee_contact'] ) ) {
                 $assignee_contact_value = explode(';', trim($defaults['assignee_contact_value'] ) );
-                $this->assign( 'assignee_contact', array_combine( $defaults['assignee_contact'], $assignee_contact_value ) );            
+                $assignee_contact = array_combine( $defaults['assignee_contact'], $assignee_contact_value );            
+            
+                if ( $this->_action & CRM_Core_Action::VIEW ) {
+                    $this->assign( 'assignee_contact', $assignee_contact ); 
+                } else {
+                    $this->assign( 'assignee_contact', $this->formatContactValues( $assignee_contact ) ); 
+                }
             }
             
             if ( !CRM_Utils_Array::value('activity_date_time', $defaults) ) {
@@ -550,7 +563,9 @@ class CRM_Activity_Form_Activity extends CRM_Contact_Form_Task
             if ( $this->_context != 'standalone' && isset( $this->_targetContactId ) ) {
                 $target_contact[$this->_targetContactId] = self::_getDisplayNameById( $this->_targetContactId );
             }
-            $this->assign( 'target_contact', $target_contact ); 
+            
+            $this->assign( 'target_contact', $this->formatContactValues( $target_contact ) ); 
+            
             list( $defaults['activity_date_time'], $defaults['activity_date_time_time'] ) = CRM_Utils_Date::setDateDefaults( null, 'activityDateTime' );
         }
 
@@ -572,6 +587,23 @@ class CRM_Activity_Form_Activity extends CRM_Contact_Form_Task
             $defaults['priority_id'] = array_search( 'Normal', $priority );
         }
         return $defaults;
+    }
+    /**
+     * Function to format contact values before assigning to autocomplete widget
+     *
+     * @param array $contactNames associated array of contact name and ids
+     * @return json encoded object
+     * @private
+     */  
+    function formatContactValues( &$contactNames ) {
+        //format target/assignee contact
+        $formatContacts = array( );
+        foreach( $contactNames as $id => $name ) {
+            $formatContacts[] = array( 'id'   => $id,
+                                       'name' => $name );
+        }
+    
+        return json_encode( $formatContacts );
     }
 
     public function buildQuickForm( ) 
@@ -1047,8 +1079,8 @@ class CRM_Activity_Form_Activity extends CRM_Contact_Form_Task
                 $attachments =& CRM_Core_BAO_File::getEntityFile( 'civicrm_activity', $activity->id );
 
                 require_once "CRM/Case/BAO/Case.php";
+                // CRM-8400 add param with _currentlyViewedContactId for URL link in mail
                 $result = CRM_Case_BAO_Case::sendActivityCopy( null, $activity->id, $mailToContacts, $attachments, null );
-                
                 $mailStatus .= ts("A copy of the activity has also been sent to assignee contacts(s)."); 
             }
         }

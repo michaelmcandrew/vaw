@@ -96,6 +96,12 @@ class CRM_Event_Page_EventInfo extends CRM_Core_Page
         // show event fees.
         require_once 'CRM/Price/BAO/Set.php';
         if ( $this->_id && CRM_Utils_Array::value( 'is_monetary', $values['event'] ) ) {
+            //CRM-6907
+            $config = CRM_Core_Config::singleton( );
+            $config->defaultCurrency = CRM_Utils_Array::value( 'currency', 
+                                                               $values['event'], 
+                                                               $config->defaultCurrency );
+
             // get price set options, - CRM-5209
             if ( $priceSetId = CRM_Price_BAO_Set::getFor( 'civicrm_event', $this->_id ) ) {
                 $setDetails     = CRM_Price_BAO_Set::getSetDetail( $priceSetId );
@@ -255,7 +261,10 @@ class CRM_Event_Page_EventInfo extends CRM_Core_Page
             $statusMessage =  $eventFullMessage;
             if ( CRM_Event_BAO_Event::checkRegistration( $params ) ) {
                 if ( $noFullMsg == 'false' ) {
-                    $statusMessage = ts( "It looks like you are already registered for this event. If you want to change your registration, or you feel that you've gotten this message in error, please contact the site administrator." );
+                    $registerUrl = CRM_Utils_System::url( 'civicrm/event/register',
+                                                          "reset=1&id={$values['event']['id']}&cid=0" );
+                    $statusMessage = ts("It looks like you are already registered for this event. If you want to change your registration, or you feel that you've gotten this message in error, please contact the site administrator.") 
+                              . ' ' . ts('You can also <a href="%1">register another participant</a>.', array(1 => $registerUrl));
                 }
             } else if ( $hasWaitingList ) {
                 $statusMessage = CRM_Utils_Array::value( 'waitlist_text', $values['event'] );

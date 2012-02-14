@@ -130,7 +130,7 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page
         $this->_userOptions  = CRM_Core_BAO_Preferences::valueOptions( 'user_dashboard_options' );
 
         $components = CRM_Core_Component::getEnabledComponents();
-
+        $this->assign('contactId',$this->_contactId);
         foreach( $components as $name => $component ) {
             $elem = $component->getUserDashboardElement();
             if ( ! $elem ) {
@@ -172,6 +172,14 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page
             $this->assign( 'pcpBlock', $pcpBlock );
             $this->assign( 'pcpInfo', $pcpInfo );
         }
+
+        // Add Activities
+        $dashboardElements[] = array( 'templatePath' => 'CRM/Activity/Page/UserDashboard.tpl',
+                                      'sectionTitle' => ts( 'Your Activities' ),
+                                      'weight'       => 5 );
+        require_once 'CRM/Activity/Page/UserDashboard.php';
+        $userDashboard = new CRM_Activity_Page_UserDashboard;
+        $userDashboard->run();
 
         require_once 'CRM/Utils/Sort.php';
         usort( $dashboardElements, array( 'CRM_Utils_Sort', 'cmpFunc' ) );
@@ -246,8 +254,11 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page
 
         // call the hook so we can modify it
         require_once 'CRM/Utils/Hook.php';
-        CRM_Utils_Hook::links( 'view.contact.userDashBoard', 'Contact',
-                               CRM_Core_DAO::$_nullObject, self::$_links );
+        CRM_Utils_Hook::links( 'view.contact.userDashBoard',
+                               'Contact',
+                               CRM_Core_DAO::$_nullObject,
+                               self::$_links,
+                               CRM_Core_DAO::$_nullObject );
         return self::$_links;
     }
 }

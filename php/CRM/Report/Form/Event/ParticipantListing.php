@@ -151,19 +151,23 @@ class CRM_Report_Form_Event_ParticipantListing extends CRM_Report_Form {
                   array( 'dao'        => 'CRM_Event_DAO_Event',
                          'fields'     =>
                          array( 
-                               'event_type_id' => array( 'title' => ts('Event Type') ), 
-                               ),
+	                             'event_type_id'	=> array( 	'title' => ts('Event Type') ), 
+	                             'start_date'		=> array( 	'title' => ts('Event start date') ),															), 
                          'grouping'  => 'event-fields', 
                          'filters'   =>             
                          array(                      
-                               'eid' =>  array( 'name'         => 'event_type_id',
-                                                'title'        => ts( 'Event Type' ),
-                                                'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-                                                'options'      => CRM_Core_OptionGroup::values('event_type') ), 
-                               ),
+	                             'eid' =>  array( 'name'         => 'event_type_id',
+	                                              'title'        => ts( 'Event Type' ),
+	                                              'operatorType' => CRM_Report_Form::OP_MULTISELECT,
+	                                              'options'      => CRM_Core_OptionGroup::values('event_type') ),
+	                             'event_start_date' =>  array( 'name'         => 'event_start_date',
+	                                              'title'        => ts( 'Event start date' ),
+	                                              'operatorType' => CRM_Report_Form::OP_DATE,)
+								),
+
                          'group_bys' => 
                          array( 'event_type_id'      => 
-                                array( 'title'      => ts( 'Event Type ' ), ), ),
+                                array( 'title'      => ts( 'Event Type ' ), ), )
                          ),                
   
 

@@ -148,12 +148,12 @@ class CRM_Dedupe_BAO_RuleGroup extends CRM_Dedupe_DAO_RuleGroup
         $tableQueries = $this->tableQuery( );
 
         if ( $this->params && !$this->noRules ) { 
-            $tempTableQuery = "CREATE TEMPORARY TABLE dedupe (id1 int, weight int, UNIQUE UI_id1 (id1))";
+            $tempTableQuery = "CREATE TEMPORARY TABLE dedupe (id1 int, weight int, UNIQUE UI_id1 (id1)) ENGINE=MyISAM";
             $insertClause   = "INSERT INTO dedupe (id1, weight)";
             $groupByClause  = "GROUP BY id1";
             $dupeCopyJoin   = " JOIN dedupe_copy ON dedupe_copy.id1 = t1.column WHERE ";
         } else {
-            $tempTableQuery = "CREATE TEMPORARY TABLE dedupe (id1 int, id2 int, weight int, UNIQUE UI_id1_id2 (id1, id2))";
+            $tempTableQuery = "CREATE TEMPORARY TABLE dedupe (id1 int, id2 int, weight int, UNIQUE UI_id1_id2 (id1, id2)) ENGINE=MyISAM";
             $insertClause   = "INSERT INTO dedupe (id1, id2, weight)";
             $groupByClause  = "GROUP BY id1, id2";
             $dupeCopyJoin   = " JOIN dedupe_copy ON dedupe_copy.id1 = t1.column AND dedupe_copy.id2 = t2.column WHERE ";
@@ -354,5 +354,35 @@ class CRM_Dedupe_BAO_RuleGroup extends CRM_Dedupe_DAO_RuleGroup
         }
         
         return array($ruleFields, $rgBao->threshold);
+    }
+
+    /**
+     * Get an array of rule group id to rule group name
+     * for all th groups for that contactType. If contactType
+     * not specified, do it for all
+     *
+     * @param string $contactType Individual, Household or Organization
+     * 
+     * @static
+     * @return array id => "nice name" of rule group
+     */
+    static function getByType( $contactType = null ) {
+        $dao = new CRM_Dedupe_DAO_RuleGroup( );
+
+        if ( $contactType ) {
+            $dao->contact_type = $contactType;
+        }
+        
+        $dao->find( );
+        $result = array( );
+        while ( $dao->fetch( ) ) {
+            if ( ! empty( $dao->name ) ) {
+                $name = "{$dao->name} - {$dao->level}" ;
+            } else {
+                $name = "{$dao->contact_type} - {$dao->level}";
+            }
+            $result[$dao->id] = $name;
+        }
+        return $result;
     }
 }

@@ -1128,6 +1128,7 @@ LEFT JOIN  civicrm_country ON (civicrm_address.country_id = civicrm_country.id)
             
             require_once 'CRM/Member/BAO/MembershipType.php';
             foreach ( $details['memberships'] as $membershipId => $membershipValues ) {
+                $relTypeIds = array( );
                 if ( $action & CRM_Core_Action::DELETE ) {                   
                     // Delete memberships of the related contacts only if relationship type exists for membership type
                     $query = "
@@ -1186,6 +1187,12 @@ SELECT relationship_type_id, relationship_direction
                             $membershipValues['status_id']     = $deceasedStatusId;
                             $membershipValues['skipStatusCal'] = true;
                         }
+                        foreach ( array( 'join_date', 'start_date', 'end_date' ) as $dateField  ) {
+                            if ( CRM_Utils_Array::value($dateField, $membershipValues) ) {
+                                $membershipValues[$dateField] = CRM_Utils_Date::processDate($membershipValues[$dateField]);
+                            }
+                        }
+
                         if ( $action & CRM_Core_Action::UPDATE ) {
                             //delete the membership record for related
                             //contact before creating new membership record.

@@ -391,16 +391,43 @@ class CRM_Utils_String {
             return;
         }
 
-        $names = explode( ' ', $name );
-        if ( count( $names ) == 1 ) {
-            $params['first_name'] = $names[0];
-        } else if ( count( $names ) == 2 ) {
-            $params['first_name'] = $names[0];
-            $params['last_name' ] = $names[1];
+        // strip out quotes
+        $name = str_replace('"', '', $name);
+        $name = str_replace('\'', '', $name);
+        
+        // check for comma in name
+        if ( strpos( $name, ',' ) !== false ) {
+            
+            // name has a comma - assume lname, fname [mname]
+            $names = explode( ',', $name );
+            if ( count( $names ) > 1) {
+                $params['last_name'] = trim( $names[0] );
+                
+                // check for space delim
+                $fnames = explode( ' ', trim( $names[1] ) );
+                if ( count( $fnames ) > 1 ) {
+                    $params['first_name' ] = trim( $fnames[0] );
+                    $params['middle_name'] = trim( $fnames[1] );
+                } else {
+                    $params['first_name'] = trim( $fnames[0] );
+                }
+            } else {
+                $params['first_name'] = trim( $names[0] );
+            }
         } else {
-            $params['first_name' ] = $names[0];
-            $params['middle_name'] = $names[1];
-            $params['last_name'  ] = $names[2];
+            
+            // name has no comma - assume fname [mname] fname
+            $names = explode( ' ', $name );
+            if ( count( $names ) == 1 ) {
+                $params['first_name'] = $names[0];
+            } else if ( count( $names ) == 2 ) {
+                $params['first_name'] = $names[0];
+                $params['last_name' ] = $names[1];
+            } else {
+                $params['first_name' ] = $names[0];
+                $params['middle_name'] = $names[1];
+                $params['last_name'  ] = $names[2];
+            }
         }
     }
 
@@ -423,7 +450,7 @@ class CRM_Utils_String {
      */
     static function addJqueryFiles( &$html ) {
         $smarty = CRM_Core_Smarty::singleton( );
-        return $smarty->fetch( 'CRM/common/jquery.tpl' ) . $html . '<script type="text/javascript">jQuery.noConflict(true);</script>';
+        return $smarty->fetch( 'CRM/common/jquery.tpl' ) . $html;
     }
 
     /**
@@ -439,7 +466,8 @@ class CRM_Utils_String {
         $matches = array();
         preg_match('/-ALTERNATIVE ITEM 0-(.*?)-ALTERNATIVE ITEM 1-.*-ALTERNATIVE END-/s', $full, $matches);
 
-        if ( trim( strip_tags( $matches[1] ) ) != '' ) {
+        if ( isset( $matches[1] ) &&
+             trim( strip_tags( $matches[1] ) ) != '' ) {
             return $matches[1];
         } else {
             return $full;

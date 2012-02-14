@@ -58,7 +58,7 @@ class CRM_Core_BAO_CMSUser
         $config = CRM_Core_Config::singleton( );
 
         CRM_Core_Error::ignoreException( );
-        $db_uf =& self::dbHandle( $config );
+        $db_uf = self::dbHandle( $config );
 
         if ( $config->userFramework == 'Drupal' ) { 
             $id   = 'uid'; 
@@ -69,7 +69,7 @@ class CRM_Core_BAO_CMSUser
             $mail = 'email'; 
             $name = 'name';
         } else { 
-            CRM_Core_Error::fatal( "CMS user creation not supported for this framework" ); 
+            CRM_Core_Error::fatal( 'CMS user creation not supported for this framework' ); 
         } 
 
         set_time_limit(300);
@@ -87,7 +87,7 @@ class CRM_Core_BAO_CMSUser
             $user->$mail = $row[$mail];
             $user->$name = $row[$name];
             $contactCount++;
-            if ($match = CRM_Core_BAO_UFMatch::synchronizeUFMatch( $user, $row[$id], $row[$mail], $uf, 1, null, true ) ) {
+            if ($match = CRM_Core_BAO_UFMatch::synchronizeUFMatch( $user, $row[$id], $row[$mail], $uf, 1, 'Individual', true ) ) {
                 $contactCreated++;
             } else {
                 $contactMatching++;
@@ -239,31 +239,11 @@ class CRM_Core_BAO_CMSUser
             $loginUrl .= 'index.php?option=com_user&view=login';
         } elseif ( $isDrupal ) {
             $loginUrl .= 'user';
-            // For Drupal we can redirect user to current page after login by passing it as destination.
-            require_once 'CRM/Utils/System.php';
-            $args = null;
-
-            $id = $form->get( 'id' );
-            if ( $id ) {
-                $args .= "&id=$id";
-            } else {
-                $gid =  $form->get( 'gid' );
-                if ( $gid ) {
-                    $args .= "&gid=$gid";
-                } else {
-                     // Setup Personal Campaign Page link uses pageId
-                     $pageId =  $form->get( 'pageId' );
-                    if ( $pageId ) {
-                        $args .= "&pageId=$pageId&action=add";
-                    }
-                }
-            }
-    
-            if ( $args ) {
-                // append destination so user is returned to form they came from after login
-                $destination = CRM_Utils_System::currentPath( ) . "?reset=1" . $args;
+            // append destination so user is returned to form they came from after login
+            $destination = self::getDrupalLoginDestination($form);
+            if ( ! empty( $destination ) ) {
                 $loginUrl .= '?destination=' . urlencode( $destination );
-             }
+            }
         }
         $form->assign( 'loginUrl', $loginUrl );
         $form->assign( 'showCMS', $showCMS ); 
@@ -389,7 +369,7 @@ SELECT name, mail
             //regex \\ to match a single backslash would become '/\\\\/' 
             $isNotValid = (bool) preg_match('/[\<|\>|\"|\'|\%|\;|\(|\)|\&|\\\\|\/]/im', $name );
             if ( $isNotValid || strlen( $name ) < 2 ) {
-                $errors['cms_name'] = ts("Your username contains invalid characters or is too short");
+                $errors['cms_name'] = ts('Your username contains invalid characters or is too short');
             }
             $sql = "
 SELECT username, email
@@ -442,7 +422,7 @@ SELECT username, email
         } 
         
         if ( !$isDrupal && !$isJoomla ) { 
-            die( "Unknown user framework" ); 
+            die( 'Unknown user framework' ); 
         }
         
         if ( $isDrupal ) { 
@@ -471,7 +451,43 @@ SELECT username, email
         $db_uf->disconnect( );
         return $result;
     }
+
+    /*
+     * Function to get the drupal destination string. When this is passed in the
+     * URL the user will be directed to it after filling in the drupal form
+     *
+     * @param object $form Form object representing the 'current' form - to which the user will be returned
+     * @return string $destination destination value for URL
+     *
+     */
+    static function getDrupalLoginDestination( &$form ) {
+        require_once 'CRM/Utils/System.php';
+        $args = null;
+
+        $id = $form->get( 'id' );
+        if ( $id ) {
+            $args .= "&id=$id";
+        } else {
+            $gid =  $form->get( 'gid' );
+            if ( $gid ) {
+                $args .= "&gid=$gid";
+            } else {
+                // Setup Personal Campaign Page link uses pageId
+                $pageId =  $form->get( 'pageId' );
+                if ( $pageId ) {
+                    $args .= "&pageId=$pageId&action=add";
+                }
+            }
+        }
     
+        $destination = null;
+        if ( $args ) {
+            // append destination so user is returned to form they came from after login
+            $destination = CRM_Utils_System::currentPath( ) . '?reset=1' . $args;
+        }
+        return $destination;
+    }
+
     /**
      * Function to create a user in Drupal.
      *  
@@ -546,8 +562,8 @@ SELECT username, email
 
         // get the default usertype
         $userType = $userParams->get('new_usertype');
-        if ( !$usertype ) {
-            $usertype = 'Registered';
+        if ( ! $userType ) {
+            $userType = 'Registered';
         }
 
         $acl = &JFactory::getACL();
@@ -574,7 +590,7 @@ SELECT username, email
         }
 
         // Get an empty JUser instance.
-        $user =& JUser::getInstance( 0 );
+        $user = JUser::getInstance( 0 );
         $user->bind( $values );
 
         // Store the Joomla! user.
@@ -584,7 +600,7 @@ SELECT username, email
         }
         //since civicrm don't have own tokens to use in user
         //activation email. we have to use com_user tokens, CRM-5809
-        $lang =& JFactory::getLanguage();
+        $lang = JFactory::getLanguage();
         $lang->load( 'com_user' );
         require_once 'components/com_user/controller.php';
         UserController::_sendMail( $user, $user->password2 );

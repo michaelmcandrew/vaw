@@ -45,14 +45,20 @@
     {assign var="timeElement" value=$elementName|cat:'_time'}
     {$form.$elementName.html|crmReplace:class:hiddenElement}
 {/if}
+
 {assign var='displayDate' value=$elementId|cat:"_display"}
-<input type="text" name="{$displayDate}" id="{$displayDate}" class="dateplugin"/>
+
+{if $action neq 1028}
+    <input type="text" name="{$displayDate}" id="{$displayDate}" class="dateplugin" autocomplete="off"/>
+{/if}
 {if $timeElement AND !$tElement}
     &nbsp;&nbsp;{$form.$timeElement.label}&nbsp;&nbsp;{$form.$timeElement.html|crmReplace:class:six}
 {/if}
-{if $action neq 4 && $action neq 1028}
+
+{if $action neq 1028}
     <span class="crm-clear-link">(<a href="javascript:clearDateTime( '{$elementId}' );">{ts}clear{/ts}</a>)</span>
 {/if}
+
 <script type="text/javascript">
     {literal}
     cj( function() {
@@ -76,10 +82,12 @@
         case 'mm/dd':
             altDateFormat = 'mm/dd';
             break;
-        case 'M yy':
-            altDateFormat = 'yy-mm';
-            break;
-     }
+      }
+      
+      if ( !( ( date_format == 'M yy' ) || ( date_format == 'yy' ) || ( date_format == 'yy-mm' ) ) ) {
+          cj( element_date ).addClass( 'dpDate' );
+      }
+
       {/literal}
       var yearRange   = currentYear - parseInt( cj( alt_field ).attr('startOffset') ); 
           yearRange  += ':';
@@ -88,6 +96,7 @@
 
       var lcMessage = {/literal}"{$config->lcMessages}"{literal};
       var localisation = lcMessage.split('_');
+      var dateValue = cj(alt_field).val( );
       cj(element_date).datepicker({
                                     closeAtTop        : true, 
                                     dateFormat        : date_format,
@@ -99,8 +108,14 @@
                                     regional          : localisation[0]
                                 });
 
-      //set default value to display field
-      cj( element_date).val( cj(alt_field).val( ) );
+      // set default value to display field, setDefault param for datepicker
+      // is not working hence using below logic
+      // parse the date
+      var displayDateValue = cj.datepicker.parseDate( altDateFormat, dateValue );
+      
+      // format date according to display field
+      displayDateValue = cj.datepicker.formatDate( date_format, displayDateValue );
+      cj( element_date).val( displayDateValue );
 
       cj(element_date).click( function( ) {
           hideYear( this );

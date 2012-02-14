@@ -27,6 +27,7 @@
 <script type="text/javascript" >
 var text_message = null;
 var html_message = null;
+var isPDF        = false;
 var isMailing    = false;
 
 {/literal}
@@ -40,6 +41,12 @@ var isMailing    = false;
     text_message = "text_message";
     html_message = "html_message";
     isMailing    = true;
+    {/literal}
+{/if}
+
+{if $form.formName eq 'PDF'}
+    {literal}
+    isPDF = true;
     {/literal}
 {/if}
 
@@ -82,9 +89,14 @@ function showSaveUpdateChkBox()
 }
 
 function selectValue( val ) {
+    document.getElementsByName("saveTemplate")[0].checked = false;
+    document.getElementsByName("updateTemplate")[0].checked = false;
+    showSaveUpdateChkBox();
     if ( !val ) {
-        document.getElementById(text_message).value ="";
-        document.getElementById("subject").value ="";
+        if ( !isPDF ) {
+            document.getElementById(text_message).value ="";
+            document.getElementById("subject").value ="";
+        }
         if ( editor == "ckeditor" ) {
             oEditor = CKEDITOR.instances[html_message];
             oEditor.setData('');
@@ -98,23 +110,27 @@ function selectValue( val ) {
         } else {	
             document.getElementById(html_message).value = '' ;
         }
+        if ( isPDF ) {
+            showBindFormatChkBox();
+        }
         return;
     }
 
     var dataUrl = {/literal}"{crmURL p='civicrm/ajax/template' h=0 }"{literal};
 
     cj.post( dataUrl, {tid: val}, function( data ) {
-        cj("#subject").val( data.subject );
-
-        if ( data.msg_text ) {      
-            cj("#"+text_message).val( data.msg_text );
-            cj("div.text").show();
-            cj(".head").find('span').removeClass().addClass('ui-icon ui-icon-triangle-1-s');
-            cj("#helptext").show(); 
-        } else {
-            cj("#"+text_message).val("");
+        if ( !isPDF ) {
+            cj("#subject").val( data.subject );
+            
+            if ( data.msg_text ) {      
+                cj("#"+text_message).val( data.msg_text );
+                cj("div.text").show();
+                cj(".head").find('span').removeClass().addClass('ui-icon ui-icon-triangle-1-s');
+                cj("#helptext").show(); 
+            } else {
+                cj("#"+text_message).val("");
+            }
         }
-
         var html_body  = "";
         if (  data.msg_html ) {
             html_body = data.msg_html;
@@ -124,7 +140,7 @@ function selectValue( val ) {
             oEditor = CKEDITOR.instances[html_message];
             oEditor.setData( html_body );
         } else if ( editor == "tinymce" ) {
-            cj('#'+ html_message).tinymce().execCommand('mceSetContent',false, html_body);
+            tinyMCE.execInstanceCommand('html_message',"mceInsertContent",false, html_body );
         } else if ( editor == "joomlaeditor" ) { 
             cj("#"+ html_message).val( html_body );
             tinyMCE.execCommand('mceSetContent',false, html_body);           
@@ -133,9 +149,15 @@ function selectValue( val ) {
         } else {
             cj("#"+ html_message).val( html_body );
         }
-
-        }, 'json');    
-    }
+        if ( isPDF ) {
+            var bind = data.pdf_format_id ? true : false ;
+            selectFormat( data.pdf_format_id, bind );
+            if ( !bind ) {
+                document.getElementById("bindFormat").style.display = "none";
+            }
+        }
+    }, 'json');    
+}
 
  if ( isMailing ) { 
      document.getElementById("editMessageDetails").style.display = "block";
@@ -230,14 +252,9 @@ function selectValue( val ) {
         }else {
            ( isMailing ) ? text_message = "text_message" : text_message = "msg_text";
         }          
-        var msg       = cj("#"+ text_message).val( );
-        var cursorlen = document.getElementById(text_message).selectionStart;
-        var textlen   = msg.length;
-        document.getElementById(text_message).value = msg.substring(0, cursorlen) + token + msg.substring(cursorlen, textlen);
-        var cursorPos = (cursorlen + token.length);
-        document.getElementById(text_message).selectionStart = cursorPos;
-        document.getElementById(text_message).selectionEnd   = cursorPos;
-        document.getElementById(text_message).focus();
+        
+        cj( "#"+ text_message ).replaceSelection( token ); 
+
         if ( isMailing ) { 
              verify();
         }
@@ -248,7 +265,7 @@ function selectValue( val ) {
         var token2     = cj("#token2").val( )[0];
         var editor     = {/literal}"{$editor}"{literal};
         if ( editor == "tinymce" ) {
-            cj('#'+ html_message).tinymce().execCommand('mceInsertContent',false, token2);
+            tinyMCE.execInstanceCommand('html_message',"mceInsertContent",false, token2 );
         } else if ( editor == "joomlaeditor" ) { 
             tinyMCE.execCommand('mceInsertContent',false, token2);
             var msg       = document.getElementById(html_message).value;
@@ -265,14 +282,7 @@ function selectValue( val ) {
         } else if ( editor == "drupalwysiwyg" ) {
             Drupal.wysiwyg.instances[html_message].insert(token2.toString());
         } else {
-            var msg       = document.getElementById(html_message).value;
-            var cursorlen = document.getElementById(html_message).selectionStart;
-            var textlen   = msg.length;
-            document.getElementById(html_message).value = msg.substring(0, cursorlen) + token2 + msg.substring(cursorlen, textlen);
-            var cursorPos = (cursorlen + token2.length);
-            document.getElementById(html_message).selectionStart = cursorPos;
-            document.getElementById(html_message).selectionEnd   = cursorPos;
-            document.getElementById(html_message).focus();
+            cj( "#"+ html_message ).replaceSelection( token2 );
         }
 
         if ( isMailing ) { 
@@ -346,8 +356,10 @@ function selectValue( val ) {
     }
 
     cj(function() {
-        if ( !cj().find('div.crm-error').text() ) {            
-            setSignature( );
+        if ( !cj().find('div.crm-error').text() ) {
+          cj(window).load(function () {           
+            setSignature();
+          });
         }
 
         cj("#fromEmailAddress").change( function( ) {
@@ -371,14 +383,16 @@ function selectValue( val ) {
                 
                 if ( data.signature_html ) {
                     var htmlMessage =  cj("#"+ html_message).val( ) + '<br/><br/>--<br/>' + data.signature_html;
-
+                    
                     // set wysiwg editor
                     if ( editor == "ckeditor" ) {
                         oEditor = CKEDITOR.instances[html_message];
                         var htmlMessage = oEditor.getData( ) + '<br/><br/>--' + data.signature_html;
                         oEditor.setData( htmlMessage  );
                     } else if ( editor == "tinymce" ) {
-                        cj('#'+ html_message).tinymce().execCommand('mceSetContent',false, htmlMessage );
+                        tinyMCE.execInstanceCommand('html_message',"mceInsertContent",false, htmlMessage );
+                    }  else if ( editor == "drupalwysiwyg" ) {
+                        Drupal.wysiwyg.instances[html_message].insert(htmlMessage);
                     } else {	
                         cj("#"+ html_message).val( htmlMessage );
                     }

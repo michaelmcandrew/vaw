@@ -23,6 +23,9 @@
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
 *}
+{if $onbehalf} 
+   {include file=CRM/Contribute/Form/Contribution/OnBehalfOf.tpl} 
+{else}
 {literal}
 <script type="text/javascript">
 <!--
@@ -62,15 +65,15 @@ function clearAmountOther() {
         {$intro_text}
     </div>
 
-{if $priceSet}
+{if $priceSet && empty($useForMember)}
     <div id="priceset">
         <fieldset>
             <legend>{ts}Contribution{/ts}</legend>
-            {include file="CRM/Price/Form/PriceSet.tpl"}
+            {include file="CRM/Price/Form/PriceSet.tpl" extends="Contribution"}
         </fieldset>
     </div>
 {else}
-    {include file="CRM/Contribute/Form/Contribution/MembershipBlock.tpl" context="makeContribution"}
+        {include file="CRM/Contribute/Form/Contribution/MembershipBlock.tpl" context="makeContribution"}
 
 	{if $form.amount}
 	    <div class="crm-section {$form.amount.name}-section">
@@ -148,7 +151,8 @@ function clearAmountOther() {
 
 
     {if $is_for_organization} 
-        {include file=CRM/Contact/Form/OnBehalfOf.tpl} 
+        <div id='onBehalfOfOrg' class="crm-section"></div>
+        {include file=CRM/Contribute/Form/Contribution/OnBehalfOf.tpl} 
     {/if} 
     {* User account registration option. Displays if enabled for one of the profiles on this page. *}
 
@@ -354,6 +358,13 @@ function enablePeriod ( ) {
     }
 }
 
+{/literal}{if $relatedOrganizationFound and $reset}{literal}
+   cj( "#is_for_organization" ).attr( 'checked', true );
+   showOnBehalf( false );
+{/literal}{elseif $onBehalfRequired}{literal}
+   showOnBehalf( true );
+{/literal}{/if}{literal}
+
 {/literal}{if $honor_block_is_active AND $form.honor_type_id.html}{literal}
     enableHonorType();
 {/literal} {/if}{literal}
@@ -416,3 +427,4 @@ function showHidePayPalExpressOption()
 }
 {/literal}
 </script>
+{/if}

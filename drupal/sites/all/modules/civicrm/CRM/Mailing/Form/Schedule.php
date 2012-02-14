@@ -288,7 +288,9 @@ require_once 'CRM/Mailing/BAO/Mailing.php';
         //when user perform mailing from search context 
         //redirect it to search result CRM-3711.
         $ssID    = $this->get( 'ssID' );
-        if ( $ssID && $this->_searchBasedMailing ) {
+        if ( $ssID && 
+             $this->_searchBasedMailing &&
+             ! CRM_Mailing_Info::workflowEnabled( ) ) {
             if ( $this->_action == CRM_Core_Action::BASIC ) {
                 $fragment = 'search';
             } else if ( $this->_action == CRM_Core_Action::PROFILE ) {
@@ -305,12 +307,12 @@ require_once 'CRM/Mailing/BAO/Mailing.php';
             if ( CRM_Utils_Rule::qfKey( $qfKey ) ) $urlParams .= "&qfKey=$qfKey";
             
             $url = CRM_Utils_System::url( 'civicrm/contact/' . $fragment, $urlParams );
-            CRM_Utils_System::redirect( $url );
+            return $this->controller->setDestination($url);
         }
         
         $session = CRM_Core_Session::singleton( );
         $session->pushUserContext( CRM_Utils_System::url( 'civicrm/mailing/browse/scheduled', 
-                                                             'reset=1&scheduled=true' ) );
+                                                          'reset=1&scheduled=true' ) );
     }
     
     /**

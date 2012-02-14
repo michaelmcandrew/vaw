@@ -35,6 +35,14 @@
  * @version $Id: UFField.php 30171 2010-10-14 09:11:27Z mover $
  *
  */
+
+/**
+ * Include common API util functions
+ */
+require_once 'api/v3/utils.php';
+require_once 'CRM/Core/BAO/UFField.php';
+require_once 'CRM/Core/BAO/UFGroup.php';
+
 /**
  * Defines 'uf field' within a group.
  *
@@ -49,8 +57,7 @@
  */
 function civicrm_api3_uf_field_create( $params)
 {
-  _civicrm_api3_initialize( true);
-  try{
+
     civicrm_api3_verify_one_mandatory($params,null,array('field_name', 'uf_group_id'));
     $groupId = CRM_Utils_Array::value('uf_group_id',$params);
     if ((int) $groupId < 1) {
@@ -72,8 +79,6 @@ function civicrm_api3_uf_field_create( $params)
 
     $ids = array();
     $ids['uf_group'] = $groupId;
-    require_once 'CRM/Core/BAO/UFField.php';
-   //   
    
     $fieldId = CRM_Utils_Array::value('id', $params);
     if (!empty($fieldId)){
@@ -95,15 +100,31 @@ function civicrm_api3_uf_field_create( $params)
       return civicrm_api3_create_error("The field was not added. It already exists in this profile.");
     }
     $ufField = CRM_Core_BAO_UFField::add( $params,$ids );
+
+    $fieldsType = CRM_Core_BAO_UFGroup::calculateGroupType($groupId, true);
+    CRM_Core_BAO_UFGroup::updateGroupTypes($groupId, $fieldsType);
+    
     _civicrm_api3_object_to_array( $ufField, $ufFieldArray[$ufField->id]);
     return civicrm_api3_create_success($ufFieldArray,$params);
-  } catch (PEAR_Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
-}
 
+}
+/**
+ * Returns array of uf groups (profiles)  matching a set of one or more group properties
+ *
+ * @param array $params  (reference) Array of one or more valid
+ *                       property_name=>value pairs. If $params is set
+ *                       as null, all surveys will be returned
+ *
+ * @return array  (reference) Array of matching profiles
+ * @access public
+ */
+function civicrm_api3_uf_field_get( $params )
+{
+
+    civicrm_api3_verify_mandatory($params);
+    return _civicrm_api3_basic_get('CRM_Core_BAO_UFField', $params);
+
+}
 
 /**
  * Delete uf field
@@ -116,17 +137,21 @@ function civicrm_api3_uf_field_create( $params)
  *
  */
 function civicrm_api3_uf_field_delete($params ) {
-  _civicrm_api3_initialize(true );
-  try{
+
     civicrm_api3_verify_mandatory($params,null,array('field_id'));
     $fieldId  = $params['field_id'];
+    
+    $ufGroupId = CRM_Core_DAO::getFieldValue( 'CRM_Core_DAO_UFField', $fieldId, 'uf_group_id' );
+    if (!$ufGroupId) {
+        return civicrm_api3_create_error('Invalid value for field_id.');  
+    }
+    
     require_once 'CRM/Core/BAO/UFField.php';
     $result = CRM_Core_BAO_UFField::del($fieldId);
+
+    $fieldsType = CRM_Core_BAO_UFGroup::calculateGroupType($ufGroupId, true);
+    CRM_Core_BAO_UFGroup::updateGroupTypes($ufGroupId, $fieldsType);
+
     return civicrm_api3_create_success($result,$params);
-  } catch (PEAR_Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
 
 }

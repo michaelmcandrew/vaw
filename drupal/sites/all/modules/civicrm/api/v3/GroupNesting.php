@@ -40,7 +40,8 @@
  * Include utility functions
  */
 require_once 'api/v3/utils.php';
-
+require_once 'CRM/Contact/DAO/GroupNesting.php';
+ 
 /**
  * Provides group nesting record(s) given parent and/or child id.
  *
@@ -50,44 +51,14 @@ require_once 'api/v3/utils.php';
  */
 function civicrm_api3_group_nesting_get( $params )
 {
-  _civicrm_api3_initialize(true);
-  try{
-    civicrm_api3_verify_one_mandatory($params);
 
+    civicrm_api3_verify_mandatory($params);
 
-    if ( ! array_key_exists( 'child_group_id', $params ) &&
-    ! array_key_exists( 'parent_group_id', $params ) ) {
-      return civicrm_api3_create_error(  'At least one of child_group_id or parent_group_id is a required field'  );
-    }
-
-    require_once 'CRM/Contact/DAO/GroupNesting.php';
-    $dao = new CRM_Contact_DAO_GroupNesting();
-    if ( array_key_exists( 'child_group_id', $params ) ) {
-      $dao->child_group_id = $params['child_group_id'];
-    }
-    if ( array_key_exists( 'parent_group_id', $params ) ) {
-      $dao->parent_group_id = $params['parent_group_id'];
-    }
-
-    $values = array();
-
-    if ( $dao->find() ) {
-      while( $dao->fetch( ) ) {
-        $temp = array();
-        _civicrm_api3_object_to_array( $dao, $temp );
-        $values[$dao->id] = $temp;
-      }
-      $values['is_error' ] = 0;
-    } else {
-      return civicrm_api3_create_error( 'No records found.' );
-    }
+    civicrm_api3_verify_mandatory($params);
+    return _civicrm_api3_basic_get('CRM_Contact_DAO_GroupNesting', $params);
 
     return civicrm_api3_create_success($values,$params);
-  } catch (PEAR_Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+
 }
 
 /**
@@ -103,8 +74,6 @@ function civicrm_api3_group_nesting_get( $params )
  */
 function civicrm_api3_group_nesting_create( $params )
 {
-  _civicrm_api3_initialize(true);
-  try{
     civicrm_api3_verify_mandatory($params);
 
   require_once 'CRM/Contact/BAO/GroupNesting.php';
@@ -119,11 +88,7 @@ function civicrm_api3_group_nesting_create( $params )
   // FIXME: CRM_Contact_BAO_GroupNesting requires some work
   $result = array( 'is_error' => 0 );
   return civicrm_api3_create_success($result,$params);
-    } catch (PEAR_Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+
 }
 
 /**
@@ -138,8 +103,7 @@ function civicrm_api3_group_nesting_create( $params )
  */
 function civicrm_api3_group_nesting_delete( $params )
 {
-  _civicrm_api3_initialize(true);
-  try{
+
     civicrm_api3_verify_mandatory($params);
   
 
@@ -156,9 +120,5 @@ function civicrm_api3_group_nesting_delete( $params )
     $result = array( 'is_error' => 0 );
   }
   return $result;
-   } catch (PEAR_Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  } catch (Exception $e) {
-    return civicrm_api3_create_error( $e->getMessage() );
-  }
+
 }

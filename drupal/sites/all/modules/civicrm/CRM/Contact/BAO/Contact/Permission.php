@@ -36,9 +36,6 @@
 
 class CRM_Contact_BAO_Contact_Permission {
 
-    const
-        NUM_CONTACTS_TO_INSERT = 200;
-
     /**
      * check if the logged in user has permissions for the operation type
      *
@@ -148,7 +145,7 @@ ORDER BY contact_a.id
         // now store this in the table
         while ( ! empty( $values ) ) {
             $processed = true;
-            $input = array_splice( $values, 0, self::NUM_CONTACTS_TO_INSERT );
+            $input = array_splice( $values, 0, CRM_Core_DAO::BULK_INSERT_COUNT );
             $str   = implode( ',', $input );
             $sql = "REPLACE INTO civicrm_acl_contact_cache ( user_id, contact_id, operation ) VALUES $str;";
             CRM_Core_DAO::executeQuery( $sql );
@@ -277,31 +274,34 @@ WHERE  (( contact_id_a = %1 AND contact_id_b = %2 AND is_permission_a_b = 1 ) OR
     }
 
 
-    static function validateOnlyChecksum( $contactID, &$form ) {
+    static function validateOnlyChecksum( $contactID, &$form, $redirect = true ) {
         // check if this is of the format cs=XXX
         require_once 'CRM/Contact/BAO/Contact/Utils.php';
         require_once 'CRM/Utils/Request.php';
         require_once 'CRM/Utils/System.php';
         if ( !  CRM_Contact_BAO_Contact_Utils::validChecksum( $contactID,
                                                               CRM_Utils_Request::retrieve( 'cs', 'String' , $form, false ) ) ) {
-            // also set a message in the UF framework
-
-            $message = ts( 'You do not have permission to edit this contact record. Contact the site administrator if you need assistance.' );
-            require_once 'CRM/Utils/System.php';
-            CRM_Utils_System::setUFMessage( $message );
-
-            $config = CRM_Core_Config::singleton( );
-            CRM_Core_Error::statusBounce( $message,
-                                          $config->userFrameworkBaseURL );
-            // does not come here, we redirect in the above statement
+            if ( $redirect ) {
+                // also set a message in the UF framework
+                $message = ts( 'You do not have permission to edit this contact record. Contact the site administrator if you need assistance.' );
+                require_once 'CRM/Utils/System.php';
+                CRM_Utils_System::setUFMessage( $message );
+                
+                $config = CRM_Core_Config::singleton( );
+                CRM_Core_Error::statusBounce( $message,
+                                              $config->userFrameworkBaseURL );
+                // does not come here, we redirect in the above statement
+            }
+            return false;
         }
         return true;
     }
 
-    static function validateChecksumContact( $contactID, &$form ) {
+    static function validateChecksumContact( $contactID, &$form, $redirect = true ) {
+        require_once 'CRM/Core/Permission.php';
         if ( ! self::allow( $contactID, CRM_Core_Permission::EDIT ) ) {
             // check if this is of the format cs=XXX
-            return self::validateOnlyChecksum( $contactID, $form );
+            return self::validateOnlyChecksum( $contactID, $form, $redirect );
         }
         return true;
     }

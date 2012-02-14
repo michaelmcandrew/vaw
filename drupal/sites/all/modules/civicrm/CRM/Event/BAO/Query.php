@@ -288,6 +288,7 @@ class CRM_Event_BAO_Query
             
         case 'participant_fee_id':
             $feeLabel = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_OptionValue', $value, 'label');
+            $feeLabel = CRM_Core_DAO::escapeString( trim( $feeLabel ) );
             if ( $value ) {
                 $query->_where[$grouping][] = "civicrm_participant.fee_level $op '$feeLabel'";
                 $query->_qill[$grouping][]  = ts("Fee level" ) . " $op $feeLabel";
@@ -323,6 +324,7 @@ class CRM_Event_BAO_Query
             $query->_tables['civicrm_participant'] = $query->_whereTables['civicrm_participant'] = 1;
             return;
 
+        case 'participant_status':
         case 'participant_status_id':
             $val = array( );
             if ( is_array( $value ) ) {

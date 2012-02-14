@@ -30,7 +30,7 @@
  *
  * @package CRM
  * @copyright CiviCRM LLC (c) 2004-2011
- * $Id: Display.php 33955 2011-04-28 15:40:29Z kurund $
+ * $Id: Display.php 34470 2011-05-25 22:34:42Z lobo $
  *
  */
 
@@ -89,6 +89,7 @@ class CRM_Admin_Form_Preferences_Display extends CRM_Admin_Form_Preferences
      */
     public function buildQuickForm( ) 
     {
+        $drupal_wysiwyg = false;
         $wysiwyg_options = array( '' => ts( 'Textarea' ) ) + CRM_Core_PseudoConstant::wysiwygEditor( );
 
         $config =& CRM_Core_Config::singleton();
@@ -99,6 +100,7 @@ class CRM_Admin_Form_Preferences_Display extends CRM_Admin_Form_Preferences
             unset( $wysiwyg_options[3] );
         }
 
+        $drupal_wysiwyg = false;
         if ( $config->userFramework != 'Drupal' || !module_exists("wysiwyg")) {
             unset( $wysiwyg_options[4] );
         } else {

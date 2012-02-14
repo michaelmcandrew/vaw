@@ -35,6 +35,8 @@
  */
 
 require_once 'CRM/Core/Form.php';
+require_once 'CRM/Core/BAO/UFGroup.php';
+require_once 'CRM/Profile/Form.php';
 
 /**
  * This class generates form components for processing a ontribution 
@@ -277,7 +279,9 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form
             // also check for billing informatin
             // get the billing location type
             $locationTypes =& CRM_Core_PseudoConstant::locationType( );
-            $this->_bltID = array_search( ts('Billing'),  $locationTypes );
+            // CRM-8108 remove ts around Billing location type
+            //$this->_bltID = array_search( ts('Billing'),  $locationTypes );
+            $this->_bltID = array_search( 'Billing',  $locationTypes );
             if ( ! $this->_bltID ) {
                 CRM_Core_Error::fatal( ts( 'Please set a location type of %1', array( 1 => 'Billing' ) ) );
             }
@@ -317,7 +321,6 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form
             // CRM-5095
             require_once 'CRM/Price/BAO/Set.php';
             CRM_Price_BAO_Set::initSet( $this, $this->_id, 'civicrm_contribution_page' );
-
             
             // this avoids getting E_NOTICE errors in php
             $setNullFields = array( 'amount_block_is_active',
@@ -637,11 +640,10 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form
         require_once 'CRM/Utils/Address.php';
         $this->assign('address', CRM_Utils_Address::format($addressFields));
         
-        if ( CRM_Utils_Array::value( 'is_for_organization', $this->_params ) ) {
+        if ( CRM_Utils_Array::value( 'hidden_onbehalf_profile', $this->_params ) ) {
             $this->assign('onBehalfName',    $this->_params['organization_name']);
-            $this->assign('onBehalfEmail',   $this->_params['onbehalf_location']['email'][1]['email']);
-            $this->assign('onBehalfAddress', 
-                          CRM_Utils_Address::format($this->_params['onbehalf_location']['address'][1]));
+            $locTypeId = array_keys( $this->_params['onbehalf_location']['email'] );
+            $this->assign('onBehalfEmail',   $this->_params['onbehalf_location']['email'][$locTypeId[0]]['email']);
         }
         
         //fix for CRM-3767
@@ -694,13 +696,11 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form
      * @return None  
      * @access public  
      */ 
-    function buildCustom( $id, $name, $viewOnly = false ) 
+    function buildCustom( $id, $name, $viewOnly = false, $onBehalf = false, $fieldTypes = null ) 
     {
         $stateCountryMap = array( );
 
         if ( $id ) {
-            require_once 'CRM/Core/BAO/UFGroup.php';
-            require_once 'CRM/Profile/Form.php';
             $session = CRM_Core_Session::singleton( );
             $contactID = $this->_userID;
             
@@ -721,13 +721,12 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form
                                      );
 
             $fields = null;
-            if ( $contactID ) {
-                require_once 'CRM/Core/BAO/UFGroup.php';
-                if ( CRM_Core_BAO_UFGroup::filterUFGroups($id, $contactID)  ) {
-                    $fields = CRM_Core_BAO_UFGroup::getFields( $id, false,CRM_Core_Action::ADD );
-                }
+            if ( $contactID && CRM_Core_BAO_UFGroup::filterUFGroups($id, $contactID) ) {
+                $fields = CRM_Core_BAO_UFGroup::getFields( $id, false,CRM_Core_Action::ADD, null, null, false,
+                                                           null, false, null, CRM_Core_Permission::CREATE, null );
             } else {
-                $fields = CRM_Core_BAO_UFGroup::getFields( $id, false,CRM_Core_Action::ADD ); 
+                $fields = CRM_Core_BAO_UFGroup::getFields( $id, false,CRM_Core_Action::ADD, null, null, false,
+                                                           null, false, null, CRM_Core_Permission::CREATE, null );
             }
 
             if ( $fields ) {
@@ -744,7 +743,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form
                 }
                 
                 $fields = array_diff_assoc( $fields, $this->_fields );
-                $this->assign( $name, $fields );
+                                
                 require_once 'CRM/Core/BAO/Address.php';
                 CRM_Core_BAO_Address::checkContactSharedAddressFields( $fields, $contactID );
                 $addCaptcha = false;
@@ -764,12 +763,24 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form
                         $stateCountryMap[$index][$prefixName] = $key;
                     }
                 
-                    CRM_Core_BAO_UFGroup::buildProfile($this, $field, CRM_Profile_Form::MODE_CREATE, $contactID, true );
-                    $this->_fields[$key] = $field;
+                    if ( $onBehalf ) {
+                        if ( !empty( $fieldTypes ) && in_array( $field['field_type'], $fieldTypes ) ) {
+                            CRM_Core_BAO_UFGroup::buildProfile( $this, $field, CRM_Profile_Form::MODE_CREATE, 
+                                                                $contactID, true );
+                            $this->_fields['onbehalf'][$key] = $field;
+                        } else {
+                            unset( $fields[$key] );
+                        }
+                    } else {
+                        CRM_Core_BAO_UFGroup::buildProfile($this, $field, CRM_Profile_Form::MODE_CREATE, $contactID, true );
+                        $this->_fields[$key] = $field;
+                    }
                     if ( $field['add_captcha'] ) {
                         $addCaptcha = true;
                     }
                 }
+                
+                $this->assign( $name, $fields );
 
                 require_once 'CRM/Core/BAO/Address.php';
                 CRM_Core_BAO_Address::addStateCountryMap( $stateCountryMap );

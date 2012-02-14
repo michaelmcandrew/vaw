@@ -100,19 +100,22 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
         
         // get user info of main contact.
         $config = CRM_Core_Config::singleton( );
+        $config->doNotResetCache = 1;
+
         require_once 'CRM/Core/Permission.php';
         $viewUser = CRM_Core_Permission::check( 'access user profiles' );
         $mainUfId = CRM_Core_BAO_UFMatch::getUFId( $cid );
+        $mainUser = null;
         if ( $mainUfId ) {
             if ( $config->userFramework == 'Drupal' ) {
                 $mainUser = user_load( $mainUfId );
             } else if ( $config->userFramework == 'Joomla' ) {
                 $mainUser = JFactory::getUser( $mainUfId );
             }
+            
+            $this->assign( 'mainUfId', $mainUfId );
+            $this->assign( 'mainUfName', $mainUser->name );
         }
-        
-        $this->assign( 'mainUfId', $mainUfId );
-        $this->assign( 'mainUfName', $mainUser->name );
 
         $flipUrl = CRM_Utils_system::url( 'civicrm/contact/merge', 
                                           "reset=1&action=update&cid={$oid}&oid={$cid}&rgid={$rgid}&gid={$gid}" );
@@ -121,6 +124,7 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
         }
         $this->assign( 'flip', $flipUrl );
 
+        $this->prev = $this->next = null;
         foreach ( array( 'prev', 'next' ) as $position ) {
             if ( !empty( $pos[$position] ) ) {
                 if ( $pos[$position]['id1'] && $pos[$position]['id2'] ) {
@@ -141,6 +145,7 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
 
         // get user info of other contact.
         $otherUfId = CRM_Core_BAO_UFMatch::getUFId( $oid );
+        $otherUser = null;
 
         if ( $otherUfId ) {
             if ( $config->userFramework == 'Drupal' ) {
@@ -148,10 +153,10 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
             } else if ( $config->userFramework == 'Joomla' ) {
                 $otherUser = JFactory::getUser( $otherUfId );
             }
-        }
         
-        $this->assign( 'otherUfId', $otherUfId );
-        $this->assign( 'otherUfName', $otherUser->name );
+            $this->assign( 'otherUfId', $otherUfId );
+            $this->assign( 'otherUfName', $otherUser->name );
+        }
         
         $cmsUser = ( $mainUfId && $otherUfId ) ? true : false;  
         $this->assign( 'user', $cmsUser );
@@ -209,8 +214,12 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
         $subtypes = CRM_Contact_BAO_ContactType::subTypePairs( null, true, '' );
 
         $this->assign('contact_type', $main['contact_type']);
-        $this->assign('main_contact_subtype',  CRM_Utils_Array::value( 'contact_sub_type', $subtypes[$main['contact_sub_type']] ) );
-        $this->assign('other_contact_subtype', CRM_Utils_Array::value( 'contact_sub_type', $subtypes[$other['contact_sub_type']] ) );
+        if(isset($main['contact_sub_type'])) {
+            $this->assign('main_contact_subtype',  CRM_Utils_Array::value( 'contact_sub_type', $subtypes[$main['contact_sub_type']] ) );
+        }
+        if(isset($other['contact_sub_type'])) {
+            $this->assign('other_contact_subtype', CRM_Utils_Array::value( 'contact_sub_type', $subtypes[$other['contact_sub_type']] ) );
+        }
         $this->assign('main_name',    $main['display_name']);
         $this->assign('other_name',   $other['display_name']);
         $this->assign('main_cid',     $main['contact_id']);
@@ -228,7 +237,7 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
         // FIXME: there must be a better way
         foreach (array('main', 'other') as $moniker) {
             $contact =& $$moniker;
-            $specialValues[$moniker] = array('preferred_communication_method' => $contact['preferred_communication_method']);
+            $specialValues[$moniker] = array('preferred_communication_method' => CRM_Utils_array::value('preferred_communication_method', $contact));
             $names = array('preferred_communication_method' => array('newName'   => 'preferred_communication_method_display',
                                                                      'groupName' => 'preferred_communication_method'));
             CRM_Core_OptionGroup::lookupValues($specialValues[$moniker], $names);
@@ -243,14 +252,14 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
                 $contact =& $$moniker;
                 $value = CRM_Utils_Array::value( $field, $contact );
                 $label = isset( $specialValues[$moniker][$field] ) ? $specialValues[$moniker]["{$field}_display"] : $value;
-                if ( $fields[$field]['type'] == CRM_Utils_Type::T_DATE ) {
+                if ( CRM_Utils_Array::value( 'type', $fields[$field] ) && $fields[$field]['type'] == CRM_Utils_Type::T_DATE ) {
                     if ( $value ) {
                         $value = str_replace( '-', '', $value );
                         $label = CRM_Utils_Date::customFormat( $label );
                     } else {
                         $value = "null";
                     }
-                } elseif ( $fields[$field]['type'] == CRM_Utils_Type::T_BOOLEAN ) {
+                } elseif ( CRM_Utils_Array::value( 'type', $fields[$field] ) && $fields[$field]['type'] == CRM_Utils_Type::T_BOOLEAN ) {
                     if ( $label === '0' ) {
                         $label = ts('[ ]');
                     }
@@ -274,7 +283,7 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
         
         // handle location blocks.
         require_once 'api/v2/Location.php';
-        $mainParams['version'] = $otherParams['version'] = '3.0';
+        $mainParams['version'] = $otherParams['version'] = 3;
         
         $locations['main']  =& civicrm_location_get($mainParams);
         $locations['other'] =& civicrm_location_get($otherParams);
@@ -344,8 +353,8 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
         $this->assign( 'mainLocAddress', json_encode( $mainLocAddress ) );        
         
         // handle custom fields
-        $mainTree  =& CRM_Core_BAO_CustomGroup::getTree($this->_contactType, $this, $this->_cid, -1);
-        $otherTree =& CRM_Core_BAO_CustomGroup::getTree($this->_contactType, $this, $this->_oid, -1);
+        $mainTree  =& CRM_Core_BAO_CustomGroup::getTree($this->_contactType, $this, $this->_cid, -1,CRM_Utils_Array::value('contact_sub_type', $main));
+        $otherTree =& CRM_Core_BAO_CustomGroup::getTree($this->_contactType, $this, $this->_oid, -1,CRM_Utils_Array::value('contact_sub_type', $other));
         if (!isset($diffs['custom'])) $diffs['custom'] = array();
         foreach ($otherTree as $gid => $group) {
             $foundField = false;
@@ -399,10 +408,14 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
                 $relTables[$name]['main_url']    = str_replace('$ufid', $mainUfId,  $relTables[$name]['url']);
                 $relTables[$name]['other_url']   = str_replace('$ufid', $otherUfId, $relTables[$name]['url']);
                 $find = array( '$ufid', '$ufname');
-                $replace = array( $mainUfId, $mainUser->name );
-                $relTables[$name]['main_title']  = str_replace( $find, $replace, $relTables[$name]['title']);
-                $replace = array( $otherUfId, $otherUser->name );
-                $relTables[$name]['other_title'] = str_replace( $find, $replace, $relTables[$name]['title']);
+                if($mainUser) {
+                    $replace = array( $mainUfId, $mainUser->name );
+                    $relTables[$name]['main_title']  = str_replace( $find, $replace, $relTables[$name]['title']);
+                }
+                if($otherUser) {
+                    $replace = array( $otherUfId, $otherUser->name );
+                    $relTables[$name]['other_title'] = str_replace( $find, $replace, $relTables[$name]['title']);
+                }
             }
             if ( $name == 'rel_table_memberships' ) {
                 $this->addElement('checkbox', "operation[move_{$name}][add]", null, ts('add new'));
@@ -715,7 +728,7 @@ class CRM_Contact_Form_Merge extends CRM_Core_Form
         
         // move other's belongings and delete the other contact
         CRM_Dedupe_Merger::moveContactBelongings( $this->_cid, $this->_oid );
-        $otherParams = array('id' => $this->_oid, 'version' => 3);
+        $otherParams = array('contact_id' => $this->_oid);
 
         if ( CRM_Core_Permission::check( 'merge duplicate contacts' ) && 
              CRM_Core_Permission::check( 'delete contacts' ) ) {

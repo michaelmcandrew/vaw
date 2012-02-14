@@ -169,7 +169,7 @@ class CRM_Contact_BAO_GroupContact extends CRM_Contact_DAO_GroupContact {
                 $groupContact->save( );
                 $numContactsAdded++;
             } else {
-                if ($groupContact->status == 'Added') {
+                if ($groupContact->status == $status) {
                     $numContactsNotAdded++;
                 } else {
                     $historyParams = array(
@@ -356,6 +356,7 @@ class CRM_Contact_BAO_GroupContact extends CRM_Contact_DAO_GroupContact {
                     civicrm_group.visibility as visibility,
                     civicrm_group_contact.status as status, 
                     civicrm_group.id as group_id,
+                    civicrm_group.is_hidden as is_hidden,
                     civicrm_subscription_history.date as date,
                     civicrm_subscription_history.method as method';
         }
@@ -409,6 +410,7 @@ class CRM_Contact_BAO_GroupContact extends CRM_Contact_DAO_GroupContact {
                 $values[$id]['group_id']       = $dao->group_id;
                 $values[$id]['title']          = $dao->group_title;
                 $values[$id]['visibility']     = $dao->visibility;
+                $values[$id]['is_hidden']      = $dao->is_hidden;
                 switch($dao->status) { 
                 case 'Added': 
                     $prefix = 'in_'; 
@@ -640,11 +642,13 @@ AND civicrm_group_contact.group_id = %2";
     {
         $contactIds = array();
         $contactIds[] = $contactId;
+
         //if $visibility is true we are coming in via profile mean $method = 'Web'
         $ignorePermission = false; 
         if ( $visibility ) {
             $ignorePermission = true; 
         }
+
         if ($contactId) {
             $contactGroupList =& CRM_Contact_BAO_GroupContact::getContactGroup( $contactId, 'Added',
                                                                                 null, false, $ignorePermission );

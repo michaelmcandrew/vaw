@@ -393,6 +393,9 @@ class CRM_Campaign_Form_Task_Interview extends CRM_Campaign_Form_Task {
                     if ( in_array( $responseFields[$key]['field_type'], $contactFieldTypes ) ) {
                         $fields[$key] = $responseFields[$key];
                         $contactParams[$key] = $value;
+                        if ( isset($params["{$key}_id"]) ) {
+                            $contactParams["{$key}_id"] = $params["{$key}_id"];
+                        }
                     }
                 }
             }
@@ -431,6 +434,9 @@ class CRM_Campaign_Form_Task_Interview extends CRM_Campaign_Form_Task {
         
         $activity->subject = $subject;
         $activity->save( );
+        //really this should use Activity BAO& not be here but refactoring will have to be later 
+        //actually the whole ajax call could be done as an api ajax call & post hook would be sorted
+        CRM_Utils_Hook::post( 'edit', 'Activity', $activity->id, $activity );
         $activity->free( );
         
         return $activityId; 
