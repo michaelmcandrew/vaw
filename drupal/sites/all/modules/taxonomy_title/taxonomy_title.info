@@ -2,9 +2,9 @@ name = Taxonomy title
 description = Enables control over the taxonomy page titles.
 dependencies[] = taxonomy
 core = 6.x
-; Information added by drupal.org packaging script on 2011-05-30
-version = "6.x-1.4"
+; Information added by drupal.org packaging script on 2011-12-12
+version = "6.x-1.5"
 core = "6.x"
 project = "taxonomy_title"
-datestamp = "1306794417"
+datestamp = "1323672652"
 

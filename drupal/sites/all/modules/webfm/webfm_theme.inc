@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -10,7 +9,7 @@
 
 /**
  * Displays file attachments in table
- * 
+ *
  * @return
  *        string HtMl of attachments-table themed via the theme('table'... function.
  */
@@ -24,7 +23,7 @@ function theme_webfm_attachments($files) {
   if ($enable_size = variable_get('webfm_attach_size', '')) {
     array_push($header, t('Size'));
   }
-  
+
   $rows = array();
   foreach ($files as $file) {
     // 0 =inline : 1 = attach
@@ -36,13 +35,13 @@ function theme_webfm_attachments($files) {
     $filename = $file->ftitle ? $file->ftitle : $file->n;
     if (variable_get('webfm_attach_new_window', '')) {
       $href = array(
-      'data' => l('<img src="'. $icon_path .'" alt="[file]" title="Download '. $filename .'"/> ', 'webfm_send/'. $file->id .'/1', array('attributes' => array('title' => 'Download '. $filename, 'target' => '_blank'), 'html' => TRUE)) . l($filename, 'webfm_send/'. $file->id, array('attributes' => array('title' => t('Open @filename', array('@filename' => $filename)), 'target' => '_blank'))) . $description,
+      'data' => l('<img src="'. $icon_path .'" alt="'.t('File').'" title="'.t('Download !filename',array('!filename' => $filename)).'" /> ', 'webfm_send/'. $file->id .'/1', array('attributes' => array('title' => 'Download '. $filename, 'target' => '_blank'), 'html' => TRUE)) . l($filename, 'webfm_send/'. $file->id, array('attributes' => array('title' => t('Open @filename', array('@filename' => $filename)), 'target' => '_blank'))) . $description,
       'class' => 'att-title'
       );
     }
     else {
       $href = array(
-      'data' => l('<img src="'. $icon_path .'" alt="[file]" title="Download '. $filename .'"/> ', 'webfm_send/'. $file->id .'/1', array('attributes' => array('title' => 'Download '. $filename), 'html' => TRUE)) . l($filename, 'webfm_send/'. $file->id, array('attributes' => array('title' => t('Open @filename', array('@filename' => $filename))))) . $description,
+      'data' => l('<img src="'. $icon_path .'" alt="'.t('File').'" title="'.t('Download !filename',array('!filename' => $filename)).'" /> ', 'webfm_send/'. $file->id .'/1', array('attributes' => array('title' => 'Download '. $filename), 'html' => TRUE)) . l($filename, 'webfm_send/'. $file->id, array('attributes' => array('title' => t('Open @filename', array('@filename' => $filename))))) . $description,
       'class' => 'att-title'
       );
     }

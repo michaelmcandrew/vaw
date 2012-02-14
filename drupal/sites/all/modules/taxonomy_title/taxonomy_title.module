@@ -23,7 +23,7 @@ function taxonomy_title_menu(){
     'type' => MENU_NORMAL_ITEM,
     'file' => 'taxonomy_title.admin.inc',
   );
-  
+
   return $items;
 }
 
@@ -35,11 +35,18 @@ function taxonomy_title_form_taxonomy_form_term_alter(&$form, &$form_state) {
     $title = _taxonomy_title_get($form['tid']['#value']);
     $form['identification']['taxonomy_title'] = array(
       '#type' => 'textfield',
-      '#title' => t('Term page heading'),
+      '#title' => t('Title (page heading)'),
       '#default_value' => $title,
       '#description' => t('This is the title you will see in the heading tag on your taxonomy term page. If left blank, the term name will be used.'),
       '#weight' => 0,
       );
+
+    if ($title !== FALSE) {
+      $form['identification']['taxonomy_title_set'] = array(
+        '#type' => 'value',
+        '#value' => TRUE
+      );
+    }
   }
 }
 
@@ -54,13 +61,16 @@ function taxonomy_title_taxonomy($op, $type, $array = NULL) {
         break;
 
       case 'update':
-        if (isset($array['taxonomy_title'])) {
+        if (!empty($array['taxonomy_title'])) {
           _taxonomy_title_update($array['tid'], $array['taxonomy_title']);  
+        }
+        if ($array['taxonomy_title_set'] === TRUE && empty($array['taxonomy_title'])) {
+          _taxonomy_title_delete($array['tid']);
         }
         break;
 
       case 'insert':
-        if (isset($array['taxonomy_title'])) {
+        if (!empty($array['taxonomy_title'])) {
           _taxonomy_title_insert($array['tid'], $array['taxonomy_title']);
         }
         break;
@@ -78,18 +88,18 @@ function taxonomy_title_preprocess_page(&$variables) {
   if (arg(0) == 'taxonomy' && arg(1) == 'term' && is_numeric(arg(2)) && arg(2) > 0) {
     $tid = arg(2);
   }
-  
+
   // Add support for Ubercart catalog too.
   elseif (module_exists('uc_catalog') && arg(0) == 'catalog') {
-		$tids = explode(' ', arg(1));
-		if (is_numeric($tids[0]) && $tids[0] > 0) {
-			$tid = $tids[0];
-		}
-	}
+    $tids = explode(' ', arg(1));
+    if (is_numeric($tids[0]) && $tids[0] > 0) {
+      $tid = $tids[0];
+    }
+  }
   
   if (!empty($tid)) {
     // Retrieve the title based on tid.
-  	$title = _taxonomy_title_get($tid);
+    $title = _taxonomy_title_get($tid);
 
     if (!empty($title)){
       drupal_set_title($title);
@@ -185,10 +195,10 @@ function _taxonomy_title_delete($tid) {
  */
 function taxonomy_title_get_settings() {
   $vocabs = taxonomy_get_vocabularies();
-  
+
   $heading_defaults = variable_get('taxonomy_title_headings', array());
   $page_title_defaults = variable_get('taxonomy_title_page_titles', array());
-  
+
   foreach ($vocabs as $vid => $vocab) {
     if (!isset($heading_defaults[$vid])) {
       $heading_defaults[$vid] = $vid;
@@ -197,9 +207,9 @@ function taxonomy_title_get_settings() {
       $page_title_defaults[$vid] = $vid;
     }
   }
-  
+
   $settings = array('taxonomy_title_headings' => $heading_defaults, 'taxonomy_title_page_titles' => $page_title_defaults);
-  
+
   return $settings;
 }
  
@@ -243,7 +253,7 @@ function taxonomy_title_locale_refresh() {
  */
 function taxonomy_title_token_list($type = 'all') {
   if ($type == 'taxonomy' || $type == 'all') {
-    $tokens['taxonomy']['term-title'] = t("The term's title, defaults to term name (same as [term]).");
+    $tokens['taxonomy']['term-title'] = t("The term's title, defaults to term name (same as [cat]) if no title provided.");
     $tokens['taxonomy']['term-title-raw'] = t("The raw component of the term's title, WARNING - raw user input.");
     return $tokens;
   }

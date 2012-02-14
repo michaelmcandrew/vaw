@@ -40,7 +40,9 @@ function masquerade_init() {
   // $uid === 0 we want to store the session variable. If there's no record in
   // masquerade table we clear the session variable.
   if ($uid === FALSE) {
-    unset($_SESSION['masquerading']);
+    if (isset($_SESSION)) {
+      unset($_SESSION['masquerading']);
+    }
   }
   else {
     $_SESSION['masquerading'] = $uid;
@@ -149,7 +151,7 @@ function masquerade_menu_alter(&$items) {
  * Dynamically add the CSRF protection token to the Masquerade menu items.
  */
 function masquerade_translated_menu_link_alter(&$item, $map) {
-  if (array_key_exists('page_callback', $item)) {
+  if (isset($item['page_callback'])) {
     if ($item['page_callback'] == 'masquerade_switch_user_page' && isset($map[2])) {
       $item['localized_options']['query']['token'] = drupal_get_token('masquerade/switch/' . $map[2]);
     }
@@ -186,6 +188,7 @@ function masquerade_access($type, $uid = NULL) {
       break;
     case 'switch':
       global $user;
+      $switch_to_account = FALSE;
       if ($uid) {
         if (!is_numeric($uid)) {
           return FALSE;
@@ -383,7 +386,7 @@ function masquerade_user($op, &$edit, &$edit_user, $category = NULL) {
       break;
 
     case 'update':
-      if ($category == 'account') {
+      if ($category == 'account' && isset($edit['masquerade_users'])) {
         $users = drupal_explode_tags($edit['masquerade_users']);
         db_query("DELETE FROM {masquerade_users} WHERE uid_from = %d", $edit_user->uid);
         foreach ($users as $user) {
@@ -413,7 +416,7 @@ function masquerade_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
     case 'list':
       $blocks[0]['info'] =  t('Masquerade');
-      $blocks[0]['cache'] = BLOCK_CACHE_PER_USER;
+      $blocks[0]['cache'] = BLOCK_NO_CACHE;
       return $blocks;
     case 'view':
       switch ($delta) {
@@ -455,14 +458,16 @@ function masquerade_block_1($record) {
 
     foreach ($masquerade_switches as $switch_user) {
       if (!isset($_SESSION['user']->uid) || $switch_user != $_SESSION['user']->uid) {
-        $user_name = user_load(array('uid' => $switch_user));
-        $switch_link = 'masquerade/switch/'. $user_name->uid;
-        if ($user_name->uid) {
-          $quick_switch_link[] = l($user_name->name, $switch_link, array('query' => array('token' => drupal_get_token($switch_link))));
-        }
-        if ($switch_user == 0) {
-          $user_name->name = variable_get('anonymous', t('Anonymous'));
-          $quick_switch_link[] = l($user_name->name, $switch_link, array('query' => array('token' => drupal_get_token($switch_link))));
+        $account = user_load(array('uid' => $switch_user));
+        if (isset($account->uid)) {
+          $switch_link = 'masquerade/switch/'. $account->uid;
+          if ($account->uid) {
+            $quick_switch_link[] = l($account->name, $switch_link, array('query' => array('token' => drupal_get_token($switch_link))));
+          }
+          if ($switch_user == 0) {
+            $account->name = variable_get('anonymous', t('Anonymous'));
+            $quick_switch_link[] = l($account->name, $switch_link, array('query' => array('token' => drupal_get_token($switch_link))));
+          }
         }
       }
     }
@@ -510,7 +515,7 @@ function masquerade_block_1_validate($form, &$form_state) {
   if (isset($_SESSION['masquerading'])) {
     form_set_error('masquerade_user_field', t('You are already masquerading. Please <a href="@unswitch">switch back</a> to your account to masquerade as another user.', array('@unswitch' => url('masquerade/unswitch', array('query' => array('token' => drupal_get_token('masquerade/unswitch')))))));
   }
-  if (module_exists('alt_login')) {
+  if (!empty($name) && module_exists('alt_login')) {
     $alt_login = db_fetch_object(db_query("SELECT u.name FROM {users} u INNER JOIN {alt_login} al ON u.uid = al.uid WHERE al.alt_login = '%s'", $name));
     if ($alt_login->name) {
       $name = $alt_login->name;

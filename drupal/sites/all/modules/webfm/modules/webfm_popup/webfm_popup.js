@@ -1,4 +1,3 @@
-// $Id$
 
 function webfm_popup() {}
 

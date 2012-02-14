@@ -179,3 +179,11 @@ function masquerade_update_6005() {
   return $ret;
 }
 
+/**
+ * Update masquerade block caching.
+ */
+function masquerade_update_6006() {
+  $ret = array();
+  $ret[] = update_sql("UPDATE {blocks} SET cache = -1 WHERE module = 'masquerade'");
+  return $ret;
+}

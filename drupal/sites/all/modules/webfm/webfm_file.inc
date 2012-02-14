@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -153,7 +152,6 @@ function webfm_rename_db_dir_recur($source, $dest, $ret, &$err_arr) {
           if (!(webfm_rename_db_file($source_item, $dest_item, $err_arr))) {
             $ret = FALSE;
           }
-          
         }
         elseif (is_dir($source_item)) {
           $ret = webfm_rename_db_dir_recur($source_item, $dest_item, $ret, $err_arr);
@@ -231,7 +229,7 @@ function webfm_delete_file($source, &$error) {
  *
  */
 function webfm_move($source, $dest, $uid, &$err_arr) {
-  $dest .= '/'. strrev(drupal_substr(strrev($source), 0, strpos(strrev($source), '/')));
+  $dest = rtrim($dest, '/ \/ '. DIRECTORY_SEPARATOR) .'/'. _webfm_basename($source);
   return webfm_rename($source, $dest, $uid, $err_arr);
 }
 
@@ -270,8 +268,8 @@ function webfm_insert_dir($path, $recur, &$err_arr) {
   if ($handle = opendir($path)) {
     $bl = array('.', '..', '.svn', '.htaccess');
     while (false !== ($file = readdir($handle))) {
-      if (!in_array(drupal_strtolower($file), $bl)) {
-        $file_path = $path .'/'. $file;
+      $file_path = $path .'/'. $file;
+        if (!in_array(drupal_strtolower($file), $bl) and !is_link($file_path)) {
         if (is_file($file_path)) {
           // file
           if (webfm_insert_file($file_path, $err)) {
@@ -317,4 +315,23 @@ function _webfm_basename($filename) {
   else {
     return preg_replace('/^.*[\/]/', '', $filename);
   }
+}
+
+/**
+ * Rawurldecode fails if the filename is utf8
+ * Inspired by http://weierophinney.net/matthew/archives/133-PHP-decoding-of-Javascript-encodeURIComponent-values.html
+ *
+ * @param string|array $value UTF8 encoded by encodeURIComponent()
+ */
+function _webfm_utf8urldecode($value) {
+    if (is_array($value)) {
+        foreach ($value as $key => $val) {
+            $value[$key] = _webfm_utf8urldecode($val);
+        }
+    }
+    else {
+        $value = (string)$value;
+        $value = preg_replace('/%([0-9a-f]{2})/ie', "chr(hexdec('\\1'))", $value);
+    }
+    return $value;
 }

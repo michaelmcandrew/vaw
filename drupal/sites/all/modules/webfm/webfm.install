@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -28,6 +27,8 @@ function webfm_uninstall() {
   variable_del('webfm_attach_size');
   variable_del('webfm_debug');
   variable_del('webfm_display_title');
+  variable_del('webfm_display_date');
+  variable_del('webfm_display_size');
   variable_del('webfm_display_owner');
   variable_del('webfm_cron');
   variable_del('webfm_max_resolution');
@@ -51,8 +52,8 @@ function webfm_uninstall() {
   $types = node_get_types();
   foreach ($types as $type) {
     if ($type->type) {
-      variable_del('webfm_attach_'. $type->type);    
-    }    
+      variable_del('webfm_attach_'. $type->type);
+    }
   }
   variable_del('webfm_file_perm_role');
   variable_del('webfm_file_perm_mod');

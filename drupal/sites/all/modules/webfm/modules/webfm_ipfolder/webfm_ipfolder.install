@@ -1,77 +1,65 @@
 <?php
-// $Id$
-/* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
- * @author			Niels Hackius <niels.hackius@tu-harburg.de>
- * @copyright	2009, Technische Universität Hamburg-Harburg: Institut für Logistik und Unternehmensführung
- * @license			http://www.opensource.org/licenses/gpl-3.0.html  GNU General Public License version 3 (GPLv3)
- * @version		$Id$
- * @since			23:09:49 - 15.04.2009
+ * @file
+ * Install, update and uninstall functions for the webfm_ipfolder module.
  */
 
 /**
- * Implementation of hook_install
+ * Implementation of hook_install().
  *
  */
-function webfm_ipfolder_install()
-{
-	drupal_install_schema('webfm_ipfolder');
-	variable_set('webfm_ipfolder_bydefault',TRUE);
+function webfm_ipfolder_install() {
+  drupal_install_schema('webfm_ipfolder');
+  variable_set('webfm_ipfolder_bydefault', TRUE);
 }
 
 /**
- * Implementation of hook_uninstall
+ * Implementation of hook_uninstall().
  *
  */
-function webfm_ipfolder_uninstall()
-{
-	drupal_uninstall_schema('webfm_ipfolder');
-	variable_del('webfm_ipfolder_bydefault');
+function webfm_ipfolder_uninstall() {
+  drupal_uninstall_schema('webfm_ipfolder');
+  variable_del('webfm_ipfolder_bydefault');
 }
 /**
- * Implementation of hook_schema
+ * Implementation of hook_schema().
  *
  * @return array
  */
-function webfm_ipfolder_schema()
-{
-	$schema['webfm_ipfolder'] = array(
-		'fields' => array(
-			'id'		=> array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
-		  'folder'	=> array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
-			'ip1'		=> array('type' => 'int',size => 'big', 'unsigned' => FALSE, 'not null' => TRUE),
-			'ip2'		=> array('type' => 'int',size => 'big', 'unsigned' => FALSE, 'not null' => TRUE),
-			),
-		'primary key' => array('id'),
-	);
+function webfm_ipfolder_schema() {
+  $schema['webfm_ipfolder'] = array(
+  'fields' => array(
+  'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+  'folder' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+  'ip1' => array('type' => 'int', size => 'big', 'unsigned' => FALSE, 'not null' => TRUE),
+  'ip2' => array('type' => 'int', size => 'big', 'unsigned' => FALSE, 'not null' => TRUE),
+  ),
+  'primary key' => array('id'),
+  );
 
-	return $schema;
+  return $schema;
 }
 
 /**
  * Fixing wrong datatype in former mysql declaration
  * Chaning from usigned INT to signed BIGINT for compatibility with pgsql.
  * As reported in http://drupal.org/node/755882
- **/
-function webfm_ipfolder_update_6200()
-{
-	global $db_type;
+ */
+function webfm_ipfolder_update_6200() {
+  global $db_type;
   $ret = array();
 
-	switch($db_type) {
+  switch ($db_type) {
     case 'pgsql':
-      db_change_column($ret, 'webfm_ipfolder', 'ip1', 'ip1', 'BIGINT( 10 )', array('not null' => TRUE, 'default' => "''"));
-      db_change_column($ret, 'webfm_ipfolder', 'ip2', 'ip2', 'BIGINT( 10 )', array('not null' => TRUE, 'default' => "''"));       
+      db_change_column($ret, 'webfm_ipfolder', 'ip1', 'ip1', 'BIGINT', array('not null' => TRUE,));
+      db_change_column($ret, 'webfm_ipfolder', 'ip2', 'ip2', 'BIGINT', array('not null' => TRUE,));
       break;
 
     case 'mysql':
     case 'mysqli':
       $ret[] = update_sql("ALTER TABLE {webfm_ipfolder} CHANGE ip1 ip1 BIGINT( 10 ) NOT NULL , CHANGE ip2 ip2 BIGINT( 10 ) NOT NULL");
       break;
- }
- 
-	return $ret;
- }
- 
- 
+  }
 
+  return $ret;
+}

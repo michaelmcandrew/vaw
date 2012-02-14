@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Admin settings callback.

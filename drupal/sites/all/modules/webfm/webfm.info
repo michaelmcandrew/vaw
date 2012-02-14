@@ -3,9 +3,9 @@ name = Web File Manager
 description = Hierarchical AJAX file system manager
 package = WebFM
 core = 6.x
-; Information added by drupal.org packaging script on 2011-02-28
-version = "6.x-2.15"
+; Information added by drupal.org packaging script on 2012-01-20
+version = "6.x-2.18"
 core = "6.x"
 project = "webfm"
-datestamp = "1298931971"
+datestamp = "1327028449"
 

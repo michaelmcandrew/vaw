@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -58,7 +57,6 @@ function webfm_popup_menu() {
     'type' => MENU_CALLBACK,
   );
   
-  
   //for path aliasing inside rich text editors
   $items['webfm_popup/get_path_alias'] = array(
     'page callback' => 'webfm_popup_get_path_alias',
@@ -98,7 +96,7 @@ function webfm_popup() {
  */
 function webfm_popup_get_path_alias() {
   $in = func_get_args();
-  $url = url(implode('/', $in),array('absolute'=>true));
+  $url = url(implode('/', $in));
   drupal_json( $url );
 }
 
@@ -109,9 +107,10 @@ function webfm_popup_webfm_extend_js() {
   if (arg(0) == 'webfm_popup') {
     $modulepath = drupal_get_path('module', 'webfm_popup');
     drupal_add_js($modulepath.'/webfm_popup.js');
-    if(($user->uid == 1) || user_access('administer webfm')) {
+    if(user_access('administer webfm')) {
       drupal_add_js(array('webfm_popup' => array('fileDirectory' => file_directory_path())), 'setting');
-    } else {
+    }
+    else {
       drupal_add_js(array('webfm_popup' => array('fileDirectory' => file_directory_path().webfm_get_root_path())), 'setting');
     }
   }

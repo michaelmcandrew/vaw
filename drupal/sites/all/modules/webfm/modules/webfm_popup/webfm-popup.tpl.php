@@ -1,11 +1,10 @@
-<?php 
-// $Id$ 
+<?php
 
 /**
  * @file
  * Display the webfm browser in a popup window.
- * 
- * @see webfm_theme(), webfm-browser.tpl.php 
+ *
+ * @see webfm_theme(), webfm-browser.tpl.php
  */
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"

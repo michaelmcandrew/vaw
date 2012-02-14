@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -10,9 +9,9 @@
 
 /**
  * Implementation of hook_views_handlers().
- * 
+ *
  * Provides Handlers and Path to Views
- * 
+ *
  * @return
  *    array() with the webfm views path and the the supported handlers.
  *
@@ -36,12 +35,12 @@ function webfm_views_handlers() {
 
 /**
  * Implementation of hook_views_data().
- * 
+ *
  * Describes fields and kind of data in the fields to views.
- * 
+ *
  * @return
  *    array() With this data.
- * 
+ *
  */
 function webfm_views_data() {
   $data = array();

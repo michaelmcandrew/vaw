@@ -1,4 +1,3 @@
-// $Id$
 /**
  * @file webfm_image.js
  *

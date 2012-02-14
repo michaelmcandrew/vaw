@@ -1,4 +1,3 @@
-/* $Id$ */
 
 img { border: 0; }
 
@@ -18,6 +17,8 @@ img { border: 0; }
 #webfm-dirlist .navi a:hover { color: red; text-decoration: none; }
 #webfm-dirlist .txt { font-weight: normal; font-size: 8pt; text-align: left; padding-left: 5px; padding-right: 5px; }
 #webfm-dirlist-ctls .selected { background-color: #2092d0; cursor:pointer; }
+#webfm-dirlist td.icon { width: 30px; }
+#webfm-dirlist td.ctls-td { text-align: right; }
 
 #webfm-tree { float:left; clear:both; position:relative; }
 #webfm-tree .selected { background-color: #e7e7e7; }
