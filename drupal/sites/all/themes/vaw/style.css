@@ -164,13 +164,58 @@ h6 a {
 /* Image banners */
 #banner { background: white;  border-bottom: 10px solid white;  }
 #banner .block { padding: 20px 375px 0 70px; height: 101px; }
-#homepage #banner .block { background: url(images/banners/banner-front.jpg) 0 0 no-repeat; height: 191px; } /* front page */
+/*#homepage #banner .block { background: url(images/banners/banner-front.jpg) 0 0 no-repeat; height: 191px; } /* front page */
 #banner #block-block-15 { background: url(images/banners/banner-1.jpg) 0 0 no-repeat; } /* Group support */
 #banner #block-block-16 { background: url(images/banners/banner-2.jpg) 0 0 no-repeat; } /* Directory & Database */
 #banner #block-block-17 { background: url(images/banners/banner-3.jpg) 0 0 no-repeat; } /* Training */
 #banner #block-block-18, #banner #block-block-2 { background: url(images/banners/banner-4.jpg) 0 0 no-repeat; } /* Funding */
 #banner #block-block-19 { background: url(images/banners/banner-5.jpg) 0 0 no-repeat; } /* News */
 #banner #block-block-33 { background: url(http://www.vawcvs.org/sites/vawcvs.org/files/images/banner-6.jpg) 0 0 no-repeat; } /* Networking */
+
+
+#homepage #banner .block { padding: 0; height: auto; }
+
+.carousel {
+	width: 100%;
+}
+.jcarousel-container,
+.jcarousel-clip-horizontal {
+	width: 960px;
+	height: 220px;
+	overflow: hidden;
+}
+.jcarousel-container ul {
+	height: 220px;
+}
+.jcarousel-item {
+	height: 100%;
+	position: relative;
+}
+.jcarousel-container .views-field-field-image-fid {
+	width: 960px;
+	height: 220px;
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+.jcarousel-container .views-field-title,
+.jcarousel-container .views-field-body {
+	width: 515px;
+	position: absolute;
+	left: 70px;
+}
+.jcarousel-container .views-field-body {
+	top: 20px;
+}
+.jcarousel-container .views-field-body h2 {
+	font-size: 2em;
+	font-weight: bold;
+	line-height: 1.1em;
+	color: #256B90;
+}
+
+
+
 
 /* center column styled lists */
 #center ul.styled, #tinymce ul.styled {
