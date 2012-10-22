@@ -164,7 +164,8 @@ h6 a {
 /* Image banners */
 #banner { background: white;  border-bottom: 10px solid white;  }
 #banner .block { padding: 20px 375px 0 70px; height: 101px; }
-/*#homepage #banner .block { background: url(images/banners/banner-front.jpg) 0 0 no-repeat; height: 191px; } /* front page */
+/* comment out next line for carousel */
+#homepage #banner .block { background: url(images/banners/banner-front.jpg) 0 0 no-repeat; height: 191px; } /* front page */
 #banner #block-block-15 { background: url(images/banners/banner-1.jpg) 0 0 no-repeat; } /* Group support */
 #banner #block-block-16 { background: url(images/banners/banner-2.jpg) 0 0 no-repeat; } /* Directory & Database */
 #banner #block-block-17 { background: url(images/banners/banner-3.jpg) 0 0 no-repeat; } /* Training */
@@ -172,8 +173,8 @@ h6 a {
 #banner #block-block-19 { background: url(images/banners/banner-5.jpg) 0 0 no-repeat; } /* News */
 #banner #block-block-33 { background: url(http://www.vawcvs.org/sites/vawcvs.org/files/images/banner-6.jpg) 0 0 no-repeat; } /* Networking */
 
-
-#homepage #banner .block { padding: 0; height: auto; }
+/* comment in next line for carousel */
+/*#homepage #banner .block { padding: 0; height: auto; }*/
 
 .carousel {
 	width: 100%;
